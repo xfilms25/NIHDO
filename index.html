@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nothing I haven't Dreamed of</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,9 +85,10 @@ button.go:hover{background:#fff}
 #vTitle .bg{position:absolute;inset:0;background:#040506 url(intro.jpg) 100% center/cover no-repeat;transform-origin:82% 50%;animation:bgIn 2.6s ease both,bgDrift 40s ease-in-out 2.6s infinite alternate}
 #vTitle .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,4,5,.94) 0%,rgba(3,4,5,.78) 30%,rgba(3,4,5,.25) 52%,rgba(3,4,5,0) 70%),linear-gradient(0deg,rgba(3,4,5,.7) 0%,rgba(3,4,5,0) 35%)}
 #vTitle .tgrain{position:absolute;inset:0;pointer-events:none;opacity:.16;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
-.menuWrap{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:18px;box-sizing:border-box;width:min(660px,100%);height:100%;overflow-y:auto;padding-block:32px;padding-left:max(7vw,env(safe-area-inset-left,0px));padding-right:16px}
+.menuWrap{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:18px;box-sizing:border-box;width:min(660px,100%);height:100%;overflow-y:auto;padding-block:32px;padding-left:max(7vw,env(safe-area-inset-left,0px));padding-right:16px}
+.menuWrap>:first-child{margin-top:auto}.menuWrap>:last-child{margin-bottom:auto}
 .menuWrap .eyebrow{font-weight:600;letter-spacing:.24em;text-transform:uppercase;font-size:14px;color:var(--gold)}
-.menuWrap h1{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(32px,5.6vw,76px);line-height:1.04;letter-spacing:.03em;margin:0;color:#e8dcc9;text-shadow:0 4px 28px #000;text-wrap:balance;max-width:10em}
+.menuWrap h1{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(26px,min(5.6vw,10vh),76px);line-height:1.04;letter-spacing:.03em;margin:0;color:#e8dcc9;text-shadow:0 4px 28px #000;text-wrap:balance;max-width:10em}
 .menuWrap .tag{margin:0;max-width:30em;font-size:clamp(16px,1.7vw,20px);line-height:1.4;color:#b4b1a8;letter-spacing:.02em}
 .menu{display:flex;flex-direction:column;gap:2px;margin-top:8px}
 .mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:600 clamp(20px,2.3vw,26px) var(--hud);letter-spacing:.2em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
@@ -108,7 +113,8 @@ button.go:hover{background:#fff}
 @media (max-aspect-ratio:1/1){
   #vTitle .bg{background-size:auto 54%;background-position:100% 0}
   #vTitle .shade{background:linear-gradient(0deg,rgba(3,4,5,1) 0%,rgba(3,4,5,.97) 42%,rgba(3,4,5,.55) 52%,rgba(3,4,5,0) 66%)}
-  .menuWrap{justify-content:flex-end;width:100%;padding-bottom:max(28px,env(safe-area-inset-bottom,0px))}
+  .menuWrap{width:100%;padding-bottom:max(28px,env(safe-area-inset-bottom,0px))}
+  .menuWrap>:last-child{margin-bottom:0}
 }
 @media (max-height:520px){.menuWrap{gap:8px;padding-block:14px}.menuWrap .tag{display:none}.mi{padding:6px 0}}
 @media (prefers-reduced-motion:reduce){#vTitle .bg,.menuWrap>*{animation:none}}
@@ -120,6 +126,14 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
   .nav{order:2}
 }
 @media (prefers-reduced-motion:reduce){#sub,#flash,#prompt{transition:none}}
+/* finale clip */
+#vFin{z-index:8;padding:0;background:#000}
+#vFin.on{animation:finIn .9s ease both}
+@keyframes finIn{from{opacity:0}to{opacity:1}}
+#finVid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#finSkip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));pointer-events:auto;cursor:pointer;font:600 14px var(--hud);letter-spacing:.2em;text-transform:uppercase;color:var(--bone);background:rgba(0,0,0,.45);border:1px solid rgba(226,220,205,.45);padding:9px 18px;opacity:.75}
+#finSkip:hover{opacity:1}
+#finTap{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font:600 20px var(--hud);letter-spacing:.24em;text-transform:uppercase;color:var(--bone);background:rgba(0,0,0,.55);pointer-events:none}
 </style>
 
 <canvas id="gl"></canvas>
@@ -190,6 +204,8 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
   </div>
 </div>
 
+<div class="veil" id="vFin"><video id="finVid" playsinline webkit-playsinline preload="none"></video><div id="finTap" data-i18n="tapPlay">Toca para reproducir</div><button id="finSkip" type="button" data-i18n="skip">Saltar</button></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
@@ -220,7 +236,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  hands:'¡Manos! Golpea con el hacha para soltarte',handsCaught:'Las manos te arrastraron.',soundOff:'Sonido apagado.',soundOn:'Sonido encendido.',
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
- axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo'},
+ axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
 en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',eyebrow:'The Official Videogame',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Enter the forest',controls:'Controls',lang:'Language: English',small:'Best with headphones',
@@ -234,7 +250,7 @@ en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kic
  hands:'Hands! Strike with the axe to break free',handsCaught:'The hands dragged you down.',soundOff:'Sound off.',soundOn:'Sound on.',
  lines:['A scrap of cloth. Still warm.','I know this path. I dreamed it before I walked it.','Every step takes me away from her. Every step brings me closer.',"Something is breathing behind me. I won't look.",'Luna, if you\'re still here, tell me which way.'],
  axTitle:'Adjust axe',axHelp:'Change the values and watch Damian. Drag on the screen to turn the camera. Saved in this browser.',axRot:'Axe in hand: rotation (°)',axPos:'Axe in hand: position (cm)',axGrip:'Grip',axSlide:'Slide along the handle (cm)',
- axRx:'Rotate X',axRy:'Rotate Y',axRz:'Rotate Z',axMx:'Move X',axMy:'Move Y',axMz:'Move Z',axFreeze:'Freeze attack',axMoment:'Moment of the swing',axTry:'Try attack',axKick:'Try kick',axSave:'Save',axSaved:'Axe position saved.',axCopy:'Copy values',axReset:'Reset',settings:'Sound',volSfx:'Effects',volAmb:'Ambience',volMus:'Music',done:'Done'}
+ axRx:'Rotate X',axRy:'Rotate Y',axRz:'Rotate Z',axMx:'Move X',axMy:'Move Y',axMz:'Move Z',axFreeze:'Freeze attack',axMoment:'Moment of the swing',axTry:'Try attack',axKick:'Try kick',axSave:'Save',axSaved:'Axe position saved.',axCopy:'Copy values',axReset:'Reset',settings:'Sound',volSfx:'Effects',volAmb:'Ambience',volMus:'Music',done:'Done',skip:'Skip',tapPlay:'Tap to play'}
 };
 var LANG='es';
 try{var _lg=localStorage.getItem('nihd_lang');LANG=_lg||((navigator.language||'es').toLowerCase().indexOf('es')===0?'es':'en');}catch(e){LANG=(navigator.language||'es').toLowerCase().indexOf('es')===0?'es':'en';}
@@ -1146,6 +1162,7 @@ function lunaTickFig(dt,playing){
   if(luna.bones&&luna.state!=='out'){var want=Math.min(k,5);if(want===5&&!LILY)want=1;if(want!==luna.poseIdx)lunaSetPose(want);}
   if(luna.bones&&luna.base&&luna.g.visible)lunaIdle(time);
   if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<8.5)advance();
+  if(playing&&k===5&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
   if(luna.state==='out'){
     lunaOp(Math.max(0,luna.op-dt*1.6));
     if(luna.op<=0){
@@ -1156,8 +1173,8 @@ function lunaTickFig(dt,playing){
     lunaOp(Math.min(1,luna.op+dt*0.7));if(luna.op>=1)luna.state='idle';
   }
   if(luna.g.visible){
-    var p=luna.g.position;luna.g.rotation.y=luna.look+Math.sin(time*0.35)*0.18;
-    p.y=H(p.x,p.z)+Math.sin(time*1.2)*0.04;luna.g.rotation.z=Math.sin(time*0.9)*0.03;
+    var p=luna.g.position;luna.g.rotation.y=FIN.on?FIN.fy:luna.look+Math.sin(time*0.35)*0.18;
+    p.y=H(p.x,p.z)+(FIN.on?0:Math.sin(time*1.2)*0.04);luna.g.rotation.z=FIN.on?0:Math.sin(time*0.9)*0.03;
   }
 }
 var targetLight=new THREE.PointLight(0xbcd4ff,1.4,22);scene.add(targetLight);
@@ -2860,8 +2877,78 @@ function resetGame(){
   randomizeWP();placeTraps();TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
   k=0;collected=0;calm=1;fol.active=false;presence.visible=false;
   pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;checkpoint={x:0,z:0};if(window.clearShadows)clearShadows();yaw=Math.PI;pitch=0.26;
-  cloths.forEach(function(c){c.g.visible=false;});lunaPlace();
+  finaleReset();cloths.forEach(function(c){c.g.visible=false;});lunaPlace();
   setTrail([0,0],WP[0]);updateObjective();
+}
+/* ---------- finale: at the last stop Luna walks slowly away, then the clip from the short plays ---------- */
+var FIN={on:false,t:0,phase:'',dx:0,dz:1,fy:0,walk:0,primed:false};
+var FIN_WALK=6.8;
+function primeFinale(){   /* called from a tap, so phones allow the clip to play later with sound */
+  if(FIN.primed)return;FIN.primed=true;
+  var v=$('finVid');if(!v)return;
+  try{v.src='finale.mp4';v.muted=true;var pr=v.play();
+    if(pr&&pr.then)pr.then(function(){v.pause();try{v.currentTime=0;}catch(e){}v.muted=false;}).catch(function(){v.muted=false;});
+    else v.muted=false;
+  }catch(e){}
+}
+function startFinale(){
+  if(FIN.on||state!=='play')return;
+  var T=WP[5],dx=T[0]-pp.x,dz=T[1]-pp.z,l=Math.hypot(dx,dz);
+  if(l<0.5){dx=Math.sin(yaw);dz=Math.cos(yaw);l=1;}
+  FIN.on=true;FIN.t=0;FIN.phase='walk';FIN.dx=dx/l;FIN.dz=dz/l;FIN.walk=0;FIN.fy=luna.g?luna.g.rotation.y:0;
+  state='finale';keys={};dragging=false;pp.vx=pp.vz=0;
+  try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}
+  holReset();
+  var h=$('hud');h.style.transition='opacity 1.2s';h.style.opacity='0';
+}
+function lunaWalkLegs(ph,amt){
+  var B=luna.bones,R=luna.rest;if(!B||!R)return;
+  var legs=['mixamorigLeftUpLeg','mixamorigRightUpLeg','mixamorigLeftLeg','mixamorigRightLeg'];
+  legs.forEach(function(n){if(B[n]&&R[n])B[n].quaternion.copy(R[n]);});
+  var sL=Math.sin(ph),cL=Math.cos(ph);
+  lunaTurn('mixamorigLeftUpLeg',_iX,-0.3*sL*amt);lunaTurn('mixamorigRightUpLeg',_iX,0.3*sL*amt);
+  lunaTurn('mixamorigLeftLeg',_iX,(0.08+0.42*Math.max(0,cL))*amt);lunaTurn('mixamorigRightLeg',_iX,(0.08+0.42*Math.max(0,-cL))*amt);
+}
+function finaleTick(dt){
+  if(!FIN.on||FIN.phase!=='walk'||!luna.g)return;
+  FIN.t+=dt;var t=FIN.t,p=luna.g.position;
+  /* the camera and Damian slowly turn to watch her go */
+  var ty=Math.atan2(p.x-pp.x,p.z-pp.z);
+  yaw+=Math.atan2(Math.sin(ty-yaw),Math.cos(ty-yaw))*Math.min(1,dt*2.2);
+  pitch+=(0.16-pitch)*Math.min(1,dt*1.5);
+  pp.face+=Math.atan2(Math.sin(ty-pp.face),Math.cos(ty-pp.face))*Math.min(1,dt*4);
+  /* Luna turns her back and walks off, slowly, then dissolves in the mist */
+  var face=Math.atan2(FIN.dx,FIN.dz);
+  FIN.fy+=Math.atan2(Math.sin(face-FIN.fy),Math.cos(face-FIN.fy))*Math.min(1,dt*1.6);
+  var amt=Math.min(1,t/1.3),sp=0.7*amt;
+  p.x+=FIN.dx*sp*dt;p.z+=FIN.dz*sp*dt;
+  FIN.walk+=sp*dt*4.5;lunaWalkLegs(FIN.walk,amt);
+  lunaOp(t<4.4?1:Math.max(0,1-(t-4.4)/2.2));
+  if(t>=FIN_WALK)playFinale();
+}
+function playFinale(){
+  FIN.phase='clip';
+  var v=$('finVid');
+  lunaOp(0);$('vFin').classList.add('on');$('finTap').style.display='none';
+  try{if(ac&&ac.state==='running')ac.suspend();}catch(e){}
+  if(!v.getAttribute('src'))v.src='finale.mp4';
+  try{v.currentTime=0;}catch(e){}
+  v.muted=false;v.volume=1;
+  var pr=v.play();
+  if(pr&&pr.catch)pr.catch(function(){if(v.error)endFinale();else $('finTap').style.display='flex';});
+}
+function endFinale(){
+  if(FIN.phase!=='clip')return;FIN.phase='done';
+  var v=$('finVid');try{v.pause();}catch(e){}
+  $('vFin').classList.remove('on');$('finTap').style.display='none';
+  try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}
+  state='ending';sfxEnd();$('vEnd').classList.add('on');
+}
+function finaleReset(){
+  FIN.on=false;FIN.phase='';FIN.t=0;
+  var v=$('finVid');if(v){try{v.pause();}catch(e){}}
+  $('vFin').classList.remove('on');$('finTap').style.display='none';
+  var h=$('hud');h.style.transition='';h.style.opacity='';
 }
 function updateObjective(){
   $('objText').textContent=k>=5?tr('objClearing'):tr('objFollow');
@@ -2906,11 +2993,7 @@ function advance(){
 function examine(){
   if(state!=='play')return;
   var T=WP[k];if(Math.hypot(pp.x-T[0],pp.z-T[1])>4)return;
-  if(k===5){
-    state='ending';sfxEnd();$('vEnd').classList.add('on');
-    if(document.exitPointerLock&&locked)document.exitPointerLock();
-    return;
-  }
+  if(k===5){startFinale();return;}
   advance();
 }
 
@@ -2920,6 +3003,7 @@ window.addEventListener('keydown',function(e){
   if(e.code==='KeyE')examine();
   if(e.code==='KeyG')axtOpen();
   if(e.code==='KeyM')toggleMute();
+  if(state==='finale'&&FIN.phase==='clip'&&(e.code==='Escape'||e.code==='Enter')){e.preventDefault();endFinale();}
   if(e.code==='KeyP'||(e.code==='Escape'&&state==='paused')){if(state==='play')pauseGame();else if(state==='paused')resumeGame();}
   if(state==='caught'&&(e.code==='Enter'||e.code==='KeyR'||e.code==='Space')){e.preventDefault();retryNow();}
   if((e.code==='KeyQ'||e.code==='KeyJ')&&!e.repeat)attack();
@@ -3013,11 +3097,16 @@ $('vTitle').addEventListener('keydown',function(e){
 });
 $('goBtn').addEventListener('click',function(){
   initAudio();if(ac&&ac.state==='suspended'){try{ac.resume();}catch(e){}}
+  primeFinale();
   var vt=$('vTitle');vt.classList.add('out');setTimeout(function(){vt.classList.remove('on','out');},900);state='play';resetGame();
   showSub(tr('followLight'),3200);
   if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
 });
 $('againBtn').addEventListener('click',function(){$('vEnd').classList.remove('on');resetGame();state='play';});
+$('finVid').addEventListener('ended',endFinale);
+$('finVid').addEventListener('error',function(){if(FIN.phase==='clip')endFinale();});
+$('finSkip').addEventListener('click',function(e){e.stopPropagation();endFinale();});
+$('vFin').addEventListener('click',function(){if($('finTap').style.display==='flex'){$('finTap').style.display='none';var v=$('finVid');v.muted=false;var pr=v.play();if(pr&&pr.catch)pr.catch(function(){});}});
 
 /* ---------- compass ---------- */
 var cmp=$('compass'),cx2=cmp.getContext('2d');
@@ -3055,6 +3144,7 @@ function frame(){
   var dt=Math.min(clock.getDelta(),0.05);if(state==='paused')dt=0;time+=dt;
   var playing=state==='play';
   if(state==='title'){yaw+=dt*0.07;}
+  if(state==='finale')finaleTick(dt);
 
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},Rt={x:-Math.cos(yaw),z:Math.sin(yaw)};
   var fwd=0,str=0;
