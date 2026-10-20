@@ -171,6 +171,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
   </div>
 </div>
 <button id="pauseBtn" type="button" aria-label="Pausa"><i></i><i></i></button>
+<button id="fsBtn" type="button" aria-label="Pantalla completa" style="position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(70px,calc(env(safe-area-inset-right,0px) + 56px));width:44px;height:44px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.55);pointer-events:auto;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;z-index:4;color:var(--bone);font:600 18px var(--hud);letter-spacing:.1em;">⛶</button>
 <div class="veil" id="vPause"><div class="card"><h1 data-i18n="pause">Pausa</h1><p data-i18n="pauseP">El bosque espera.</p><div class="row"><button class="go" id="resumeBtn" type="button" data-i18n="resume">Continuar</button><button class="ghost" id="restartBtn" type="button" data-i18n="restart">Volver a empezar</button><button class="ghost" id="menuBtn" type="button" data-i18n="menu">Men&uacute; principal</button><button class="ghost" id="setBtn2" type="button" data-i18n="settings">Sonido</button><button class="ghost" id="langBtn2" type="button" data-i18n="lang">Idioma: Español</button></div></div></div>
 <div class="veil dark" id="vSet" style="z-index:7"><div class="card" style="min-width:min(340px,calc(100vw - 48px))"><h1 data-i18n="settings">Sonido</h1>
 <div class="vols">
@@ -2985,6 +2986,18 @@ $('setBtn').addEventListener('click',openSettings);$('setBtn2').addEventListener
   if(p[1]==='sfx'&&typeof swish==='function'&&ac)try{swish(1.2);}catch(er){}});});
 applyVol();$('langBtn2').addEventListener('click',toggleLang);
 $('pauseBtn').addEventListener('click',function(e){e.stopPropagation();pauseGame();});
+var fsBtn=$('fsBtn');
+if(document.fullscreenEnabled||document.webkitFullscreenEnabled||document.mozFullScreenEnabled||document.msFullscreenEnabled){
+  fsBtn.style.display='flex';
+  fsBtn.addEventListener('click',function(e){e.stopPropagation();
+    var d=document.documentElement;
+    if(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement){
+      (document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen).call(document);
+    }else{
+      (d.requestFullscreen||d.webkitRequestFullscreen||d.mozRequestFullScreen||d.msRequestFullscreen).call(d);
+    }
+  });
+}
 $('resumeBtn').addEventListener('click',resumeGame);
 $('restartBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='play';clock.getDelta();});
 $('menuBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='title';$('vTitle').classList.add('on');});
