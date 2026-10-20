@@ -3179,12 +3179,12 @@ function frame(){
   dmnUpdate(dt,spd);
 
   /* camera */
-  var D=4.4,cp=Math.cos(pitch),sn=Math.sin(pitch);
+  var D=2.2,cp=Math.cos(pitch),sn=Math.sin(pitch);
   var ay=py+1.45;
-  camPos.set(pp.x-F.x*cp*D+Rt.x*0.9,ay+sn*D,pp.z-F.z*cp*D+Rt.z*0.9);
+  camPos.set(pp.x-F.x*cp*D+Rt.x*0.65,ay+0.3+sn*D,pp.z-F.z*cp*D+Rt.z*0.65);
   var gh=H(camPos.x,camPos.z)+0.6;if(camPos.y<gh)camPos.y=gh;
   camera.position.copy(camPos);
-  camera.lookAt(pp.x+Rt.x*0.9+F.x*6,ay+0.3,pp.z+Rt.z*0.9+F.z*6);
+  camera.lookAt(pp.x+Rt.x*0.65+F.x*6,ay-1.2,pp.z+Rt.z*0.65+F.z*6);
   camera.getWorldDirection(camDir);
 
   /* sun follows */
