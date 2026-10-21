@@ -1809,6 +1809,7 @@ function attack(force){
 }
 function killShadow(e){e.alive=false;e.dying=0.0001;calm=Math.min(1,calm+0.15);sfxHit(true);if(!shownDissolve){shownDissolve=true;showSub(tr('smoke'),2200);}}
 function doHit(){
+  if(hol.grab)return;
   var fx=Math.sin(pp.face),fz=Math.cos(pp.face),any=false;
   enemies.forEach(function(e){
     if(!e.alive||e.spawn<0.5)return;
@@ -1999,7 +2000,14 @@ function loadHollow(){
         var g=new THREE.Group();g.add(m);g.visible=false;scene.add(g);hol.g=g;
         var hs=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.NormalBlending,opacity:0,color:0x000000,fog:false}));hs.scale.set(10,10,1);hs.position.y=5.6;g.add(hs);
         var hb=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.NormalBlending,opacity:0,color:0x000000,fog:false}));hb.scale.set(9,15,1);hb.position.y=3.4;hb.renderOrder=-1;g.add(hb);hol.spr=[hs,hb];
-        if(gltf.animations&&gltf.animations.length){hol.mixer=new THREE.AnimationMixer(m);hol.act=hol.mixer.clipAction(gltf.animations[0]);hol.act.play();hol.act.timeScale=0.3;}
+        if(gltf.animations&&gltf.animations.length){hol.mixer=new THREE.AnimationMixer(m);hol.act=hol.mixer.clipAction(gltf.animations[0]);hol.act.play();hol.act.timeScale=0.3;
+          fetch('hollowgrab.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
+            var d=J.grab,tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
+            var a=hol.mixer.clipAction(new THREE.AnimationClip('grab',d.dur,tr));a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.setEffectiveWeight(0);
+            hol.grabAct=a;hol.grabDur=d.dur;
+          }).catch(function(e){console.warn('hollow grab clip not used',e);});
+        }
+        m.traverse(function(o){if(o.isBone&&/Spine2$/.test(o.name))hol.chest=o;});
         hol.ready=true;
       }catch(e){console.warn('hollow not used',e);}
     },function(e){console.warn('hollow failed',e);});
@@ -2041,7 +2049,45 @@ function holPick(){
   return false;
 }
 function holSetOp(v){hol.op=v;for(var i=0;i<hol.mats.length;i++)hol.mats[i].opacity=v;if(hol.spr){hol.spr[0].material.opacity=0.5*v;hol.spr[1].material.opacity=0.42*v;}}
-function holReset(){hol.state='hide';hol.t=2;hol.seenT=0;if(hol.g)hol.g.visible=false;holSetOp(0);}
+var HOL_GRAB_HIT=1.55;
+function holGrabStart(){
+  if(hol.grab)return;
+  hol.grab=true;hol.grabT=0;SHK.imp=Math.max(SHK.imp||0,0.12);
+  if(hol.grabAct&&hol.act){hol.grabAct.reset();hol.grabAct.setEffectiveTimeScale(1);hol.grabAct.setEffectiveWeight(1);hol.grabAct.play();hol.act.crossFadeTo(hol.grabAct,0.25,false);}
+  else HOL_GRAB_HIT=0.6;
+  holBreath(1.0,true);
+}
+function holGrabEnd(){
+  hol.grab=false;hol.grabT=0;
+  if(hol.grabAct){hol.grabAct.stop();hol.grabAct.setEffectiveWeight(0);}
+  if(hol.act){hol.act.enabled=true;hol.act.setEffectiveWeight(1);hol.act.play();}
+}
+/* Hollow's breathing: slow and distant at first, heavier and faster the closer he gets */
+function holBreath(near,hard){
+  if(!ac)return;
+  try{
+    var t=ac.currentTime+0.02,dur=hard?1.5:1.9-0.7*near,pk=Math.min(0.9,0.05+0.8*near*near)*(hard?1.4:1);
+    var len=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,len,ac.sampleRate),dd=b.getChannelData(0),lp=0;
+    for(var i=0;i<len;i++){var x=i/len,env=x<0.38?Math.pow(x/0.38,1.6)*0.8:Math.pow(1-(x-0.38)/0.62,1.5);lp+=((Math.random()*2-1)-lp)*0.35;dd[i]=lp*env;}
+    var src=ac.createBufferSource();src.buffer=b;
+    var bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(380+260*near,t);bp.frequency.linearRampToValueAtTime(260,t+dur);bp.Q.value=0.7;
+    var lo=ac.createOscillator(),lg=ac.createGain();lo.type='sine';lo.frequency.setValueAtTime(48,t);lo.frequency.linearRampToValueAtTime(38,t+dur);lg.gain.setValueAtTime(0.0001,t);lg.gain.linearRampToValueAtTime(0.35*pk,t+dur*0.4);lg.gain.linearRampToValueAtTime(0.0001,t+dur);
+    var g=ac.createGain();g.gain.value=pk*2.2;
+    var dx=hol.x-pp.x,dz=hol.z-pp.z,dl=Math.hypot(dx,dz)||1,pan=Math.max(-1,Math.min(1,(dx*-Math.cos(yaw)+dz*Math.sin(yaw))/dl));
+    var p=panner(pan);
+    src.connect(bp);bp.connect(g);lo.connect(lg);lg.connect(g);
+    if(p){g.connect(p);p.connect(sfxBus);}else g.connect(sfxBus);
+    src.start(t);lo.start(t);lo.stop(t+dur+0.05);
+  }catch(e){}
+}
+function holBreathTick(dt,d){
+  /* chest swell, in step with the breaths */
+  hol.bT=(hol.bT||0)-dt;
+  var near=Math.max(0,Math.min(1,1-(d-4)/46));
+  if(hol.chest){var ph=hol.bPh=(hol.bPh||0)+dt*(1.2+2.2*near);hol.chest.scale.setScalar(1+(0.018+0.03*near)*Math.sin(ph*Math.PI*2*0.5));}
+  if(hol.bT<=0&&d<55){hol.bT=2.6-1.5*near+Math.random()*0.4;holBreath(near,false);}
+}
+function holReset(){hol.state='hide';hol.t=2;hol.seenT=0;holGrabEnd();if(hol.g)hol.g.visible=false;holSetOp(0);}
 
 /* wood under Hollow's weight: a sharp crack (sometimes a double snap) and a slow creak */
 function woodCrack(vol,pan,dbl){
@@ -2099,15 +2145,23 @@ function holTick(dt,playing){
   tmpV.set(hol.x-camPos.x,gy+3.6-camPos.y,hol.z-camPos.z);var cd=tmpV.length();tmpV.normalize();
   var dotv=tmpV.dot(camDir),looked=dotv>0.93&&cd<80,inView=dotv>0.72&&cd<90;
   hol.dist=d;hol.looked=inView&&hol.state!=='in';
+  if(hol.state!=='out')holBreathTick(dt,d);
   if(hol.state==='in'){
     holSetOp(Math.min(1,hol.op+dt*0.7));
     if(hol.op>=1)hol.state='watch';
   }else if(hol.state==='watch'&&hol.hunt){
     /* the bar is nearly empty: Hollow stops watching and comes for Damian */
     holSetOp(1);hol.watch=99;
-    var hs=(d>20?7:4.6)*(hol.hitT>0?0:1);hol.x+=dx/d*hs*dt;hol.z+=dz/d*hs*dt;
+    var hs=(d>20?7:4.6)*(hol.hitT>0?0:1);
+    if(hol.grab){hs=d>2.9?2.4:0;}   /* he plants himself in front of Damian and reaches down */
+    hol.x+=dx/d*hs*dt;hol.z+=dz/d*hs*dt;
     calm=Math.max(0,calm-dt*0.05);
-    hol.drain=true;if(d<3.5||calm<=0){calm=0;hol.hunt=false;respawn(tr('hollowCaught'));}
+    hol.drain=true;
+    if(!hol.grab&&(d<4.6||calm<=0))holGrabStart();
+    if(hol.grab){
+      hol.grabT+=dt;pp.face+=Math.atan2(Math.sin(Math.atan2(hol.x-pp.x,hol.z-pp.z)-pp.face),Math.cos(Math.atan2(hol.x-pp.x,hol.z-pp.z)-pp.face))*Math.min(1,dt*6);
+      if(hol.grabT>=HOL_GRAB_HIT){calm=0;hol.hunt=false;hol.grab=false;respawn(tr('hollowCaught'));}
+    }
   }else if(hol.state==='watch'){
     hol.watch-=dt;
     if(inView){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr('dontLook'),1600);}}
@@ -3237,7 +3291,7 @@ function frame(){
   }
   var len=Math.hypot(fwd,str);if(len>1){fwd/=len;str/=len;len=1;}
   var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null)&&len>0;
-  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1);
+  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
   pp.vx+=(tvx-pp.vx)*kk;pp.vz+=(tvz-pp.vz)*kk;
