@@ -1188,7 +1188,7 @@ function lunaTickFig(dt,playing){
   if(!luna.g)return;
   if(luna.bones&&luna.state!=='out'){var want=Math.min(k,5);if(want===5&&!LILY)want=1;if(want!==luna.poseIdx)lunaSetPose(want);}
   if(luna.bones&&luna.base&&luna.g.visible)lunaIdle(time);
-  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<2.8)advance();
+  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<4.5)advance();
   if(playing&&k===5&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
   if(luna.state==='out'){
     lunaOp(Math.max(0,luna.op-dt*1.6));
@@ -3579,6 +3579,8 @@ function frame(){
       if(Math.abs(ddx)<1.2&&Math.abs(ddz)<1.2){var dd=Math.hypot(ddx,ddz),rr=tr.r?tr.r+0.42:0.75;if(dd<rr&&dd>0.001){pp.x=tr.x+ddx/dd*rr;pp.z=tr.z+ddz/dd*rr;}}
     }
     pp.x=Math.max(WB.x0,Math.min(WB.x1,pp.x));pp.z=Math.max(WB.z0,Math.min(WB.z1,pp.z));
+    /* Luna can't be touched: Damian stops a couple of metres short of her */
+    if(luna.g&&luna.g.visible&&luna.op>0.3){var lx=pp.x-luna.g.position.x,lz=pp.z-luna.g.position.z,ld=Math.hypot(lx,lz);if(ld<2.2&&ld>0.001){pp.x=luna.g.position.x+lx/ld*2.2;pp.z=luna.g.position.z+lz/ld*2.2;}}
   }
   var spd=Math.hypot(pp.vx,pp.vz);
   if(spd>0.4&&axe.t<0){var tf=Math.atan2(pp.vx,pp.vz),df=((tf-pp.face+Math.PI*3)%(Math.PI*2))-Math.PI;pp.face+=df*Math.min(1,dt*12);}
