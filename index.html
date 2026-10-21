@@ -3401,7 +3401,7 @@ function frame(){
     if(dmn.hurtT>=0&&SHK.hp<0)SHK.imp=Math.max(SHK.imp,0.1);
   }
   SHK.hp=dmn.hurtT;SHK.imp*=Math.exp(-dt*5);
-  var shk=shAmp+SHK.imp;
+  var shk=shAmp+SHK.imp;if(hol.grab){shk=0;SHK.imp=0;}
   if(shk>0.002&&state!=='title'){camera.position.x+=Math.sin(time*47.0)*shk*0.7;camera.position.y+=Math.sin(time*53.0+1.3)*shk;camera.position.z+=Math.cos(time*41.0+0.4)*shk*0.7;camera.rotateZ(Math.sin(time*37.0)*shk*0.12);}
   camera.getWorldDirection(camDir);
 
