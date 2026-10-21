@@ -2164,10 +2164,10 @@ function holTick(dt,playing){
     }
   }else if(hol.state==='watch'){
     hol.watch-=dt;
-    if(inView){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr('dontLook'),1600);}}
+    if(inView&&d>=15){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr('dontLook'),1600);}}
     if(looked){hol.seenT+=dt;holSetOp(hol.seenT>2.2?0.75+0.25*Math.sin(time*38):1);}
     else{hol.seenT=Math.max(0,hol.seenT-dt*0.5);holSetOp(1);}
-    if(hol.seenT>4.2||d<11||hol.watch<=0){hol.state='out';}
+    if(hol.seenT>4.2||d<14.5||hol.watch<=0){hol.state='out';}
   }else if(hol.state==='out'){
     holSetOp(Math.max(0,hol.op-dt*3.2));
     if(hol.op<=0){hol.g.visible=false;hol.state='hide';hol.t=1.5+Math.random()*3.5;sfxHollow();}
