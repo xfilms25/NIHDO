@@ -1809,7 +1809,7 @@ function kick(){attack('kick');}
 function attack(force){
   if(typeof force!=='string')force=null;
   if(TRAP.hold>0){trapStruggle();dmn.hurtT=-1;}
-  if(state!=='play'||hol.grab||axe.t>=0||axe.cd>0||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0)return;
+  if(state!=='play'||hol.grab||DEATH.on||axe.t>=0||axe.cd>0||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0)return;
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},best=null,bd=6;
   enemies.forEach(function(e){if(!e.alive)return;var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz);if(d<bd&&(dx*F.x+dz*F.z)/(d||1)>0.5){bd=d;best=e;}});
   pp.face=best?Math.atan2(best.x-pp.x,best.z-pp.z):Math.atan2(F.x,F.z);
@@ -1821,7 +1821,7 @@ function attack(force){
 }
 function killShadow(e){e.alive=false;e.dying=0.0001;calm=Math.min(1,calm+0.15);sfxHit(true);if(!shownDissolve){shownDissolve=true;showSub(tr('smoke'),2200);}}
 function doHit(){
-  if(hol.grab)return;
+  if(hol.grab||DEATH.on)return;
   var fx=Math.sin(pp.face),fz=Math.cos(pp.face),any=false;
   enemies.forEach(function(e){
     if(!e.alive||e.spawn<0.5)return;
@@ -1922,7 +1922,7 @@ loadShadowAsset();
 var jmp={active:false,t:0,launched:false},JMP=null,JTS=1.35,JG=31.4,JV0=6.4;
 function jumpTick(dt,playing){
   jumpCd-=dt;
-  if(playing&&(keys.Space||jumpReq)&&!jmp.active&&pp.jy<=0.001&&jumpCd<=0&&axe.t<0&&!(TRAP.hold>0)){
+  if(playing&&!DEATH.on&&!hol.grab&&(keys.Space||jumpReq)&&!jmp.active&&pp.jy<=0.001&&jumpCd<=0&&axe.t<0&&!(TRAP.hold>0)){
     jmp.active=true;jmp.t=0;jmp.launched=false;jumpCd=0.25;
     if(!JMP){pp.vj=6.6;jmp.launched=true;stepSound(0.5,false,0,false);}
   }
@@ -1967,10 +1967,10 @@ function combatTick(dt,playing){
       var sp=spd0*(lit?0.3:1)*(d<8?1.1:1);
       if(d>1.1){e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;mvT=lit?0.45:1;}
     }
-    if(playing&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
+    if(playing&&!DEATH.on&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
       e.atk=1.5;calm-=0.14;sfxHit(true);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;
       e.x-=dx/d*0.8;e.z-=dz/d*0.8;
-      if(calm<=0){calm=0;respawn(tr('shadowsCaught'));}
+      if(calm<=0){calm=0;dmnDie(tr('shadowsCaught'));}
     }
     var sc=e.sc*(0.4+0.6*e.spawn);
     e.g.scale.set(sc,sc*(0.7+0.3*e.spawn),sc);
@@ -2183,7 +2183,7 @@ function holTick(dt,playing){
   var dotv=tmpV.dot(camDir),looked=dotv>0.93&&cd<80,inView=dotv>0.72&&cd<90;
   hol.dist=d;hol.looked=inView&&hol.state!=='in';
   if(hol.state!=='out')holBreathTick(dt,d);
-  if(!hol.grab&&hol.state==='watch'&&d<4.6)holGrabStart();
+  if(!hol.grab&&!DEATH.on&&hol.state==='watch'&&d<4.6)holGrabStart();
   if(hol.grab){
     /* he stays, plants himself in front of Damian and the whole grab plays before the caught screen */
     holSetOp(1);hol.state='watch';hol.watch=99;
@@ -3156,6 +3156,17 @@ function spawnPresence(dist){
   fol.active=false;presence.visible=false;   /* the pale stalker was removed: Hollow is the main threat */
 }
 var caughtAt=0;
+/* Damian falls (Mixamo dying clip) and the caught screen waits until he's down */
+var DEATH={on:false,t:0,msg:''};
+function dmnDie(msg){
+  if(DEATH.on||state!=='play')return;
+  if(!(DIE&&dmn.ready)){respawn(msg);return;}
+  DEATH.on=true;DEATH.t=0;DEATH.msg=msg;dmn.dieT=0;dmn.hurtT=-1;axe.t=-1;pp.vx=pp.vz=0;pp.vj=0;pp.jy=0;keys={};
+}
+function deathTick(dt){
+  if(!DEATH.on||state!=='play')return;
+  DEATH.t+=dt;if(DEATH.t>=DIE.dur+0.7){respawn(DEATH.msg);}
+}
 function respawn(msg){
   if(state!=='play')return;
   SHK.imp=0.25;
@@ -3171,7 +3182,7 @@ function retryNow(){
   $('vCaught').classList.remove('on');state='play';dragging=false;
 }
 function retryInner(){
-  pp.x=checkpoint.x;pp.z=checkpoint.z;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;calm=1;
+  pp.x=checkpoint.x;pp.z=checkpoint.z;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;calm=1;DEATH.on=false;dmn.dieT=-1;
   axe.t=-1;axe.cd=0;jmp.active=false;jumpCd=0;pp.phase=0;keys={};
   spawnPresence(46);clearShadows();
   if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
@@ -3343,6 +3354,7 @@ function frame(){
   var playing=state==='play';
   if(state==='title'){yaw+=dt*0.07;}
   if(state==='finale')finaleTick(dt);
+  deathTick(dt);
 
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},Rt={x:-Math.cos(yaw),z:Math.sin(yaw)};
   var fwd=0,str=0;
@@ -3353,7 +3365,7 @@ function frame(){
   }
   var len=Math.hypot(fwd,str);if(len>1){fwd/=len;str/=len;len=1;}
   var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null)&&len>0;
-  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab?0:1);
+  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
   pp.vx+=(tvx-pp.vx)*kk;pp.vz+=(tvz-pp.vz)*kk;
