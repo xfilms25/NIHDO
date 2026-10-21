@@ -1256,12 +1256,12 @@ var motes=new THREE.Points(mGeo,new THREE.PointsMaterial({size:0.11,map:GLOW,tra
 mGeo.setDrawRange(0,12);motes.frustumCulled=false;scene.add(motes);
 
 /* pines sway in the wind */
-var windU={value:0};
+var windU={value:0},gustU={value:0.5};
 function addWind(mat,amt){
   mat.onBeforeCompile=function(sh){
-    sh.uniforms.uWind=windU;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\n#ifdef USE_INSTANCING\nfloat ph=instanceMatrix[3].x*0.21+instanceMatrix[3].z*0.17;\n#else\nfloat ph=0.0;\n#endif\nfloat sw=(sin(uWind*1.2+ph)+0.5*sin(uWind*2.3+ph*1.7))*0.035*max(0.0,position.y-2.5)*'+amt+';\ntransformed.x+=sw;transformed.z+=sw*0.6;');
+    sh.uniforms.uWind=windU;sh.uniforms.uGust=gustU;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;uniform float uGust;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\n#ifdef USE_INSTANCING\nfloat ph=instanceMatrix[3].x*0.21+instanceMatrix[3].z*0.17;\n#else\nfloat ph=0.0;\n#endif\nfloat sw=(sin(uWind*1.2+ph)+0.5*sin(uWind*2.3+ph*1.7))*0.035*max(0.0,position.y-2.5)*'+amt+'*(0.7+1.1*uGust);\ntransformed.x+=sw;transformed.z+=sw*0.6;');
   };
 }
 addWind(barkMat,'0.10');addWind(needleMat,'0.16');
@@ -1270,7 +1270,7 @@ function wrapC(v,c,half){var s=half*2;return(((v-c+half)%s)+s)%s-half+c;}
 function atmo(){
   dome.position.copy(camera.position);MTNS.position.set(camera.position.x,camera.position.y*0.3,camera.position.z);dome.material.uniforms.uT.value=time;
   sunSpr.position.copy(camera.position).addScaledVector(SUNDIR,480);
-  windU.value=time;
+  windU.value=time;gustU.value=Math.max(0,Math.min(1,0.5+0.5*Math.sin(time*0.37)*Math.sin(time*0.11+1.3)+0.2*Math.sin(time*1.3)));
   for(var i=0;i<mists.length;i++){
     var u=mists[i].userData,x=wrapC(u.bx+time*u.vx,pp.x,70),z=wrapC(u.bz+time*u.vz,pp.z,70);
     mists[i].position.set(x,H(x,z)+u.oy,z);
@@ -1325,9 +1325,9 @@ function rockTexture(){
 }
 function windOn(mat,amp){
   mat.onBeforeCompile=function(sh){
-    sh.uniforms.uWind=windU;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat gph=instanceMatrix[3].x*0.4+instanceMatrix[3].z*0.3;\nfloat gsw=(sin(uWind*1.7+gph)+0.4*sin(uWind*3.1+gph*2.0))*'+amp+'*position.y*position.y;\ntransformed.x+=gsw;transformed.z+=gsw*0.5;');
+    sh.uniforms.uWind=windU;sh.uniforms.uGust=gustU;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;uniform float uGust;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat gph=instanceMatrix[3].x*0.4+instanceMatrix[3].z*0.3;\nfloat gsw=(sin(uWind*1.7+gph)+0.4*sin(uWind*3.1+gph*2.0))*'+amp+'*position.y*position.y*(0.7+1.1*uGust);\ntransformed.x+=gsw;transformed.z+=gsw*0.5;');
   };
 }
 (function(){
@@ -1379,9 +1379,9 @@ function windOn(mat,amp){
 var TRUNKS=[[-4.411,4.606,0.031],[-4.531,1.317,0.019],[-4.449,3.897,0.036],[-3.863,3.075,0.023],[-4.032,-1.072,0.034],[-3.974,-0.418,0.036],[-3.699,-1.213,0.024],[-3.613,0.259,0.025],[-3.799,-3.048,0.025],[-3.297,0.459,0.033],[-3.188,3.188,0.036],[-3.136,-1.74,0.02],[-2.915,0.85,0.029],[-3.09,-3.538,0.031],[-2.829,3.633,0.032],[-2.779,3.434,0.018],[-2.873,2.373,0.031],[-2.915,1.381,0.034],[-2.58,-3.291,0.022],[-2.472,2.739,0.026],[-2.468,0.039,0.028],[-2.335,-0.159,0.03],[-2.449,-3.395,0.026],[-2.254,-1.403,0.038],[-2.03,2.618,0.025],[-1.845,-3.899,0.023],[-1.771,4.09,0.025],[-1.705,3.678,0.018],[-1.768,-0.312,0.021],[-1.617,4.076,0.029],[-1.465,-1.588,0.028],[-1.4,5.096,0.037],[-1.46,4.838,0.02],[-1.384,4.414,0.024],[-1.458,3.952,0.024],[-1.38,-2.085,0.033],[-0.936,-3.539,0.026],[-0.792,-3.044,0.024],[-0.772,1.57,0.025],[-0.468,1.904,0.026],[-0.518,-1.909,0.032],[-0.455,4.84,0.03],[-0.179,4.293,0.022],[-0.18,1.306,0.033],[-0.234,-0.398,0.038],[0.212,0.819,0.025],[0.561,2.531,0.036],[0.613,-3.312,0.019],[0.784,1.912,0.02],[0.922,5.125,0.027],[0.862,2.944,0.03],[0.959,2.612,0.02],[1.046,-3.699,0.034],[1.182,1.928,0.02],[1.468,0.826,0.033],[1.554,-0.757,0.039],[1.717,2.656,0.036],[1.825,2.639,0.034],[1.742,0.261,0.037],[1.878,2.119,0.018],[2.231,4.234,0.03],[2.071,2.754,0.03],[2.024,2.286,0.026],[2.381,4.779,0.031],[2.329,4.705,0.037],[2.553,1.07,0.034],[2.959,1.716,0.025],[2.798,-2.107,0.036],[2.946,3.72,0.037],[3.292,3.358,0.018],[3.31,1.033,0.036],[3.486,1.874,0.036],[3.463,-0.271,0.031],[3.608,4.721,0.03],[3.715,1.218,0.037],[4.217,3.331,0.033],[4.147,3.099,0.026],[4.271,2.744,0.029],[4.472,2.348,0.021],[4.464,1.142,0.021],[4.299,-1.509,0.031],[4.702,1.764,0.022],[4.548,-1.592,0.035]];
 function mapSway(mat,amp){
   mat.onBeforeCompile=function(sh){
-    sh.uniforms.uWind=windU;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat swh=clamp(position.y-0.2,0.0,1.2);\nfloat sww=sin(uWind*1.7+position.x*7.0+position.z*5.0)+0.5*sin(uWind*3.3+position.x*13.0+position.z*9.0);\ntransformed.x+=sww*'+amp+'*swh;transformed.z+=sww*'+amp+'*0.6*swh;');
+    sh.uniforms.uWind=windU;sh.uniforms.uGust=gustU;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;uniform float uGust;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat swh=clamp(position.y-0.2,0.0,1.2)*(0.7+1.4*uGust);\nfloat sww=sin(uWind*1.7+position.x*7.0+position.z*5.0)+0.5*sin(uWind*3.3+position.x*13.0+position.z*9.0);\ntransformed.x+=sww*'+amp+'*swh;transformed.z+=sww*'+amp+'*0.6*swh;');
   };
 }
 function buildMap(root){
@@ -1818,14 +1818,26 @@ function doHit(){
       if(e.hp<=0)killShadow(e);else sfxHit(false);
     }
   });
+  if(hol.ready&&hol.g&&hol.g.visible&&hol.op>0.4&&hol.state!=='hide'&&hol.state!=='in'){
+    var hdx=hol.x-pp.x,hdz=hol.z-pp.z,hd=Math.hypot(hdx,hdz)||1;
+    if(hd<4.8&&(hdx*fx+hdz*fz)/hd>0.1){any=true;holHit(hdx/hd,hdz/hd);}
+  }
+  if(any)SHK.imp=Math.max(SHK.imp,0.04);
   if(!any){sfxHit(false);}
+}
+/* the axe lands on Hollow: he flinches, flashes and is knocked back a step (it does not hurt him) */
+function holHit(ux,uz){
+  sfxHit(true);SHK.imp=Math.max(SHK.imp,0.08);
+  hol.flash=0.28;
+  if((hol.cool||0)>0)return;
+  hol.hitT=0.6;hol.cool=1.8;hol.kx=ux*3.4;hol.kz=uz*3.4;
 }
 function makeShadow(){
   var g=new THREE.Group();
   var mat=new THREE.MeshBasicMaterial({color:0x020304,transparent:true,opacity:0.95,side:THREE.DoubleSide});
   mat.onBeforeCompile=function(sh){
-    sh.uniforms.uWind=windU;
-    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;')
+    sh.uniforms.uWind=windU;sh.uniforms.uGust=gustU;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWind;uniform float uGust;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat wb=sin(position.y*5.0+uWind*2.6+modelMatrix[3].x*0.7)*0.045*(1.0+position.y)+sin(position.y*11.0+uWind*4.1)*0.012;\ntransformed.x+=wb;transformed.z+=wb*0.7;');
   };
   var pts=[[0.0,0.0],[0.3,0.04],[0.24,0.5],[0.2,1.0],[0.27,1.4],[0.17,1.58],[0.0,1.62]].map(function(p){return new THREE.Vector2(p[0],p[1]);});
@@ -2066,6 +2078,8 @@ function holTick(dt,playing){
   hol.drain=false;hol.looked=false;hol.dist=999;
   if(!hol.ready||!playing){return;}
   if(hol.mixer)hol.mixer.update(dt);
+  hol.flash=Math.max(0,(hol.flash||0)-dt);hol.cool=Math.max(0,(hol.cool||0)-dt);
+  if(hol.hitT>0){hol.hitT-=dt;var ks=Math.max(0,hol.hitT/0.6),kx2=hol.x+hol.kx*ks*dt,kz2=hol.z+hol.kz*ks*dt;if(holFree(kx2,kz2)){hol.x=kx2;hol.z=kz2;}}
   if(hol.state==='hide'||hol.state==='out'){hol.hunt=calm<0.2&&(collected>=1||time>10);if(hol.hunt&&hol.state==='out'){hol.state='watch';}}
   if(hol.state==='hide'){
     hol.t-=dt;if(calm<0.2&&(collected>=1||time>10))hol.t=Math.min(hol.t,0);
@@ -2077,7 +2091,11 @@ function holTick(dt,playing){
   hol.hunt=calm<0.2&&(collected>=1||time>10);
   var dx=pp.x-hol.x,dz=pp.z-hol.z,d=Math.hypot(dx,dz)||1;
   var gy=H(hol.x,hol.z);
-  hol.g.position.set(hol.x,gy,hol.z);hol.g.rotation.y=Math.atan2(dx,dz);
+  hol.g.position.set(hol.x,gy,hol.z);hol.g.rotation.order='YXZ';hol.g.rotation.y=Math.atan2(dx,dz);
+  var rc=hol.hitT>0?Math.sin(Math.min(1,hol.hitT/0.6)*Math.PI):0;
+  hol.g.rotation.x=-0.32*rc;hol.g.scale.y=1-0.05*rc;
+  var fe=hol.flash>0?hol.flash/0.28:0;
+  hol.mats.forEach(function(m){if(m.emissiveMap){if(m.userData.ei0===undefined)m.userData.ei0=m.emissiveIntensity;m.emissiveIntensity=m.userData.ei0+2.4*fe;}});
   tmpV.set(hol.x-camPos.x,gy+3.6-camPos.y,hol.z-camPos.z);var cd=tmpV.length();tmpV.normalize();
   var dotv=tmpV.dot(camDir),looked=dotv>0.93&&cd<80,inView=dotv>0.72&&cd<90;
   hol.dist=d;hol.looked=inView&&hol.state!=='in';
@@ -2087,7 +2105,7 @@ function holTick(dt,playing){
   }else if(hol.state==='watch'&&hol.hunt){
     /* the bar is nearly empty: Hollow stops watching and comes for Damian */
     holSetOp(1);hol.watch=99;
-    var hs=d>20?7:4.6;hol.x+=dx/d*hs*dt;hol.z+=dz/d*hs*dt;
+    var hs=(d>20?7:4.6)*(hol.hitT>0?0:1);hol.x+=dx/d*hs*dt;hol.z+=dz/d*hs*dt;
     calm=Math.max(0,calm-dt*0.05);
     hol.drain=true;if(d<3.5||calm<=0){calm=0;hol.hunt=false;respawn(tr('hollowCaught'));}
   }else if(hol.state==='watch'){
@@ -2109,6 +2127,7 @@ function holTick(dt,playing){
     var nx=hol.x+(dx/d*cs-dz/d*hol.side*0.9)*dt,nz=hol.z+(dz/d*cs+dx/d*hol.side*0.9)*dt;
     if(holFree(nx,nz)){hol.x=nx;hol.z=nz;moving=true;}else hol.side=-hol.side;
   }else if(hol.state==='watch'&&hol.hunt)moving=true;
+  if(hol.hitT>0)moving=false;
   if(hol.act)hol.act.timeScale=moving?(hol.hunt?1.5:0.7):0.15;
   /* branches crack and old wood creaks under him as he comes closer */
   if(moving&&(hol.state==='watch')){
@@ -2719,11 +2738,12 @@ function placeTraps(){
   }
 }
 function trapSpring(t){
+  SHK.imp=Math.max(SHK.imp,0.16);
   t.used=true;TRAP.active=t;TRAP.hold=4.2;TRAP.hits=0;TRAP.t=0;
   pp.vx=pp.vz=0;if(HURT&&axe.t<0)dmn.hurtT=0;
   calm=Math.max(0,calm-0.08);sfxGrab();
   flash(tr('hands'),2400);
-  TRAP.hands.forEach(function(h,i){h.ang=i/TRAP.hands.length*6.283+Math.random()*0.4;h.rad=0.32+Math.random()*0.2;h.g.visible=true;h.ph=Math.random()*6;});
+  TRAP.hands.forEach(function(h,i){h.ang=i/TRAP.hands.length*6.283+Math.random()*0.4;h.rad=0.32+Math.random()*0.2;h.g.visible=true;h.ph=Math.random()*6;h.dl=i*0.06+Math.random()*0.1;h.burst=false;});
 }
 function trapStruggle(){
   if(!TRAP.active||TRAP.hold<=0)return;
@@ -2741,13 +2761,17 @@ function trapsTick(dt,playing){
   TRAP.t+=dt;
   var holding=TRAP.hold>0;
   if(holding){TRAP.hold-=dt;calm=Math.max(0,calm-dt*0.06);if(TRAP.hold<=0){TRAP.t=0;TRAP.release=true;if(TRAP.hits<3)calm=Math.max(0,calm-0.12);}}
-  var rise=holding?Math.min(1,TRAP.t/0.35):Math.max(0,1-TRAP.t/0.6);
+  if(A.m){var pu=Math.min(1,TRAP.t/0.4);A.m.scale.setScalar(holding?1+0.6*pu:1.6);A.m.material.opacity=holding?0.55+0.4*pu:Math.max(0,0.95*(1-TRAP.t/0.6));}
   TRAP.hands.forEach(function(h,i){
     var x=pp.x+Math.cos(h.ang)*h.rad,z=pp.z+Math.sin(h.ang)*h.rad,gy=H(x,z);
+    var tt=Math.max(0,TRAP.t-(holding?(h.dl||0):0)),uu=Math.min(1,tt/0.38);
+    var rise=holding?1+2.2*Math.pow(uu-1,3)+1.2*Math.pow(uu-1,2):Math.max(0,1-TRAP.t/0.6);
+    if(holding&&tt>0.02&&!h.burst){h.burst=true;mudSplash(x,z,10,1.15);}
     h.g.position.set(x,gy-0.8+rise*(0.7+0.18*Math.sin(i)),z);
+    h.g.scale.setScalar(1.3*(0.7+0.3*Math.min(1,tt/0.3)));
     /* lean in toward his legs and squirm */
     h.g.rotation.set(0,0,0);h.g.rotation.order='YXZ';h.g.rotation.y=Math.atan2(pp.x-x,pp.z-z);
-    h.g.rotation.x=0.45+0.12*Math.sin(time*6+h.ph);h.g.rotation.z=0.15*Math.sin(time*4.3+h.ph);
+    h.g.rotation.x=(0.12+0.33*Math.min(1,tt/0.6))+0.12*Math.sin(time*6+h.ph);h.g.rotation.z=0.15*Math.sin(time*4.3+h.ph);
     var grip=holding?Math.min(1,Math.max(0,(TRAP.t-0.2)/0.3)):0.4;
     h.f.forEach(function(f,k){var c=(k===4?0.9:1.2)*grip+0.15*Math.sin(time*9+k+h.ph)*(holding?1:0.3);f.a.rotation.x=c;f.b.rotation.x=c*1.1;});
   });
@@ -2962,6 +2986,7 @@ function spawnPresence(dist){
 var caughtAt=0;
 function respawn(msg){
   if(state!=='play')return;
+  SHK.imp=0.25;
   state='caught';caughtAt=performance.now();sfxCaught();$('caughtText').textContent=msg;$('vCaught').classList.add('on');
   axe.t=-1;
   try{if(document.exitPointerLock)document.exitPointerLock();}catch(e){}
@@ -3139,6 +3164,7 @@ window.addEventListener('resize',resize);resize();
 resetGame();state='title';
 
 var titleFrames=0,clock=new THREE.Clock(),camPos=new THREE.Vector3(),camDir=new THREE.Vector3(),tmpV=new THREE.Vector3();
+var SHK={imp:0,hp:-1};
 function frame(){
   requestAnimationFrame(frame);
   var dt=Math.min(clock.getDelta(),0.05);if(state==='paused')dt=0;time+=dt;
@@ -3185,6 +3211,16 @@ function frame(){
   var gh=H(camPos.x,camPos.z)+0.6;if(camPos.y<gh)camPos.y=gh;
   camera.position.copy(camPos);
   camera.lookAt(pp.x+Rt.x*0.65+F.x*6,ay-1.2,pp.z+Rt.z*0.65+F.z*6);
+  /* camera shake: Hollow close by, a hit taken, the hands, the axe landing */
+  var shAmp=0;
+  if(playing){
+    if(hol.g&&hol.g.visible&&hol.op>0.3&&hol.dist<900)shAmp+=Math.pow(Math.max(0,1-hol.dist/30),1.6)*(hol.hunt?0.05:0.028);
+    if(TRAP.hold>0)shAmp+=0.03;
+    if(dmn.hurtT>=0&&SHK.hp<0)SHK.imp=Math.max(SHK.imp,0.1);
+  }
+  SHK.hp=dmn.hurtT;SHK.imp*=Math.exp(-dt*5);
+  var shk=shAmp+SHK.imp;
+  if(shk>0.002&&state!=='title'){camera.position.x+=Math.sin(time*47.0)*shk*0.7;camera.position.y+=Math.sin(time*53.0+1.3)*shk;camera.position.z+=Math.cos(time*41.0+0.4)*shk*0.7;camera.rotateZ(Math.sin(time*37.0)*shk*0.12);}
   camera.getWorldDirection(camDir);
 
   /* sun follows */
