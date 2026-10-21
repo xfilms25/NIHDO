@@ -1902,7 +1902,7 @@ function spawnShadow(){
     if(x<WB.x0+4||x>WB.x1-4||z<WB.z0+4||z>WB.z1-4)continue;
     if(dx*Math.sin(yaw)+dz*Math.cos(yaw)>0.35)continue;
     e.x=x;e.z=z;e.alive=true;e.dying=0;e.hp=2;e.spawn=0;e.flash=0;e.stun=0;e.atk=1.2;e.sc=(e.rig?0.95:e.model?1.0:1.2)+Math.random()*0.2;e.g.visible=true;
-    if(e.rig){e.loco=Math.random()<0.35?'crawl':'run';e.scr=2.2;e.atkA=0;e.kd=0;e.biting=false;e.mat.opacity=0.97;shAct(e,'scream',0);}
+    if(e.rig){e.gsnap=true;e.loco=Math.random()<0.35?'crawl':'run';e.scr=2.2;e.atkA=0;e.kd=0;e.biting=false;e.mat.opacity=0.97;shAct(e,'scream',0);}
     sfxShadow();return;
   }
 }
@@ -1976,6 +1976,16 @@ function rigShadow(e){
   e.mixer=new THREE.AnimationMixer(m);e.acts={};
   for(var k in SHADOW_RIG.clips){var a=e.mixer.clipAction(SHADOW_RIG.clips[k]);if(/attack|scream|death|dying/.test(k)){a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;}e.acts[k]=a;}
   e.cur=null;shAct(e,'idle',0);
+  e.gb=[];['LeftToeBase','RightToeBase','LeftFoot','RightFoot','LeftHand','RightHand','Head','Hips'].forEach(function(n){var b=m.getObjectByName('mixamorig'+n)||m.getObjectByName('mixamorig:'+n);if(b)e.gb.push(b);});
+}
+/* keep the body on the ground: whatever part of him is lowest (feet, hands when crawling, the body when he's down) touches the floor */
+var _gv=new THREE.Vector3();
+function shGround(e,dt,snap){
+  if(!e.rig||!e.gb||!e.gb.length)return;
+  e.g.updateMatrixWorld(true);var lo=1e9;
+  for(var i=0;i<e.gb.length;i++){e.gb[i].getWorldPosition(_gv);if(_gv.y<lo)lo=_gv.y;}
+  var dlt=(e.g.position.y+0.04-lo)/Math.max(0.01,e.g.scale.y);
+  e.rig.position.y+=snap?dlt:dlt*Math.min(1,dt*12);
 }
 function shAct(e,name,fade){
   if(!e.acts||!e.acts[name])return;
@@ -2020,7 +2030,7 @@ function combatTick(dt,playing){
     var e=enemies[i];if(!e.g.visible)continue;
     if(e.dying>0&&e.rig){
       /* the zombie death plays out, then the body fades into the mist */
-      e.dying+=dt;e.mixer.update(dt);
+      e.dying+=dt;e.mixer.update(dt);shGround(e,dt,false);
       var uf=Math.max(0,Math.min(1,(e.dying-e.dieDur*0.85)/0.9));
       e.mat.opacity=0.97*(1-uf);e.halo.material.opacity=0.42*(1-uf);
       if(uf>=1){e.g.visible=false;e.dying=0;}
@@ -2076,6 +2086,7 @@ function combatTick(dt,playing){
     e.g.scale.set(sc,sc*(0.7+0.3*e.spawn),sc);
     e.g.position.set(e.x,H(e.x,e.z)-(1-e.spawn)*0.5,e.z);
     if(!(e.kd>0))e.g.rotation.y=Math.atan2(dx,dz);
+    if(e.rig){shGround(e,dt,!!e.gsnap);e.gsnap=false;}
     e.mat.opacity=(e.rig?0.97:0.95)*Math.min(1,e.spawn*1.6)*(lit?0.8+0.2*Math.sin(time*40):1);
     e.mat.color.setHex(e.model?(e.flash>0?0xa8c0ff:0xffffff):(e.flash>0?0x5a6a80:0x020304));
     if(e.model&&!e.rig){
