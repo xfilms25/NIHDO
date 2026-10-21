@@ -226,6 +226,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -1840,7 +1841,7 @@ function attack(force){
   axe.hitIdx=0;axe.t=0;
   axe.hits.forEach(function(h){setTimeout(function(){swish(1.6);},Math.max(0,h-0.16)*1000);});
 }
-function killShadow(e){e.alive=false;e.dying=0.0001;calm=Math.min(1,calm+0.15);sfxHit(true);if(!shownDissolve){shownDissolve=true;showSub(tr('smoke'),2200);}}
+function killShadow(e){e.alive=false;e.dying=0.0001;if(e.rig){e.dieClip=Math.random()<0.5?'death':'dying';e.dieDur=SHADOW_RIG.clips[e.dieClip].duration;e.atkA=0;shAct(e,e.dieClip,0.12);}calm=Math.min(1,calm+0.15);sfxHit(true);if(!shownDissolve){shownDissolve=true;showSub(tr('smoke'),2200);}}
 function doHit(){
   if(hol.grab||DEATH.on)return;
   var fx=Math.sin(pp.face),fz=Math.cos(pp.face),any=false;
@@ -1848,7 +1849,7 @@ function doHit(){
     if(!e.alive||e.spawn<0.5)return;
     var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz);
     if(d<2.9&&(dx*fx+dz*fz)/(d||1)>0.2){
-      any=true;e.hp--;e.flash=0.18;e.x+=fx*1.4;e.z+=fz*1.4;e.stun=0.6;
+      any=true;e.hp--;e.flash=0.18;e.x+=fx*1.4;e.z+=fz*1.4;e.stun=0.6;if(e.rig){e.atkA=0;e.hitAt=0;}
       if(e.hp<=0)killShadow(e);else sfxHit(false);
     }
   });
@@ -1900,7 +1901,8 @@ function spawnShadow(){
     var x=pp.x+dx*d,z=pp.z+dz*d;
     if(x<WB.x0+4||x>WB.x1-4||z<WB.z0+4||z>WB.z1-4)continue;
     if(dx*Math.sin(yaw)+dz*Math.cos(yaw)>0.35)continue;
-    e.x=x;e.z=z;e.alive=true;e.dying=0;e.hp=2;e.spawn=0;e.flash=0;e.stun=0;e.atk=1.2;e.sc=(e.model?1.0:1.2)+Math.random()*0.2;e.g.visible=true;
+    e.x=x;e.z=z;e.alive=true;e.dying=0;e.hp=2;e.spawn=0;e.flash=0;e.stun=0;e.atk=1.2;e.sc=(e.rig?0.95:e.model?1.0:1.2)+Math.random()*0.2;e.g.visible=true;
+    if(e.rig){e.loco=Math.random()<0.35?'crawl':'run';e.scr=2.2;e.atkA=0;e.mat.opacity=0.97;shAct(e,'scream',0);}
     sfxShadow();return;
   }
 }
@@ -1939,7 +1941,43 @@ function loadShadowAsset(){
     },function(e){console.warn('shadow model failed',e);});
   }).catch(function(e){console.warn('shadow model not found',e);});
 }
-loadShadowAsset();
+/* rigged shadows (Mixamo zombie pack): scream when they rise, run or crawl at Damian, swipe, and die */
+var SHADOW_RIG=null,SH_SPD={run:3.6,crawl:2.7,walk:0.4};
+function loadShadowRig(){
+  if(!THREE.GLTFLoader||!THREE.SkeletonUtils){loadShadowAsset();return;}
+  new THREE.GLTFLoader().load('shadow_rig.glb',function(gltf){
+    try{
+      var sc=gltf.scene;sc.updateMatrixWorld(true);
+      var bb=new THREE.Box3().setFromObject(sc);
+      SHADOW_RIG={scene:sc,clips:{},h:Math.max(0.1,bb.max.y-bb.min.y),minY:bb.min.y};
+      gltf.animations.forEach(function(c){SHADOW_RIG.clips[c.name]=c;});
+      if(!SHADOW_RIG.clips.run)throw new Error('clips missing');
+      enemies.forEach(rigShadow);
+    }catch(err){console.warn('shadow rig not used',err);SHADOW_RIG=null;loadShadowAsset();}
+  },undefined,function(err){console.warn('shadow rig failed',err);loadShadowAsset();});
+}
+function rigShadow(e){
+  if(!SHADOW_RIG||e.rig)return;
+  e.g.children.slice().forEach(function(c){if(c!==e.halo)c.visible=false;});
+  var m=THREE.SkeletonUtils.clone(SHADOW_RIG.scene),s=2.0/SHADOW_RIG.h;
+  m.scale.multiplyScalar(s);m.position.y=-SHADOW_RIG.minY*s;
+  var tex=null;m.traverse(function(o){if(o.isMesh&&o.material&&o.material.map)tex=o.material.map;});
+  var mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.85,metalness:0,emissive:0x7a7064,emissiveMap:tex,emissiveIntensity:1.5,transparent:true,opacity:0.97,skinning:true});
+  m.traverse(function(o){if(o.isMesh){o.material=mat;o.frustumCulled=false;o.castShadow=true;}});
+  e.g.add(m);e.mat=mat;e.model=true;e.rig=m;e.sc=0.95+Math.random()*0.2;
+  e.mixer=new THREE.AnimationMixer(m);e.acts={};
+  for(var k in SHADOW_RIG.clips){var a=e.mixer.clipAction(SHADOW_RIG.clips[k]);if(/attack|scream|death|dying/.test(k)){a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;}e.acts[k]=a;}
+  e.cur=null;shAct(e,'idle',0);
+}
+function shAct(e,name,fade){
+  if(!e.acts||!e.acts[name])return;
+  if(e.cur===name&&!/attack|scream|death|dying/.test(name))return;
+  var nx=e.acts[name],pv=e.cur?e.acts[e.cur]:null;
+  nx.reset();nx.setEffectiveTimeScale(1);nx.setEffectiveWeight(1);nx.play();
+  if(pv&&pv!==nx&&fade>0)nx.crossFadeFrom(pv,fade,false);else if(pv&&pv!==nx)pv.stop();
+  e.cur=name;
+}
+loadShadowRig();
 var jmp={active:false,t:0,launched:false},JMP=null,JTS=1.35,JG=31.4,JV0=6.4;
 function jumpTick(dt,playing){
   jumpCd-=dt;
@@ -1972,6 +2010,14 @@ function combatTick(dt,playing){
   var spd0=3.1+collected*0.22;
   for(var i=0;i<enemies.length;i++){
     var e=enemies[i];if(!e.g.visible)continue;
+    if(e.dying>0&&e.rig){
+      /* the zombie death plays out, then the body fades into the mist */
+      e.dying+=dt;e.mixer.update(dt);
+      var uf=Math.max(0,Math.min(1,(e.dying-e.dieDur*0.85)/0.9));
+      e.mat.opacity=0.97*(1-uf);e.halo.material.opacity=0.42*(1-uf);
+      if(uf>=1){e.g.visible=false;e.dying=0;}
+      continue;
+    }
     if(e.dying>0){
       e.dying+=dt;var u=Math.min(1,e.dying/0.7);
       e.mat.opacity=0.95*(1-u);e.rimM.opacity=0.3*(1-u);e.halo.material.opacity=0.42*(1-u);e.g.scale.set(e.sc*(1+u*0.3),e.sc*(1-u*0.6),e.sc*(1+u*0.3));
@@ -1984,22 +2030,40 @@ function combatTick(dt,playing){
     tmpV.set(e.x-camPos.x,H(e.x,e.z)+1.2-camPos.y,e.z-camPos.z);var cd=tmpV.length();tmpV.normalize();
     var lit=flOn&&tmpV.dot(camDir)>0.93&&cd<30;
     e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);e.atk-=dt;
-    if(playing&&e.spawn>=0.5&&e.stun<=0){
-      var sp=spd0*(lit?0.3:1)*(d<8?1.1:1);
+    if(e.rig){if(e.scr>0)e.scr-=dt;if(e.atkA>0)e.atkA-=dt;}
+    var rigBusy=e.rig&&(e.scr>0||e.atkA>0);
+    if(playing&&e.spawn>=0.5&&e.stun<=0&&!rigBusy){
+      var sp=spd0*(lit?0.3:1)*(d<8?1.1:1)*(e.rig&&e.loco==='crawl'?0.85:1);
       if(d>1.1){e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;mvT=lit?0.45:1;}
     }
-    if(playing&&!DEATH.on&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
+    if(e.rig&&e.hitAt>0&&e.atkA>0){
+      e.hitAt-=dt;
+      if(e.hitAt<=0){e.hitAt=0;if(playing&&!DEATH.on&&d<2.1){calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;if(calm<=0){calm=0;dmnDie(tr('shadowsCaught'));}}}
+    }
+    if(e.rig&&playing&&!DEATH.on&&e.spawn>=0.7&&!rigBusy&&d<1.7&&e.atk<=0&&e.stun<=0){
+      /* the swipe: wind-up first, the hit lands about a second in, so Damian can still dodge or strike first */
+      e.atk=2.4;e.atkA=1.6;e.hitAt=1.0;shAct(e,'attack',0.15);
+    }
+    if(!e.rig&&playing&&!DEATH.on&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
       e.atk=1.5;calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;
       e.x-=dx/d*0.8;e.z-=dz/d*0.8;
       if(calm<=0){calm=0;dmnDie(tr('shadowsCaught'));}
     }
     var sc=e.sc*(0.4+0.6*e.spawn);
+    if(e.rig){
+      sc=e.sc;e.g.scale.set(sc,sc,sc);
+      if(!(e.scr>0||e.atkA>0)){
+        if(mvT>0){var an=lit?'walk':e.loco;shAct(e,an,0.25);var spn=spd0*(lit?0.3:1)*(d<8?1.1:1)*(an==='crawl'?0.85:1);e.acts[an].setEffectiveTimeScale(Math.max(0.5,Math.min(2.6,spn/(SH_SPD[an]*sc))));}
+        else shAct(e,'idle',0.3);
+      }
+      e.mixer.update(dt);
+    }else
     e.g.scale.set(sc,sc*(0.7+0.3*e.spawn),sc);
     e.g.position.set(e.x,H(e.x,e.z)-(1-e.spawn)*0.5,e.z);
     e.g.rotation.y=Math.atan2(dx,dz);
-    e.mat.opacity=0.95*Math.min(1,e.spawn*1.6)*(lit?0.8+0.2*Math.sin(time*40):1);
+    e.mat.opacity=(e.rig?0.97:0.95)*Math.min(1,e.spawn*1.6)*(lit?0.8+0.2*Math.sin(time*40):1);
     e.mat.color.setHex(e.model?(e.flash>0?0xa8c0ff:0xffffff):(e.flash>0?0x5a6a80:0x020304));
-    if(e.model){
+    if(e.model&&!e.rig){
       e.mv=(e.mv||0)+(mvT-(e.mv||0))*Math.min(1,dt*5);e.ph=(e.ph||0)+dt*(2.2+7*e.mv);
       e.g.rotation.order='YXZ';
       e.g.rotation.x=0.06+0.2*e.mv+Math.sin(e.ph*2)*0.035*e.mv;
