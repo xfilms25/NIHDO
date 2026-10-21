@@ -1624,6 +1624,48 @@ function makeAxe(){
   g.traverse(function(o){if(o.isMesh)o.castShadow=true;});
   return g;
 }
+/* axe swing trail: a pale ribbon that follows the blade during attacks and fades in a fraction of a second */
+var TRAIL=(function(){
+  var N=28,pos=new Float32Array(N*2*3),al=new Float32Array(N*2),idx=[];
+  for(var i=0;i<N-1;i++){var a=i*2,b=a+1,c=a+2,d=a+3;idx.push(a,b,c,b,d,c);}
+  var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('a',new THREE.BufferAttribute(al,1));g.setIndex(idx);
+  var m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
+    uniforms:{col:{value:new THREE.Color(0xcfdcff)}},
+    vertexShader:'attribute float a;varying float va;void main(){va=a;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'uniform vec3 col;varying float va;void main(){gl_FragColor=vec4(col*va,va);}'});
+  var mesh=new THREE.Mesh(g,m);mesh.frustumCulled=false;mesh.renderOrder=5;mesh.visible=false;scene.add(mesh);
+  return {N:N,s:[],mesh:mesh,g:g,tip:null,base:null,src:null,life:0.2};
+})();
+function trailPoints(){
+  var src=axe.g&&axe.g.children[0];if(!src)return false;
+  if(TRAIL.src!==src){
+    var bb=null;src.traverse(function(o){if(o.isMesh&&o.geometry){o.geometry.computeBoundingBox();var b=o.geometry.boundingBox.clone();if(o!==src)b.applyMatrix4(o.matrix);bb=bb?bb.union(b):b;}});
+    if(!bb)return false;
+    /* the blade end is the far end of the longest axis from the grip (the axe's origin) */
+    var ext=[Math.max(Math.abs(bb.min.x),Math.abs(bb.max.x)),Math.max(Math.abs(bb.min.y),Math.abs(bb.max.y)),Math.max(Math.abs(bb.min.z),Math.abs(bb.max.z))];
+    var ax=ext[0]>ext[1]&&ext[0]>ext[2]?'x':ext[1]>ext[2]?'y':'z',far=Math.abs(bb.max[ax])>Math.abs(bb.min[ax])?bb.max[ax]:bb.min[ax];
+    TRAIL.tip=new THREE.Vector3();TRAIL.tip[ax]=far;TRAIL.base=TRAIL.tip.clone().multiplyScalar(0.5);TRAIL.src=src;
+  }
+  return true;
+}
+function axeTrailTick(dt){
+  var T=TRAIL,on=axe.t>=0&&axe.kind!=='kick'&&axe.g&&axe.g.visible!==false&&trailPoints();
+  for(var i=0;i<T.s.length;i++)T.s[i].age+=dt;
+  while(T.s.length&&T.s[0].age>T.life)T.s.shift();
+  if(on){
+    hero.updateMatrixWorld(true);
+    var tp=axe.g.localToWorld(T.tip.clone()),bp=axe.g.localToWorld(T.base.clone());
+    T.s.push({t:tp,b:bp,age:0});if(T.s.length>T.N)T.s.shift();
+  }
+  var n=T.s.length;T.mesh.visible=n>1;if(n<2)return;
+  var P=T.g.attributes.position.array,A=T.g.attributes.a.array;
+  for(var j=0;j<T.N;j++){
+    var s=T.s[Math.min(j,n-1)],k=1-s.age/T.life,f=(j/(n-1));
+    P[j*6]=s.t.x;P[j*6+1]=s.t.y;P[j*6+2]=s.t.z;P[j*6+3]=s.b.x;P[j*6+4]=s.b.y;P[j*6+5]=s.b.z;
+    var a=j<n?Math.max(0,k)*Math.min(1,f*1.2)*0.7:0;A[j*2]=a;A[j*2+1]=a*0.12;
+  }
+  T.g.attributes.position.needsUpdate=true;T.g.attributes.a.needsUpdate=true;
+}
 function attachAxe(model){
   axe.g=makeAxe();axe.bones={};
   var hand=null;
@@ -3603,6 +3645,7 @@ function frame(){
   pr.legL.rotation.x=sw;pr.legR.rotation.x=-sw;pr.kneeL.rotation.x=Math.max(0,sw)*1.1+0.04;pr.kneeR.rotation.x=Math.max(0,-sw)*1.1+0.04;pr.armL.rotation.x=-sw*0.8;pr.armR.rotation.x=sw*0.8;pr.elbowL.rotation.x=-0.25-Math.max(0,sw)*0.5;pr.elbowR.rotation.x=-0.25-Math.max(0,-sw)*0.5;
   hero.position.y=py+(dmn.ready?0:Math.abs(Math.sin(pp.phase))*0.04*Math.min(1,spd/4));
   dmnUpdate(dt,spd);
+  axeTrailTick(dt);
 
   /* camera */
   var D=2.2,cp=Math.cos(pitch),sn=Math.sin(pitch);
