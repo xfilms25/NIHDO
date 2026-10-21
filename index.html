@@ -71,6 +71,21 @@ body{position:relative}
 .veil.on{display:flex}
 .veil.dark{background:rgba(0,0,0,.94)}
 .card{max-width:560px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.runbox{text-align:right;padding-top:60px;padding-right:6px}
+#runTime{font-family:'Cinzel',var(--display);font-size:clamp(13px,1.6vw,18px);letter-spacing:.12em;color:#cdbfae;text-shadow:0 2px 10px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
+#endStats{width:100%}
+#endStats .rank{font-family:'Cinzel',var(--display);font-size:clamp(17px,2.6vw,24px);color:var(--gold);letter-spacing:.06em;margin-bottom:10px}
+#endStats .st{display:flex;justify-content:center;gap:clamp(16px,5vw,40px)}
+#endStats .st b{display:block;font-size:clamp(18px,3vw,26px);color:#ece6d8;font-variant-numeric:tabular-nums}
+#endStats .st small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+#endSaveRow{display:flex;gap:8px;width:100%;max-width:340px}
+#endName{flex:1;min-width:0;background:rgba(20,20,22,.6);border:1px solid rgba(226,220,205,.35);color:#ece6d8;padding:9px 12px;font:inherit;font-size:16px}
+#endSave{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:9px 14px;font:inherit;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+#endBoard{width:100%;max-width:340px;font-size:14px}
+#endBoard .bh{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mist);margin-bottom:6px}
+#endBoard .br{display:grid;grid-template-columns:1fr auto 44px;gap:10px;padding:4px 0;border-bottom:1px solid rgba(226,220,205,.12);color:#d8d1c2;text-align:left;font-variant-numeric:tabular-nums}
+#endBoard .br span:last-child{text-align:right;color:var(--mist)}
+#endBoard .br.me{color:var(--gold)}
 .card h1{font-family:'Cinzel',var(--display);font-weight:500;letter-spacing:.03em;font-size:clamp(26px,6vw,52px);line-height:1.1;margin:0;color:#e3d7c4;text-shadow:0 4px 24px #000}
 .card p{margin:0;font-size:clamp(17px,2.6vw,21px);line-height:1.35;color:#b9b6ad;letter-spacing:.02em}
 .card .eyebrow{font-weight:600;letter-spacing:.24em;text-transform:uppercase;font-size:14px;color:var(--gold)}
@@ -149,7 +164,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
       <canvas id="compass"></canvas>
       <div class="obj"><i></i><span id="objText">Seguir a Luna</span><small id="objDist"></small></div>
     </div>
-    <div></div>
+    <div class="runbox"><span id="runTime">0:00</span></div>
   </div>
   <div class="bottom">
     <div class="calm">
@@ -200,6 +215,9 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
     <div class="eyebrow" data-i18n="endEyebrow">Fin del prototipo</div>
     <h1 data-i18n="endTitle">Nada que no haya soñado</h1>
     <p data-i18n="endP">El vestido sigue aquí, y también el camino que recorriste. Pelea por lo que amas y llega hasta el final.</p>
+    <div id="endStats"></div>
+    <div id="endSaveRow"><input id="endName" maxlength="16" autocomplete="off" data-i18n-ph="yourName" placeholder="Tu nombre"><button id="endSave" type="button" data-i18n="saveTime">Guardar tiempo</button></div>
+    <div id="endBoard"></div>
     <button class="go" id="againBtn" type="button" data-i18n="restart">Volver a empezar</button>
   </div>
 </div>
@@ -229,6 +247,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span>',
  keysTouch:'<span><b>Arrastra izq.</b> mover</span><span><b>Arrastra der.</b> mirar</span><span><b>Ver</b> examinar</span><span><b>Hacha / Patada</b> atacar</span>',
  pause:'Pausa',pauseP:'El bosque espera.',resume:'Continuar',restart:'Volver a empezar',menu:'Menú principal',caughtP:'Vuelves al último lugar donde viste a Luna.',retry:'Reintentar',
+ statTime:'Tiempo',statDeaths:'Muertes',statLooks:'Miradas a Hollow',rank0:'No miraste atrás.',rank1:'Intacto',rank2:'Sobreviviente',rank3:'Perdido en el sueño',bestTimes:'Mejores tiempos',yourName:'Tu nombre',saveTime:'Guardar tiempo',
  endEyebrow:'Fin del prototipo',endTitle:'Nada que no haya soñado',endP:'Luna sigue aquí, y también el camino que recorriste. Pelea por lo que amas y llega hasta el final.',
  loading:'Cargando…',loadForest:'Cargando el bosque…',loadDamian:'Cargando a Damian…',
  objFollow:'Seguir a Luna',objClearing:'Llegar al claro',followLight:'Sigue la luz.',smoke:'Se deshace como humo.',shadows:'Las sombras…',shadowsCaught:'Las sombras te alcanzaron.',
@@ -243,6 +262,7 @@ en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kic
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span>',
  keysTouch:'<span><b>Drag left</b> move</span><span><b>Drag right</b> look</span><span><b>Look</b> examine</span><span><b>Axe / Kick</b> attack</span>',
  pause:'Paused',pauseP:'The forest is waiting.',resume:'Continue',restart:'Start over',menu:'Main menu',caughtP:'You return to the last place you saw Luna.',retry:'Try again',
+ statTime:'Time',statDeaths:'Deaths',statLooks:'Looks at Hollow',rank0:"You didn't look back.",rank1:'Untouched',rank2:'Survivor',rank3:'Lost in the dream',bestTimes:'Best times',yourName:'Your name',saveTime:'Save time',
  endEyebrow:'End of the prototype',endTitle:"Nothing I haven't Dreamed of",endP:'Luna is still here, and so is the path you walked. Fight for what you love and see it through to the end.',
  loading:'Loading…',loadForest:'Loading the forest…',loadDamian:'Loading Damian…',
  objFollow:'Follow Luna',objClearing:'Reach the clearing',followLight:'Follow the light.',smoke:'It falls apart like smoke.',shadows:'The shadows…',shadowsCaught:'The shadows caught you.',
@@ -262,6 +282,7 @@ function applyLang(){
   for(var i=0;i<els.length;i++){var k=els[i].getAttribute('data-i18n');var v=tr(k);
     if(k==='keys'&&touch)v=tr('keysTouch');if(k==='prompt'&&touch)v=tr('promptTouch');els[i].innerHTML=v;}
   var pb=$('pauseBtn');if(pb)pb.setAttribute('aria-label',tr('pause'));
+  var phs=document.querySelectorAll('[data-i18n-ph]');for(var pi=0;pi<phs.length;pi++)phs[pi].setAttribute('placeholder',tr(phs[pi].getAttribute('data-i18n-ph')));
   if(typeof updateObjective==='function'&&typeof k!=='undefined')try{updateObjective();}catch(e){}
   if(typeof axtUI!=='undefined'&&axtUI){var vis=axtUI.style.display;axtUI.remove();axtUI=null;if(vis!=='none')axtOpen();}
   if(typeof gateCheck==='function')try{gateCheck();}catch(e){}
@@ -1968,7 +1989,7 @@ function combatTick(dt,playing){
       if(d>1.1){e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;mvT=lit?0.45:1;}
     }
     if(playing&&!DEATH.on&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
-      e.atk=1.5;calm-=0.14;sfxHit(true);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;
+      e.atk=1.5;calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;
       e.x-=dx/d*0.8;e.z-=dz/d*0.8;
       if(calm<=0){calm=0;dmnDie(tr('shadowsCaught'));}
     }
@@ -2047,8 +2068,25 @@ function holFree(x,z){
   for(var i=0;i<trees.length;i++){var q=trees[i],dx=q.x-x,dz=q.z-z;if(dx*dx+dz*dz<(q.r+2.6)*(q.r+2.6))return false;}
   return true;
 }
-function holPick(){
+function holMode(){
+  if(window.__holMode)return window.__holMode;
+  var r=Math.random(),m=r<0.4?'normal':r<0.6?'ahead':r<0.75?'behind':r<0.9?'heard':'none';
+  if(m===hol.lastMode&&m!=='normal')m='normal';
+  return m;
+}
+function holPick(mode){
   var F={x:Math.sin(yaw),z:Math.cos(yaw)};
+  hol.mode=mode||'normal';
+  if(mode==='ahead'||mode==='behind'){
+    for(var t2=0;t2<24;t2++){
+      var ang,dd;
+      if(mode==='ahead'){var T=WP[Math.min(k,5)];ang=Math.atan2(T[0]-pp.x,T[1]-pp.z)+(Math.random()-0.5)*0.35;dd=Math.max(17,Math.min(26,Math.hypot(T[0]-pp.x,T[1]-pp.z)-4))+Math.random()*3;}
+      else{ang=Math.atan2(-F.x,-F.z)+(Math.random()-0.5)*0.9;dd=15+Math.random()*4;}
+      var x2=pp.x+Math.sin(ang)*dd,z2=pp.z+Math.cos(ang)*dd;
+      if(holFree(x2,z2)){hol.x=x2;hol.z=z2;return true;}
+    }
+    hol.mode='normal';
+  }
   for(var tr=0;tr<40;tr++){
     var x,z,r=Math.random();
     if(r<0.12){x=WB.x0+6+Math.random()*(WB.x1-WB.x0-12);z=WB.z0+6+Math.random()*(WB.z1-WB.z0-12);}
@@ -2088,6 +2126,32 @@ function holGrabStart(){
   hol.sW=0;HOL_HOLD=hol.stompAct?1.19:0.5;HOL_DEATH=(DIE&&dmn.ready)?DIE.dur+0.7:1.2;
   holBreath(1.0,true);
 }
+/* phone vibration + gamepad rumble */
+function buzz(pat,strong){
+  if(window.__noBuzz)return;
+  try{if(touch&&navigator.vibrate)navigator.vibrate(pat);}catch(e){}
+  try{
+    var gps=navigator.getGamepads?navigator.getGamepads():[],dur=0;for(var i=0;i<pat.length;i+=2)dur+=pat[i];
+    for(var j=0;j<gps.length;j++){var gp=gps[j];if(gp&&gp.vibrationActuator&&gp.vibrationActuator.playEffect)gp.vibrationActuator.playEffect('dual-rumble',{duration:Math.max(30,dur),strongMagnitude:Math.min(1,strong||0.5),weakMagnitude:Math.min(1,(strong||0.5)*0.7)});}
+  }catch(e){}
+}
+/* the cue that comes just before Hollow: a swelling, reversed rush with a low detuned drone and a cold metallic ring */
+function sfxDread(v){
+  if(!ac)return;v=v||1;
+  try{
+    var t=ac.currentTime+0.02,dur=1.4;
+    var len=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,len,ac.sampleRate),dd=b.getChannelData(0);
+    for(var i=0;i<len;i++){var x=i/len;dd[i]=(Math.random()*2-1)*Math.pow(x,2.4);}
+    var src=ac.createBufferSource();src.buffer=b;var hp=ac.createBiquadFilter();hp.type='bandpass';hp.Q.value=0.9;hp.frequency.setValueAtTime(300,t);hp.frequency.exponentialRampToValueAtTime(2600,t+dur);
+    var ng=ac.createGain();ng.gain.value=0.22*v;src.connect(hp);hp.connect(ng);ng.connect(sfxBus);src.start(t);
+    [55,58.4,82.2].forEach(function(f){var o=ac.createOscillator(),g=ac.createGain(),lp=ac.createBiquadFilter();o.type='sawtooth';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=320;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.07*v,t+dur);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+1.6);
+      o.connect(lp);lp.connect(g);g.connect(sfxBus);o.start(t);o.stop(t+dur+1.7);});
+    [1131,1597,2213].forEach(function(f){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t+dur-0.02);g.gain.exponentialRampToValueAtTime(0.05*v,t+dur);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+2.2);
+      o.connect(g);g.connect(sfxBus);o.start(t+dur-0.03);o.stop(t+dur+2.3);});
+  }catch(e){}
+}
 function holWeights(rw){
   var sw=hol.grab?(hol.sW||0):0;
   if(hol.act)hol.act.setEffectiveWeight((1-rw)*(1-sw));
@@ -2122,9 +2186,9 @@ function holBreathTick(dt,d){
   hol.bT=(hol.bT||0)-dt;
   var near=Math.max(0,Math.min(1,1-(d-4)/46));
   if(hol.chest){var ph=hol.bPh=(hol.bPh||0)+dt*(1.2+2.2*near);hol.chest.scale.setScalar(1+(0.018+0.03*near)*Math.sin(ph*Math.PI*2*0.5));}
-  if(hol.bT<=0&&d<55){hol.bT=2.6-1.5*near+Math.random()*0.4;holBreath(near,false);}
+  if(hol.bT<=0&&d<55){hol.bT=2.6-1.5*near+Math.random()*0.4;holBreath(near,false);if(near>0.5)buzz([35,110,55],near);}
 }
-function holReset(){hol.state='hide';hol.t=2;hol.seenT=0;holGrabEnd();if(hol.g)hol.g.visible=false;holSetOp(0);}
+function holReset(){hol.mode='normal';hol.state='hide';hol.t=2;hol.seenT=0;holGrabEnd();if(hol.g)hol.g.visible=false;holSetOp(0);}
 
 /* wood under Hollow's weight: a sharp crack (sometimes a double snap) and a slow creak */
 function woodCrack(vol,pan,dbl){
@@ -2165,10 +2229,32 @@ function holTick(dt,playing){
   if(hol.hitT>0){hol.hitT-=dt;var ks=Math.max(0,hol.hitT/0.6),kx2=hol.x+hol.kx*ks*dt,kz2=hol.z+hol.kz*ks*dt;if(holFree(kx2,kz2)){hol.x=kx2;hol.z=kz2;}}
   if(hol.state==='hide'||hol.state==='out'){hol.hunt=calm<0.2&&(collected>=1||time>10);if(hol.hunt&&hol.state==='out'){hol.state='watch';}}
   if(hol.state==='hide'){
-    hol.t-=dt;if(calm<0.2&&(collected>=1||time>10))hol.t=Math.min(hol.t,0);
-    if(hol.t<=0&&holPick()){hol.state='in';hol.g.visible=true;hol.watch=10+Math.random()*8;hol.seenT=0;hol.n++;sfxHollow();
+    var huntNow=calm<0.2&&(collected>=1||time>10);
+    hol.t-=dt;if(huntNow)hol.t=Math.min(hol.t,0);
+    if(hol.t<=0){
+      /* he never comes the same way twice: watching from the side, waiting on the path ahead, behind you, only heard, or not at all */
+      var m=huntNow||!hol.told?'normal':holMode();
+      if(m==='none'){hol.lastMode='none';sfxDread(0.7);buzz([25,60,25],0.35);hol.t=7+Math.random()*6;return;}
+      if(m==='heard'){hol.lastMode='heard';hol.state='heard';hol.heardT=7+Math.random()*4;hol.ha=Math.random()*6.283;hol.hr=15+Math.random()*5;hol.bT=0;sfxDread(0.8);buzz([25,60,25],0.35);return;}
+      if(holPick(m)){hol.lastMode=m;hol.state='pre';hol.preT=huntNow?0.6:1.5;sfxDread(1);buzz([25,60,25,60,25],0.45);}
+      else hol.t=1;
+    }
+    return;
+  }
+  if(hol.state==='pre'){
+    hol.preT-=dt;
+    if(hol.preT<=0){hol.state='in';hol.g.visible=true;hol.watch=10+Math.random()*8;hol.seenT=0;hol.n++;sfxHollow();
       if(!hol.told){hol.told=true;showSub(tr('watched'),3400);}}
-    else if(hol.t<=0)hol.t=1;
+    return;
+  }
+  if(hol.state==='heard'){
+    /* unseen: just his breathing and the wood cracking as he circles around Damian */
+    hol.g.visible=false;hol.heardT-=dt;hol.ha+=dt*0.22;
+    var hx=pp.x+Math.sin(hol.ha)*hol.hr,hz=pp.z+Math.cos(hol.ha)*hol.hr;hol.x=hx;hol.z=hz;
+    holBreathTick(dt,hol.hr);
+    hol.crackT=(hol.crackT===undefined?1:hol.crackT)-dt;
+    if(hol.crackT<=0){hol.crackT=0.9+Math.random()*1.6;var pn=Math.max(-1,Math.min(1,((hx-pp.x)*-Math.cos(yaw)+(hz-pp.z)*Math.sin(yaw))/hol.hr));if(Math.random()<0.6)woodCrack(0.5,pn,Math.random()<0.3);else woodCreak(0.5,pn);}
+    if(hol.heardT<=0||(calm<0.2&&(collected>=1||time>10))){hol.state='hide';hol.t=3+Math.random()*4;}
     return;
   }
   hol.hunt=calm<0.2&&(collected>=1||time>10);
@@ -2182,6 +2268,7 @@ function holTick(dt,playing){
   tmpV.set(hol.x-camPos.x,gy+3.6-camPos.y,hol.z-camPos.z);var cd=tmpV.length();tmpV.normalize();
   var dotv=tmpV.dot(camDir),looked=dotv>0.93&&cd<80,inView=dotv>0.72&&cd<90;
   hol.dist=d;hol.looked=inView&&hol.state!=='in';
+  if(looked&&!hol.wasLooked&&state==='play')RUN.looks++;hol.wasLooked=looked;
   if(hol.state!=='out')holBreathTick(dt,d);
   if(!hol.grab&&!DEATH.on&&hol.state==='watch'&&d<4.6)holGrabStart();
   if(hol.grab){
@@ -2196,7 +2283,7 @@ function holTick(dt,playing){
       pp.face+=Math.atan2(Math.sin(ta-pp.face),Math.cos(ta-pp.face))*Math.min(1,dt*8);
       if(hol.grabT>=HOL_HOLD){
         hol.hitDone=true;hol.deathT=0;SHK.imp=Math.max(SHK.imp||0,0.6);sfxHit(true);sfxHollow();
-        mudSplash(pp.x,pp.z,26,1.6);
+        mudSplash(pp.x,pp.z,26,1.6);buzz([280,60,120],1);
         pp.face=ta;pp.jy=0;pp.vj=0;dmn.hurtT=-1;axe.t=-1;
         if(DIE&&dmn.ready)dmn.dieT=0;
       }
@@ -2222,7 +2309,7 @@ function holTick(dt,playing){
 
   }else if(hol.state==='watch'){
     hol.watch-=dt;
-    if(inView){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr('dontLook'),1600);}}
+    if(inView){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04)*(hol.mode==='behind'?1.4:1));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr(hol.mode==='behind'?'dontLookBack':'dontLook'),1600);}}
     if(looked){hol.seenT+=dt;holSetOp(hol.seenT>2.2?0.75+0.25*Math.sin(time*38):1);}
     else{hol.seenT=Math.max(0,hol.seenT-dt*0.5);holSetOp(1);}
     if(hol.seenT>4.2||hol.watch<=0){hol.state='out';}
@@ -2231,7 +2318,7 @@ function holTick(dt,playing){
     if(hol.op<=0){hol.g.visible=false;hol.state='hide';hol.t=1.5+Math.random()*3.5;sfxHollow();}
   }
   var moving=false;
-  if(hol.state==='watch'&&!hol.hunt){
+  if(hol.state==='watch'&&!hol.hunt&&hol.mode!=='ahead'){
     /* creeps toward Damian, drifting sideways, never closer than ~15 m until the bar is low */
     if(!hol.side)hol.side=Math.random()<0.5?-1:1;
     if(Math.random()<dt*0.12)hol.side=-hol.side;
@@ -3015,7 +3102,7 @@ function randomizeWP(){
 }
 function resetGame(){
   randomizeWP();placeTraps();TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
-  k=0;collected=0;calm=1;fol.active=false;presence.visible=false;
+  k=0;collected=0;calm=1;fol.active=false;presence.visible=false;RUN={t:0,deaths:0,looks:0,on:true};
   pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;checkpoint={x:0,z:0};if(window.clearShadows)clearShadows();yaw=Math.PI;pitch=0.26;
   finaleReset();cloths.forEach(function(c){c.g.visible=false;});lunaPlace();
   setTrail([0,0],WP[0]);updateObjective();
@@ -3033,6 +3120,7 @@ function primeFinale(){   /* called from a tap, so phones allow the clip to play
 }
 function startFinale(){
   if(FIN.on||state!=='play')return;
+  RUN.on=false;
   var T=WP[5],dx=T[0]-pp.x,dz=T[1]-pp.z,l=Math.hypot(dx,dz);
   if(l<0.5){dx=Math.sin(yaw);dz=Math.cos(yaw);l=1;}
   FIN.on=true;FIN.t=0;FIN.phase='walk';FIN.dx=dx/l;FIN.dz=dz/l;FIN.walk=0;FIN.sub='';FIN.fy=luna.g?luna.g.rotation.y:0;
@@ -3137,7 +3225,7 @@ function endFinale(){
   var v=$('finVid');try{v.pause();}catch(e){}
   $('vFin').classList.remove('on');$('finTap').style.display='none';
   try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}
-  state='ending';sfxEnd();$('vEnd').classList.add('on');
+  state='ending';sfxEnd();showRunStats();$('vEnd').classList.add('on');
 }
 function finaleReset(){
   FIN.on=false;FIN.phase='';FIN.t=0;FIN.sub='';
@@ -3145,6 +3233,29 @@ function finaleReset(){
   var v=$('finVid');if(v){try{v.pause();}catch(e){}}
   $('vFin').classList.remove('on');$('finTap').style.display='none';
   var h=$('hud');h.style.transition='';h.style.opacity='';
+}
+function fmtTime(t,ms){var m=Math.floor(t/60),s=Math.floor(t%60),c=Math.floor((t%1)*100);return m+':'+(s<10?'0':'')+s+(ms?'.'+(c<10?'0':'')+c:'');}
+function runRank(){if(RUN.deaths===0&&RUN.looks===0)return tr('rank0');if(RUN.deaths===0)return tr('rank1');if(RUN.deaths<=3)return tr('rank2');return tr('rank3');}
+function boardLoad(){try{var b=JSON.parse(localStorage.getItem('nihdo_board')||'[]');return Array.isArray(b)?b:[];}catch(e){return [];}}
+function boardRender(hi){
+  var b=boardLoad(),el=$('endBoard');if(!el)return;
+  if(!b.length){el.innerHTML='';return;}
+  el.innerHTML='<div class="bh">'+tr('bestTimes')+'</div>'+b.map(function(r,i){var n=String(r.n||'-').replace(/[<>&"]/g,'');return '<div class="br'+(i===hi?' me':'')+'"><span>'+(i+1)+'. '+n+'</span><span>'+fmtTime(r.t,true)+'</span><span>'+r.d+' \u271D</span></div>';}).join('');
+}
+function showRunStats(){
+  RUN.on=false;
+  $('endStats').innerHTML='<div class="rank">'+runRank()+'</div><div class="st"><div><b>'+fmtTime(RUN.t,true)+'</b><small>'+tr('statTime')+'</small></div><div><b>'+RUN.deaths+'</b><small>'+tr('statDeaths')+'</small></div><div><b>'+RUN.looks+'</b><small>'+tr('statLooks')+'</small></div></div>';
+  var nm='';try{nm=localStorage.getItem('nihdo_name')||'';}catch(e){}
+  $('endName').value=nm;$('endSaveRow').style.display='flex';
+  boardRender(-1);
+}
+function boardSave(){
+  var n=($('endName').value||'').trim().slice(0,16)||'Damian';
+  try{localStorage.setItem('nihdo_name',n);}catch(e){}
+  var b=boardLoad(),rec={n:n,t:+RUN.t.toFixed(2),d:RUN.deaths,l:RUN.looks,at:Date.now()};
+  b.push(rec);b.sort(function(a,c){return a.t-c.t;});b=b.slice(0,5);
+  try{localStorage.setItem('nihdo_board',JSON.stringify(b));}catch(e){}
+  $('endSaveRow').style.display='none';boardRender(b.indexOf(rec));
 }
 function updateObjective(){
   $('objText').textContent=k>=5?tr('objClearing'):tr('objFollow');
@@ -3158,10 +3269,11 @@ function spawnPresence(dist){
 var caughtAt=0;
 /* Damian falls (Mixamo dying clip) and the caught screen waits until he's down */
 var DEATH={on:false,t:0,msg:''};
+var RUN={t:0,deaths:0,looks:0,on:false};
 function dmnDie(msg){
   if(DEATH.on||state!=='play')return;
   if(!(DIE&&dmn.ready)){respawn(msg);return;}
-  DEATH.on=true;DEATH.t=0;DEATH.msg=msg;dmn.dieT=0;dmn.hurtT=-1;axe.t=-1;pp.vx=pp.vz=0;pp.vj=0;pp.jy=0;keys={};
+  DEATH.on=true;DEATH.t=0;DEATH.msg=msg;buzz([150,80,320],1);dmn.dieT=0;dmn.hurtT=-1;axe.t=-1;pp.vx=pp.vz=0;pp.vj=0;pp.jy=0;keys={};
 }
 function deathTick(dt){
   if(!DEATH.on||state!=='play')return;
@@ -3169,6 +3281,7 @@ function deathTick(dt){
 }
 function respawn(msg){
   if(state!=='play')return;
+  RUN.deaths++;
   SHK.imp=0.25;
   state='caught';caughtAt=performance.now();sfxCaught();$('caughtText').textContent=msg;$('vCaught').classList.add('on');
   axe.t=-1;
@@ -3310,6 +3423,9 @@ $('goBtn').addEventListener('click',function(){
   showSub(tr('followLight'),3200);
   if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
 });
+$('endSave').addEventListener('click',boardSave);
+$('endName').addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter')boardSave();});
+$('endName').addEventListener('keyup',function(e){e.stopPropagation();});
 $('againBtn').addEventListener('click',function(){$('vEnd').classList.remove('on');resetGame();state='play';});
 $('finVid').addEventListener('ended',endFinale);
 $('finVid').addEventListener('error',function(){if(FIN.phase==='clip')endFinale();});
@@ -3355,6 +3471,7 @@ function frame(){
   if(state==='title'){yaw+=dt*0.07;}
   if(state==='finale')finaleTick(dt);
   deathTick(dt);
+  if(state==='play'&&RUN.on){RUN.t+=dt;var rs=Math.floor(RUN.t);if(rs!==RUN.shown){RUN.shown=rs;$('runTime').textContent=fmtTime(RUN.t,false);}}
 
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},Rt={x:-Math.cos(yaw),z:Math.sin(yaw)};
   var fwd=0,str=0;
