@@ -1184,11 +1184,30 @@ function lunaPlace(){
   if(k<=5){var T=WP[k];luna.g.position.set(T[0],H(T[0],T[1]),T[1]);lunaLook();lunaOp(1);}else lunaOp(0);
 }
 loadLunaModel();
+/* at these stops Luna doesn't just fade: she runs off ahead of Damian */
+var LUNA_RUN_CP=[1,3];
+function lunaRunStart(){
+  var N=WP[Math.min(k+1,5)],p=luna.g.position,dx=N[0]-p.x,dz=N[1]-p.z;
+  if(Math.hypot(dx,dz)<1){dx=p.x-pp.x;dz=p.z-pp.z;}
+  luna.runYaw=Math.atan2(dx,dz);
+  if(LILY&&LILY.parent)LILY.parent.remove(LILY);
+  if(luna.rest)for(var bn in luna.rest)luna.bones[bn].quaternion.copy(luna.rest[bn]);
+  luna.act.reset();luna.act.timeScale=1.25;luna.act.setEffectiveWeight(1);luna.act.play();luna.mixer.update(0);
+  advance();luna.state='run';luna.runT=0;
+}
 function lunaTickFig(dt,playing){
   if(!luna.g)return;
-  if(luna.bones&&luna.state!=='out'){var want=Math.min(k,5);if(want===5&&!LILY)want=1;if(want!==luna.poseIdx)lunaSetPose(want);}
-  if(luna.bones&&luna.base&&luna.g.visible)lunaIdle(time);
-  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<4.5)advance();
+  if(luna.bones&&luna.state!=='out'&&luna.state!=='run'){var want=Math.min(k,5);if(want===5&&!LILY)want=1;if(want!==luna.poseIdx)lunaSetPose(want);}
+  if(luna.bones&&luna.base&&luna.g.visible&&luna.state!=='run')lunaIdle(time);
+  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<4.5){if(LUNA_RUN_CP.indexOf(k)>=0&&luna.act)lunaRunStart();else advance();}
+  if(luna.state==='run'){
+    /* she runs ahead toward the next place, then dissolves */
+    luna.runT+=dt;var rp=luna.g.position,rs=2.6*Math.min(1,luna.runT/0.4);
+    rp.x+=Math.sin(luna.runYaw)*rs*dt;rp.z+=Math.cos(luna.runYaw)*rs*dt;
+    luna.mixer.update(dt);
+    if(luna.runT>2.0)lunaOp(Math.max(0,luna.op-dt*1.4));
+    if(luna.op<=0){luna.act.timeScale=0;luna.act.time=LUNA_POSE;luna.mixer.update(0);if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);luna.poseIdx=-1;luna.state='out';}
+  }
   if(playing&&k===5&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
   if(luna.state==='out'){
     lunaOp(Math.max(0,luna.op-dt*1.6));
@@ -1200,8 +1219,8 @@ function lunaTickFig(dt,playing){
     lunaOp(Math.min(1,luna.op+dt*0.7));if(luna.op>=1)luna.state='idle';
   }
   if(luna.g.visible){
-    var p=luna.g.position;luna.g.rotation.y=FIN.on?FIN.fy:luna.look+Math.sin(time*0.35)*0.18;
-    p.y=H(p.x,p.z)+(FIN.on?0:Math.sin(time*1.2)*0.04);luna.g.rotation.z=FIN.on?0:Math.sin(time*0.9)*0.03;
+    var p=luna.g.position,lr=luna.state==='run';luna.g.rotation.y=FIN.on?FIN.fy:lr?luna.runYaw:luna.look+Math.sin(time*0.35)*0.18;
+    p.y=H(p.x,p.z)+(FIN.on||lr?0:Math.sin(time*1.2)*0.04);luna.g.rotation.z=FIN.on?0:Math.sin(time*0.9)*0.03;
   }
 }
 var targetLight=new THREE.PointLight(0xbcd4ff,1.4,22);scene.add(targetLight);
@@ -3456,6 +3475,7 @@ function examine(){
   if(state!=='play')return;
   var T=WP[k];if(Math.hypot(pp.x-T[0],pp.z-T[1])>4)return;
   if(k===5){startFinale();return;}
+  if(LUNA_RUN_CP.indexOf(k)>=0&&luna.act&&luna.state==='idle'){lunaRunStart();return;}
   advance();
 }
 
@@ -3635,7 +3655,7 @@ function frame(){
     }
     pp.x=Math.max(WB.x0,Math.min(WB.x1,pp.x));pp.z=Math.max(WB.z0,Math.min(WB.z1,pp.z));
     /* Luna can't be touched: Damian stops a couple of metres short of her */
-    if(luna.g&&luna.g.visible&&luna.op>0.3){var lx=pp.x-luna.g.position.x,lz=pp.z-luna.g.position.z,ld=Math.hypot(lx,lz);if(ld<2.2&&ld>0.001){pp.x=luna.g.position.x+lx/ld*2.2;pp.z=luna.g.position.z+lz/ld*2.2;}}
+    if(luna.g&&luna.g.visible&&luna.op>0.3&&luna.state!=='run'){var lx=pp.x-luna.g.position.x,lz=pp.z-luna.g.position.z,ld=Math.hypot(lx,lz);if(ld<2.2&&ld>0.001){pp.x=luna.g.position.x+lx/ld*2.2;pp.z=luna.g.position.z+lz/ld*2.2;}}
   }
   var spd=Math.hypot(pp.vx,pp.vz);
   if(spd>0.4&&axe.t<0){var tf=Math.atan2(pp.vx,pp.vz),df=((tf-pp.face+Math.PI*3)%(Math.PI*2))-Math.PI;pp.face+=df*Math.min(1,dt*12);}
