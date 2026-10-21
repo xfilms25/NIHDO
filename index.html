@@ -838,7 +838,10 @@ function dmnUpdate(dt,spd){
   if(dmn.jW<0.01&&!jT)dmn.jW=0;
   var hT=(HURT&&dmn.hurtT>=0)?1:0;dmn.hW=(dmn.hW||0)+(hT-(dmn.hW||0))*Math.min(1,dt*(hT?14:6));if(dmn.hW<0.01&&!hT)dmn.hW=0;
   if(HURT){if(dmn.hurtT>=0){dmn.hurtT+=dt;HURT.act.time=Math.min(HURT.dur-0.02,dmn.hurtT*1.2);if(dmn.hurtT*1.2>=HURT.dur-0.05)dmn.hurtT=-1;}HURT.act.setEffectiveWeight(dmn.hW);}
-  var hk=1-dmn.hW;
+  var dieT=(DIE&&dmn.dieT>=0)?1:0;dmn.dW=(dmn.dW||0)+(dieT-(dmn.dW||0))*Math.min(1,dt*(dieT?10:20));if(dmn.dW<0.01&&!dieT)dmn.dW=0;
+  if(DIE){if(dmn.dieT>=0){dmn.dieT+=dt;DIE.act.time=Math.min(DIE.dur-0.02,dmn.dieT);}DIE.act.setEffectiveWeight(dmn.dW);}
+  var hk=(1-dmn.hW)*(1-dmn.dW);
+  if(HURT)HURT.act.setEffectiveWeight(dmn.hW*(1-dmn.dW));
   var loco=(1-dmn.atkW)*(1-dmn.jW)*hk;
   ['down','combo','kick'].forEach(function(kk){var A=ATK[kk];if(!A)return;
     if(axe.clip===A&&axe.t>=0){A.act.time=Math.min(A.dur-0.02,axe.t*axe.ts);A.act.setEffectiveWeight(dmn.atkW*(1-dmn.jW)*hk);}
@@ -848,7 +851,9 @@ function dmnUpdate(dt,spd){
     if(jmp.active)JMP.act.time=Math.min(JMP.dur-0.02,jmp.t*JTS);
     JMP.act.setEffectiveWeight(dmn.jW*hk);
   }
-  a.idle.setEffectiveWeight(dmn.w.idle*loco);a.walk.setEffectiveWeight(dmn.w.walk*loco);a.run.setEffectiveWeight(dmn.w.run*loco);
+  a.idle.setEffectiveWeight(dmn.w.idle*loco);a.walk.setEffectiveWeight(dmn.w.walk*loco);
+  if(INJ&&!air){a.run.setEffectiveWeight(0);INJ.act.setEffectiveWeight(dmn.w.run*loco);INJ.act.timeScale=Math.max(0.8,Math.min(2.4,spd/1.17));}
+  else{a.run.setEffectiveWeight(dmn.w.run*loco);if(INJ)INJ.act.setEffectiveWeight(0);}
   a.walk.timeScale=Math.max(0.7,Math.min(2.6,spd/0.95));
   a.run.timeScale=Math.max(0.6,Math.min(1.8,spd/4.6));
   dmn.mixer.update(dt);
@@ -1733,7 +1738,7 @@ function loadAxeAsset(){
 }
 loadAxeAsset();
 /* attack animations (Mixamo FBX, converted): downward chop and 3-hit combo */
-var ATK={down:null,combo:null,kick:null},HURT=null,lastAtk={kind:'',end:-9};
+var ATK={down:null,combo:null,kick:null},HURT=null,DIE=null,INJ=null,lastAtk={kind:'',end:-9};
 function loadAttacks(mixer){
   fetch('attacks.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
     ['down','combo','kick'].forEach(function(k){
@@ -1754,6 +1759,13 @@ function loadAttacks(mixer){
     var act=mixer.clipAction(new THREE.AnimationClip('hurt',d.dur,tr));act.setLoop(THREE.LoopRepeat,Infinity);act.setEffectiveTimeScale(0);act.setEffectiveWeight(0);act.play();
     HURT={act:act,dur:d.dur};dmn.hurtT=-1;
   }).catch(function(e){console.warn('hurt clip not used',e);});
+  /* death (Hollow's blow) and the injured run */
+  fetch('dmn2.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
+    function mk(d,nm){var tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
+      var act=mixer.clipAction(new THREE.AnimationClip(nm,d.dur,tr));act.setLoop(THREE.LoopRepeat,Infinity);act.setEffectiveWeight(0);act.play();return act;}
+    DIE={act:mk(J.dying,'dying'),dur:J.dying.dur};DIE.act.setEffectiveTimeScale(0);
+    INJ={act:mk(J.injured,'injured'),dur:J.injured.dur};
+  }).catch(function(e){console.warn('death / injured clips not used',e);});
 }
 function rotBoneWorld(bone,axisLocalHero,ang){
   _ax.copy(axisLocalHero).applyQuaternion(hero.quaternion);
@@ -1797,7 +1809,7 @@ function kick(){attack('kick');}
 function attack(force){
   if(typeof force!=='string')force=null;
   if(TRAP.hold>0){trapStruggle();dmn.hurtT=-1;}
-  if(state!=='play'||axe.t>=0||axe.cd>0||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0)return;
+  if(state!=='play'||hol.grab||axe.t>=0||axe.cd>0||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0)return;
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},best=null,bd=6;
   enemies.forEach(function(e){if(!e.alive)return;var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz);if(d<bd&&(dx*F.x+dz*F.z)/(d||1)>0.5){bd=d;best=e;}});
   pp.face=best?Math.atan2(best.x-pp.x,best.z-pp.z):Math.atan2(F.x,F.z);
@@ -1920,7 +1932,7 @@ function jumpTick(dt,playing){
     if(!jmp.launched&&jmp.t>=(JMP.launch||0.38)/JTS){jmp.launched=true;pp.vj=JV0;stepSound(0.6,false,0,false);}
     if(jmp.t>=JMP.dur/JTS)jmp.active=false;
   }
-  if(pp.jy>0||pp.vj>0){
+  if((pp.jy>0||pp.vj>0)&&!hol.grab){
     var g=JMP?JG:19;
     pp.vj-=g*dt;pp.jy+=pp.vj*dt;
     if(pp.jy<=0){if(pp.vj<-3)stepSound(0.9,false,0,true);pp.jy=0;pp.vj=0;if(!JMP)jmp.active=false;}
@@ -1988,7 +2000,7 @@ function loadHollow(){
       try{
         var m=gltf.scene;m.updateMatrixWorld(true);
         var bb=new THREE.Box3().setFromObject(m),h=Math.max(0.5,bb.max.y-bb.min.y),s=7.2/h;
-        m.scale.setScalar(s);
+        m.scale.setScalar(s);hol.sc=s;
         m.traverse(function(o){
           if(!o.isMesh)return;
           o.frustumCulled=false;o.castShadow=false;
@@ -2001,13 +2013,15 @@ function loadHollow(){
         var hs=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.NormalBlending,opacity:0,color:0x000000,fog:false}));hs.scale.set(10,10,1);hs.position.y=5.6;g.add(hs);
         var hb=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.NormalBlending,opacity:0,color:0x000000,fog:false}));hb.scale.set(9,15,1);hb.position.y=3.4;hb.renderOrder=-1;g.add(hb);hol.spr=[hs,hb];
         if(gltf.animations&&gltf.animations.length){hol.mixer=new THREE.AnimationMixer(m);hol.act=hol.mixer.clipAction(gltf.animations[0]);hol.act.play();hol.act.timeScale=0.3;
-          fetch('hollowgrab.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
-            var d=J.grab,tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
-            var a=hol.mixer.clipAction(new THREE.AnimationClip('grab',d.dur,tr));a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.setEffectiveWeight(0);
-            hol.grabAct=a;hol.grabDur=d.dur;
-          }).catch(function(e){console.warn('hollow grab clip not used',e);});
+          /* Mixamo clips: the stomp that kills Damian, and the lurching run when he hunts */
+          fetch('hollowanim.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
+            function mk(d,nm){var tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
+              var a=hol.mixer.clipAction(new THREE.AnimationClip(nm,d.dur,tr));a.setEffectiveWeight(0);a.play();return a;}
+            hol.stompAct=mk(J.stomp,'stomp');hol.stompAct.setLoop(THREE.LoopOnce,1);hol.stompAct.clampWhenFinished=true;hol.stompAct.stop();hol.stompDur=J.stomp.dur;
+            hol.runAct=mk(J.run,'run');hol.runSpd=J.run.travel/J.run.dur;
+          }).catch(function(e){console.warn('hollow clips not used',e);});
         }
-        m.traverse(function(o){if(o.isBone&&/Spine2$/.test(o.name))hol.chest=o;});
+        m.traverse(function(o){if(o.isBone&&/Spine2$/.test(o.name))hol.chest=o;if(o.isBone&&/mixamorig:?LeftHand$/.test(o.name))hol.lhand=o;});
         hol.ready=true;
       }catch(e){console.warn('hollow not used',e);}
     },function(e){console.warn('hollow failed',e);});
@@ -2049,17 +2063,40 @@ function holPick(){
   return false;
 }
 function holSetOp(v){hol.op=v;for(var i=0;i<hol.mats.length;i++)hol.mats[i].opacity=v;if(hol.spr){hol.spr[0].material.opacity=0.5*v;hol.spr[1].material.opacity=0.42*v;}}
-var HOL_GRAB_HIT=1.55;
+var HOL_GRAB_HIT=1.55,HOL_HOLD=0.95,HOL_DEATH=5.0,_hv=new THREE.Vector3();
 function holGrabStart(){
   if(hol.grab)return;
-  hol.grab=true;hol.grabT=0;SHK.imp=Math.max(SHK.imp||0,0.12);
-  if(hol.grabAct&&hol.act){hol.grabAct.reset();hol.grabAct.setEffectiveTimeScale(1);hol.grabAct.setEffectiveWeight(1);hol.grabAct.play();hol.act.crossFadeTo(hol.grabAct,0.25,false);}
-  HOL_GRAB_HIT=hol.grabAct?Math.max(0.6,(hol.grabDur||2)-0.1):0.6;
+  hol.grab=true;hol.hitDone=false;hol.deathT=0;hol.grabT=0;
+  (function(){
+    /* pick a clear spot for the cinematic camera: off to the side if possible, with no trunk or branches between it and the two of them */
+    var mx=hol.x*0.4+pp.x*0.6,mz=hol.z*0.4+pp.z*0.6,ax=pp.x-hol.x,az=pp.z-hol.z,base=Math.atan2(-az,ax),best=null,bs=-1e9;
+    function segD(px,pz,x0,z0,x1,z1){var vx=x1-x0,vz=z1-z0,l2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((px-x0)*vx+(pz-z0)*vz)/l2));return Math.hypot(px-(x0+vx*u),pz-(z0+vz*u));}
+    var al=Math.hypot(ax,az)||1,bx=ax/al,bz=az/al,sx=-bz,sz=bx;
+    /* over Damian's shoulder, pulled back and a little to the side: the way the player came in, so it's usually clear */
+    [[4.6,1.6],[4.6,-1.6],[4.2,0],[3.8,2.4],[3.8,-2.4],[3.2,1],[3.2,-1],[2.6,0]].forEach(function(c,ai){
+      var x=pp.x+bx*c[0]+sx*c[1],z=pp.z+bz*c[0]+sz*c[1];
+      if(x<WB.x0+2||x>WB.x1-2||z<WB.z0+2||z>WB.z1-2)return;
+      var clr=99;
+      for(var i=0;i<trees.length;i++){var q=trees[i],rr=(q.r||0.4)+1.0;
+        if(Math.abs(q.x-pp.x)>12||Math.abs(q.z-pp.z)>12)continue;
+        var cc=Math.min(segD(q.x,q.z,x,z,pp.x,pp.z),segD(q.x,q.z,x,z,mx,mz))-rr;if(cc<clr)clr=cc;}
+      var sc=(clr>0?100:clr*10)-ai;
+      if(sc>bs){bs=sc;best=[x,z];}
+    });
+    if(!best)best=[pp.x+ax*0.8,pp.z+az*0.8];hol.gcx=best[0];hol.gcz=best[1];})();SHK.imp=Math.max(SHK.imp||0,0.12);
+  if(hol.stompAct){hol.stompAct.reset();hol.stompAct.setEffectiveTimeScale(1);hol.stompAct.play();}
+  hol.sW=0;HOL_HOLD=hol.stompAct?1.19:0.5;HOL_DEATH=(DIE&&dmn.ready)?DIE.dur+0.7:1.2;
   holBreath(1.0,true);
 }
+function holWeights(rw){
+  var sw=hol.grab?(hol.sW||0):0;
+  if(hol.act)hol.act.setEffectiveWeight((1-rw)*(1-sw));
+  if(hol.runAct)hol.runAct.setEffectiveWeight(rw*(1-sw));
+  if(hol.stompAct)hol.stompAct.setEffectiveWeight(sw);
+}
 function holGrabEnd(){
-  hol.grab=false;hol.grabT=0;
-  if(hol.grabAct){hol.grabAct.stop();hol.grabAct.setEffectiveWeight(0);}
+  hol.hitDone=false;hol.grab=false;hol.grabT=0;dmn.dieT=-1;
+  hol.sW=0;if(hol.stompAct){hol.stompAct.stop();hol.stompAct.setEffectiveWeight(0);}
   if(hol.act){hol.act.enabled=true;hol.act.setEffectiveWeight(1);hol.act.play();}
 }
 /* Hollow's breathing: slow and distant at first, heavier and faster the closer he gets */
@@ -2150,11 +2187,26 @@ function holTick(dt,playing){
   if(hol.grab){
     /* he stays, plants himself in front of Damian and the whole grab plays before the caught screen */
     holSetOp(1);hol.state='watch';hol.watch=99;
-    var gs=d>2.9?2.4:0;hol.x+=dx/d*gs*dt;hol.z+=dz/d*gs*dt;
     hol.grabT+=dt;var ta=Math.atan2(hol.x-pp.x,hol.z-pp.z);
-    pp.face+=Math.atan2(Math.sin(ta-pp.face),Math.cos(ta-pp.face))*Math.min(1,dt*6);
+    hol.g.updateMatrixWorld(true);
+    if(!hol.hitDone){
+      /* the stomp: he squares up so his raised foot comes down right on Damian */
+      var want=0.43*(hol.sc||4),gap=d-want,mv=Math.max(-3*dt,Math.min(gap,Math.min(5,Math.abs(gap)*3)*dt));
+      hol.x+=dx/d*mv;hol.z+=dz/d*mv;
+      pp.face+=Math.atan2(Math.sin(ta-pp.face),Math.cos(ta-pp.face))*Math.min(1,dt*8);
+      if(hol.grabT>=HOL_HOLD){
+        hol.hitDone=true;hol.deathT=0;SHK.imp=Math.max(SHK.imp||0,0.6);sfxHit(true);sfxHollow();
+        mudSplash(pp.x,pp.z,26,1.6);
+        pp.face=ta;pp.jy=0;pp.vj=0;dmn.hurtT=-1;axe.t=-1;
+        if(DIE&&dmn.ready)dmn.dieT=0;
+      }
+    }else{
+      hol.deathT+=dt;
+
+    }
     if(hol.act)hol.act.timeScale=0.15;
-    if(hol.grabT>=HOL_GRAB_HIT){calm=0;hol.hunt=false;hol.grab=false;respawn(tr('hollowCaught'));}
+    hol.sW=Math.min(1,(hol.sW||0)+dt*5);holWeights(0);
+    if(hol.hitDone&&hol.deathT>=HOL_DEATH){calm=0;hol.hunt=false;respawn(tr('hollowCaught'));}
     return;
   }
   if(hol.state==='in'){
@@ -2163,7 +2215,7 @@ function holTick(dt,playing){
   }else if(hol.state==='watch'&&hol.hunt){
     /* the bar is nearly empty: Hollow stops watching and comes for Damian */
     holSetOp(1);hol.watch=99;
-    var hs=(d>20?7:4.6)*(hol.hitT>0?0:1);
+    var hs=(d>20?7:4.6)*(hol.hitT>0?0:1);hol.curSp=hs;
     hol.x+=dx/d*hs*dt;hol.z+=dz/d*hs*dt;
     calm=Math.max(0,calm-dt*0.05);
     hol.drain=true;
@@ -2189,6 +2241,10 @@ function holTick(dt,playing){
   }else if(hol.state==='watch'&&hol.hunt)moving=true;
   if(hol.hitT>0)moving=false;
   if(hol.act)hol.act.timeScale=moving?(hol.hunt?1.5:0.7):0.15;
+  /* hunting: the drunk, lurching run instead of the sneaky walk */
+  var runT=(moving&&hol.hunt&&hol.runAct)?1:0;hol.rW=(hol.rW||0)+(runT-(hol.rW||0))*Math.min(1,dt*4);
+  if(hol.runAct)hol.runAct.timeScale=Math.max(0.35,Math.min(1.2,(hol.curSp||4.6)/((hol.runSpd||2.3)*(hol.sc||4))));
+  holWeights(hol.rW);
   /* branches crack and old wood creaks under him as he comes closer */
   if(moving&&(hol.state==='watch')){
     hol.crackT=(hol.crackT===undefined?1:hol.crackT)-dt;
@@ -3327,6 +3383,16 @@ function frame(){
   var gh=H(camPos.x,camPos.z)+0.6;if(camPos.y<gh)camPos.y=gh;
   camera.position.copy(camPos);
   camera.lookAt(pp.x+Rt.x*0.65+F.x*6,ay-1.2,pp.z+Rt.z*0.65+F.z*6);
+  /* the grab: the camera backs off to the side so Hollow and the hand are in frame */
+  hol.gcw=Math.min(1,(hol.gcw||0)+(hol.grab?dt*1.6:-dt*4));if(hol.gcw<0)hol.gcw=0;
+  if(hol.gcw>0&&hol.g){
+    var mxg=hol.x*0.4+pp.x*0.6,mzg=hol.z*0.4+pp.z*0.6,gg=H(mxg,mzg),w=hol.gcw*hol.gcw*(3-2*hol.gcw);
+    var gcx=hol.gcx,gcz=hol.gcz,gy=Math.max(H(gcx,gcz)+2.2,gg+2.2);
+    camPos.x+=(gcx-camPos.x)*w;camPos.y+=(gy-camPos.y)*w;camPos.z+=(gcz-camPos.z)*w;
+    camera.position.copy(camPos);
+    var ly=gg+2.4-1.6*Math.min(1,Math.max(0,(hol.deathT||0)-1.2)/1.5);
+    camera.lookAt(mxg,ly,mzg);
+  }
   /* camera shake: Hollow close by, a hit taken, the hands, the axe landing */
   var shAmp=0;
   if(playing){
