@@ -852,7 +852,7 @@ function dmnUpdate(dt,spd){
     JMP.act.setEffectiveWeight(dmn.jW*hk);
   }
   a.idle.setEffectiveWeight(dmn.w.idle*loco);a.walk.setEffectiveWeight(dmn.w.walk*loco);
-  if(INJ&&!air){a.run.setEffectiveWeight(0);INJ.act.setEffectiveWeight(dmn.w.run*loco);INJ.act.timeScale=Math.max(0.8,Math.min(2.4,spd/1.17));}
+  if(false&&INJ&&!air){a.run.setEffectiveWeight(0);INJ.act.setEffectiveWeight(dmn.w.run*loco);INJ.act.timeScale=Math.max(0.8,Math.min(2.4,spd/1.17));}
   else{a.run.setEffectiveWeight(dmn.w.run*loco);if(INJ)INJ.act.setEffectiveWeight(0);}
   a.walk.timeScale=Math.max(0.7,Math.min(2.6,spd/0.95));
   a.run.timeScale=Math.max(0.6,Math.min(1.8,spd/4.6));
