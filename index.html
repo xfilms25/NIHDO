@@ -1166,7 +1166,7 @@ function lunaTickFig(dt,playing){
   if(!luna.g)return;
   if(luna.bones&&luna.state!=='out'){var want=Math.min(k,5);if(want===5&&!LILY)want=1;if(want!==luna.poseIdx)lunaSetPose(want);}
   if(luna.bones&&luna.base&&luna.g.visible)lunaIdle(time);
-  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<8.5)advance();
+  if(playing&&k<5&&luna.state==='idle'&&Math.hypot(pp.x-WP[k][0],pp.z-WP[k][1])<2.8)advance();
   if(playing&&k===5&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
   if(luna.state==='out'){
     lunaOp(Math.max(0,luna.op-dt*1.6));
