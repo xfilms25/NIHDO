@@ -866,23 +866,35 @@ function dmnUpdate(dt,spd){
   var jT=(jmp.active&&JMP)?1:0;dmn.jW=(dmn.jW||0)+(jT-(dmn.jW||0))*Math.min(1,dt*(jT?18:10));
   if(dmn.jW<0.01&&!jT)dmn.jW=0;
   var hT=(HURT&&dmn.hurtT>=0)?1:0;dmn.hW=(dmn.hW||0)+(hT-(dmn.hW||0))*Math.min(1,dt*(hT?14:6));if(dmn.hW<0.01&&!hT)dmn.hW=0;
-  if(HURT){if(dmn.hurtT>=0){dmn.hurtT+=dt;HURT.act.time=Math.min(HURT.dur-0.02,dmn.hurtT*1.2);if(dmn.hurtT*1.2>=HURT.dur-0.05)dmn.hurtT=-1;}HURT.act.setEffectiveWeight(dmn.hW);}
+  if(HURT){var hts=HURT===HURTS.base?1.2:1.35;if(dmn.hurtT>=0){dmn.hurtT+=dt;HURT.act.time=Math.min(HURT.dur-0.02,dmn.hurtT*hts);if(dmn.hurtT*hts>=HURT.dur-0.05)dmn.hurtT=-1;}HURT.act.setEffectiveWeight(dmn.hW);}
   var dieT=(DIE&&dmn.dieT>=0)?1:0;dmn.dW=(dmn.dW||0)+(dieT-(dmn.dW||0))*Math.min(1,dt*(dieT?10:20));if(dmn.dW<0.01&&!dieT)dmn.dW=0;
   if(DIE){if(dmn.dieT>=0){dmn.dieT+=dt;DIE.act.time=Math.min(DIE.dur-0.02,dmn.dieT);}DIE.act.setEffectiveWeight(dmn.dW);}
-  var hk=(1-dmn.hW)*(1-dmn.dW);
-  if(HURT)HURT.act.setEffectiveWeight(dmn.hW*(1-dmn.dW));
+  /* getting up (after a retry), the slide dodge: full-body clips that override everything else */
+  var uT=(MOB.getup&&dmn.upT>=0)?1:0;dmn.uW=(dmn.uW||0)+(uT-(dmn.uW||0))*Math.min(1,dt*(uT?20:4));if(dmn.uW<0.01&&!uT)dmn.uW=0;
+  if(MOB.getup){if(dmn.upT>=0){dmn.upT+=dt;MOB.getup.act.time=Math.min(MOB.getup.dur-0.02,dmn.upT*1.15);if(dmn.upT*1.15>=MOB.getup.dur)dmn.upT=-1;}MOB.getup.act.setEffectiveWeight(dmn.uW*(1-dmn.dW));}
+  var slT=(MOB.slide&&CB.dodgeT>0)?1:0;dmn.sW=(dmn.sW||0)+(slT-(dmn.sW||0))*Math.min(1,dt*(slT?22:8));if(dmn.sW<0.01&&!slT)dmn.sW=0;
+  if(MOB.slide){if(slT)MOB.slide.act.time=Math.min(MOB.slide.dur-0.02,(DODGE_T-CB.dodgeT)*SLIDE_TS);MOB.slide.act.setEffectiveWeight(dmn.sW*(1-dmn.dW)*(1-dmn.uW));}
+  var hk=(1-dmn.hW)*(1-dmn.dW)*(1-dmn.uW)*(1-dmn.sW);
+  if(HURT)HURT.act.setEffectiveWeight(dmn.hW*(1-dmn.dW)*(1-dmn.uW)*(1-dmn.sW));
   var loco=(1-dmn.atkW)*(1-dmn.jW)*hk;
-  ['down','combo','kick'].forEach(function(kk){var A=ATK[kk];if(!A)return;
+  ['down','combo','kick','spin'].forEach(function(kk){var A=ATK[kk];if(!A)return;
     if(axe.clip===A&&axe.t>=0){A.act.time=Math.min(A.dur-0.02,axe.t*axe.ts);A.act.setEffectiveWeight(dmn.atkW*(1-dmn.jW)*hk);}
     else A.act.setEffectiveWeight(A===axe.clip?dmn.atkW:0);
   });
+  var rjm=jmp.mode==='run'&&MOB.rjump;
   if(JMP){
-    if(jmp.active)JMP.act.time=Math.min(JMP.dur-0.02,jmp.t*JTS);
-    JMP.act.setEffectiveWeight(dmn.jW*hk);
+    if(jmp.active&&!rjm)JMP.act.time=Math.min(JMP.dur-0.02,jmp.t*JTS);
+    JMP.act.setEffectiveWeight(rjm?0:dmn.jW*hk);
   }
-  a.idle.setEffectiveWeight(dmn.w.idle*loco);a.walk.setEffectiveWeight(dmn.w.walk*loco);
-  if(false&&INJ&&!air){a.run.setEffectiveWeight(0);INJ.act.setEffectiveWeight(dmn.w.run*loco);INJ.act.timeScale=Math.max(0.8,Math.min(2.4,spd/1.17));}
-  else{a.run.setEffectiveWeight(dmn.w.run*loco);if(INJ)INJ.act.setEffectiveWeight(0);}
+  if(MOB.rjump){if(rjm&&jmp.active)MOB.rjump.act.time=Math.min(MOB.rjump.dur-0.02,jmp.t*RJ_TS);MOB.rjump.act.setEffectiveWeight(rjm?dmn.jW*hk:0);}
+  /* standing still a while: he looks around nervously */
+  dmn.idleT=(spd<0.3&&loco>0.95&&state==='play')?(dmn.idleT||0)+dt:0;
+  var lkT=(MOB.look&&dmn.idleT>6)?1:0;dmn.lkW=(dmn.lkW||0)+(lkT-(dmn.lkW||0))*Math.min(1,dt*(lkT?0.8:4));if(dmn.lkW<0.01&&!lkT){dmn.lkW=0;if(MOB.look)MOB.look.act.time=0;}
+  a.idle.setEffectiveWeight(dmn.w.idle*loco*(1-dmn.lkW));if(MOB.look)MOB.look.act.setEffectiveWeight(dmn.w.idle*loco*dmn.lkW);
+  a.walk.setEffectiveWeight(dmn.w.walk*loco);
+  if(INJ)INJ.act.setEffectiveWeight(0);
+  if(MOB.run&&!air){a.run.setEffectiveWeight(0);MOB.run.act.setEffectiveWeight(dmn.w.run*loco);MOB.run.act.timeScale=Math.max(0.8,Math.min(2.0,spd/2.23));}
+  else{a.run.setEffectiveWeight(dmn.w.run*loco);if(MOB.run)MOB.run.act.setEffectiveWeight(0);}
   a.walk.timeScale=Math.max(0.7,Math.min(2.6,spd/0.95));
   a.run.timeScale=Math.max(0.6,Math.min(1.8,spd/4.6));
   dmn.mixer.update(dt);
@@ -1745,7 +1757,7 @@ function carryTick(w){
   hero.updateMatrixWorld(true);
   axe.hand.getWorldQuaternion(_cq1).invert().multiply(hero.getWorldQuaternion(_cq2)).multiply(RD_UP);
   /* jumping keeps the same carry grip as idle / walk / run */
-  var loco=(1-(dmn.atkW||0))*(1-(dmn.hW||0));
+  var loco=(1-(dmn.atkW||0))*(1-(dmn.hW||0))*(1-(dmn.sW||0))*(1-(dmn.uW||0));
   var G=window.__gripQ||GRIP_Q;_cq4.set(G[0],G[1],G[2],G[3]);
   axe.g.quaternion.copy(_cq4.slerp(_cq1,loco)).multiply(axtQ(AXT.ar,_cq6));
   var sc=axe.sc||1;
@@ -1829,7 +1841,7 @@ function loadAxeAsset(){
 }
 loadAxeAsset();
 /* attack animations (Mixamo FBX, converted): downward chop and 3-hit combo */
-var ATK={down:null,combo:null,kick:null},HURT=null,DIE=null,INJ=null,lastAtk={kind:'',end:-9};
+var ATK={down:null,combo:null,kick:null},HURT=null,DIE=null,INJ=null,MOB={ready:false},HURTS={},lastAtk={kind:'',end:-9};
 function loadAttacks(mixer){
   fetch('attacks.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
     ['down','combo','kick'].forEach(function(k){
@@ -1848,7 +1860,7 @@ function loadAttacks(mixer){
   fetch('hurt.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(d){
     var tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
     var act=mixer.clipAction(new THREE.AnimationClip('hurt',d.dur,tr));act.setLoop(THREE.LoopRepeat,Infinity);act.setEffectiveTimeScale(0);act.setEffectiveWeight(0);act.play();
-    HURT={act:act,dur:d.dur};dmn.hurtT=-1;
+    HURT={act:act,dur:d.dur};HURTS.base=HURT;dmn.hurtT=-1;
   }).catch(function(e){console.warn('hurt clip not used',e);});
   /* death (Hollow's blow) and the injured run */
   fetch('dmn2.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
@@ -1857,6 +1869,30 @@ function loadAttacks(mixer){
     DIE={act:mk(J.dying,'dying'),dur:J.dying.dur};DIE.act.setEffectiveTimeScale(0);
     INJ={act:mk(J.injured,'injured'),dur:J.injured.dur};
   }).catch(function(e){console.warn('death / injured clips not used',e);});
+  /* mobility pack: axe run, 360 spin, slide dodge, running jump, hit reactions, getting up, nervous idle */
+  fetch('dmn3.json').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json();}).then(function(J){
+    function mk(d,nm){var tr=d.tracks.map(function(t){return t.q?new THREE.QuaternionKeyframeTrack(t.n,t.t,t.v):new THREE.VectorKeyframeTrack(t.n,t.t,t.v);});
+      var act=mixer.clipAction(new THREE.AnimationClip(nm,d.dur,tr));act.setLoop(THREE.LoopRepeat,Infinity);act.setEffectiveWeight(0);act.play();return act;}
+    function man(a){a.setEffectiveTimeScale(0);return a;}
+    MOB.run={act:mk(J.run,'run2'),dur:J.run.dur};
+    var sp=man(mk(J.spin,'spin'));ATK.spin={act:sp,dur:J.spin.dur,hits:[0.95,1.22],kind:'spin'};
+    MOB.slide={act:man(mk(J.slide,'slide')),dur:J.slide.dur,root:J.slide.root,rt:J.slide.rt};
+    MOB.rjump={act:man(mk(J.rjump,'rjump')),dur:J.rjump.dur,foot:J.rjump.foot,rt:J.rjump.rt};
+    HURTS.gut={act:man(mk(J.gut,'gut')),dur:J.gut.dur};HURTS.left={act:man(mk(J.left,'left')),dur:J.left.dur};
+    MOB.getup={act:man(mk(J.getup,'getup')),dur:J.getup.dur};
+    MOB.look={act:mk(J.look,'look'),dur:J.look.dur};
+    MOB.ready=true;
+  }).catch(function(e){console.warn('mobility clips not used',e);});
+}
+function curveAt(T,V,t){var i=0;while(i<T.length-1&&T[i+1]<=t)i++;if(i>=T.length-1)return V[V.length-1];var u=(t-T[i])/(T[i+1]-T[i]||1);return V[i]+(V[i+1]-V[i])*u;}
+/* which reaction: hit from the left side or from the front */
+function dmnHurt(ex,ez){
+  if(axe.t>=0||jmp.active||CB.dodgeT>0)return;
+  var k='base';
+  if(HURTS.gut){var fx=Math.sin(pp.face),fz=Math.cos(pp.face),dx=ex-pp.x,dz=ez-pp.z,side=fz*dx-fx*dz;k=side>0.45*Math.hypot(dx,dz)?'left':'gut';}
+  var nh=HURTS[k]||HURTS.base;if(!nh)return;
+  if(HURT&&HURT!==nh)HURT.act.setEffectiveWeight(0);
+  HURT=nh;dmn.hurtT=0;
 }
 function rotBoneWorld(bone,axisLocalHero,ang){
   _ax.copy(axisLocalHero).applyQuaternion(hero.quaternion);
@@ -1899,19 +1935,20 @@ function sfxShadow(){
 function kick(){attack('kick');}
 var CHAIN={down:'combo',combo:'kick'};
 var CB={hitstop:0,pressT:-1,heavyQ:false,spinCd:0,dodgeT:0,dodgeCd:0,inv:0,dx:0,dz:0};
-var SPIN_CD=3.5,DODGE_T=0.3,DODGE_V=13;
+var SPIN_CD=3.5,DODGE_T=0.3,DODGE_V=13,SLIDE_TS=1.7,SLIDE_K=0.72,RJ_TS=1.15;
 function atkPress(){if(state!=='play')return;CB.pressT=time;CB.heavyQ=false;attack();}
 function atkRelease(){CB.pressT=-1;}
 function spinAttack(){attack('spin');}
 /* dodge: a quick dash in the stick direction (or backwards), untouchable for a moment */
 function dodge(){
-  if(state!=='play'||hol.grab||DEATH.on||CB.dodgeCd>0||CB.dodgeT>0||TRAP.hold>0||pp.jy>0.2)return;
+  if(state!=='play'||hol.grab||DEATH.on||CB.dodgeCd>0||CB.dodgeT>0||TRAP.hold>0||pp.jy>0.2||dmn.upT>=0)return;
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},Rt={x:-Math.cos(yaw),z:Math.sin(yaw)},fw=0,st=0;
   if(keys.KeyW||keys.ArrowUp)fw+=1;if(keys.KeyS||keys.ArrowDown)fw-=1;if(keys.KeyD||keys.ArrowRight)st+=1;if(keys.KeyA||keys.ArrowLeft)st-=1;
   fw+=-joy.y;st+=joy.x;fw+=-GP.my;st+=GP.mx;
   var mx=F.x*fw+Rt.x*st,mz=F.z*fw+Rt.z*st,ml=Math.hypot(mx,mz);
   if(ml<0.2){mx=-Math.sin(pp.face);mz=-Math.cos(pp.face);ml=1;}
-  CB.dx=mx/ml;CB.dz=mz/ml;CB.dodgeT=DODGE_T;CB.inv=DODGE_T+0.1;CB.dodgeCd=0.75;
+  if(MOB.slide){DODGE_T=MOB.slide.dur/SLIDE_TS;}
+  CB.dx=mx/ml;CB.dz=mz/ml;CB.dodgeT=DODGE_T;CB.inv=MOB.slide?DODGE_T*0.75:DODGE_T+0.1;CB.dodgeCd=MOB.slide?0.35:0.75;CB.sl0=0;
   axe.t=-1;axe.ql=[];dmn.hurtT=-1;swish(1.2);buzz([20],0.3);
 }
 /* ---------- hit sparks: black ink and pale sparks bursting from a struck shadow ---------- */
@@ -1956,7 +1993,7 @@ function sfxThump(){
 function attack(force){
   if(typeof force!=='string')force=null;
   if(TRAP.hold>0){trapStruggle();dmn.hurtT=-1;}
-  if(state!=='play'||hol.grab||DEATH.on||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0||CB.dodgeT>0)return;
+  if(state!=='play'||hol.grab||DEATH.on||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0||CB.dodgeT>0||dmn.upT>=0)return;
   /* pressing again during a swing queues the next link of the chain: chop -> 3-hit combo -> kick finisher */
   if(axe.t>=0){var ql=axe.ql||(axe.ql=[]),lastK=ql.length?ql[ql.length-1]:axe.kind,nx=force==='heavy'?'heavy':force==='spin'?null:force==='kick'?(lastK==='kick'?null:'kick'):CHAIN[lastK];if(nx&&ql.length<2)ql.push(nx);return;}
   if(axe.cd>0)return;
@@ -1967,11 +2004,12 @@ function attack(force){
   enemies.forEach(function(e){if(!e.alive||e.spawn<0.5)return;var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz)||1,dot=(dx*F.x+dz*F.z)/d;if(d<7.5&&dot>0.15){var sc=d-dot*2.5;if(sc<bs){bs=sc;best=e;}}});
   axe.target=best;
   if(kind!=='spin')pp.face=best?Math.atan2(best.x-pp.x,best.z-pp.z):Math.atan2(F.x,F.z);
-  var src=kind==='heavy'?'down':kind==='spin'?'combo':kind;
+  var src=kind==='heavy'?'down':kind==='spin'?(ATK.spin?'spin':'combo'):kind;
   if(ATK[src]){
-    axe.clip=ATK[src];axe.ts=kind==='heavy'?0.95:kind==='spin'?1.6:1.35;
+    axe.clip=ATK[src];axe.ts=kind==='heavy'?0.95:kind==='spin'?(src==='spin'?1.3:1.6):1.35;
     axe.hits=axe.clip.hits.map(function(h){return h/axe.ts;});
-    if(kind==='spin'){axe.hits=[axe.hits[0]-0.12,axe.hits[0]+0.06];axe.dur=axe.hits[1]+0.28;}
+    if(kind==='spin'&&src==='combo'){axe.hits=[axe.hits[0]-0.12,axe.hits[0]+0.06];axe.dur=axe.hits[1]+0.28;}
+    else if(kind==='spin')axe.dur=Math.min(axe.clip.dur,1.75)/axe.ts;
     else axe.dur=Math.min(axe.clip.dur,axe.clip.hits[axe.clip.hits.length-1]+0.32)/axe.ts;
     axe.kind=kind;
   }
@@ -2144,16 +2182,23 @@ var jmp={active:false,t:0,launched:false},JMP=null,JTS=1.35,JG=31.4,JV0=6.4;
 function jumpTick(dt,playing){
   jumpCd-=dt;
   if(playing&&!DEATH.on&&!hol.grab&&(keys.Space||jumpReq)&&!jmp.active&&pp.jy<=0.001&&jumpCd<=0&&axe.t<0&&!(TRAP.hold>0)){
-    jmp.active=true;jmp.t=0;jmp.launched=false;jumpCd=0.25;
+    jmp.active=true;jmp.t=0;jmp.launched=false;jumpCd=0.25;jmp.mode=(MOB.rjump&&Math.hypot(pp.vx,pp.vz)>3.0)?'run':'stand';
+    if(jmp.mode==='run'){jmp.launched=true;stepSound(0.6,false,0,false);}
     if(!JMP){pp.vj=6.6;jmp.launched=true;stepSound(0.5,false,0,false);}
   }
   jumpReq=false;
-  if(jmp.active&&JMP){
+  if(jmp.active&&jmp.mode==='run'){
+    /* running jump: the clip's own foot height lifts Damian, he keeps his running speed */
+    jmp.t+=dt;var R=MOB.rjump,ct=jmp.t*RJ_TS;
+    pp.jy=curveAt(R.rt,R.foot,Math.min(R.dur,ct))*1.15;pp.vj=0;
+    if(ct>=R.dur-0.05){jmp.active=false;jmp.mode='stand';pp.jy=0;stepSound(0.9,false,0,true);}
+  }
+  else if(jmp.active&&JMP){
     jmp.t+=dt;
     if(!jmp.launched&&jmp.t>=(JMP.launch||0.38)/JTS){jmp.launched=true;pp.vj=JV0;stepSound(0.6,false,0,false);}
     if(jmp.t>=JMP.dur/JTS)jmp.active=false;
   }
-  if((pp.jy>0||pp.vj>0)&&!hol.grab){
+  if((pp.jy>0||pp.vj>0)&&!hol.grab&&!(jmp.active&&jmp.mode==='run')){
     var g=JMP?JG:19;
     pp.vj-=g*dt;pp.jy+=pp.vj*dt;
     if(pp.jy<=0){if(pp.vj<-3)stepSound(0.9,false,0,true);pp.jy=0;pp.vj=0;if(!JMP)jmp.active=false;}
@@ -2171,7 +2216,7 @@ function combatTick(dt,playing){
       pp.face+=Math.atan2(Math.sin(tf-pp.face),Math.cos(tf-pp.face))*Math.min(1,dt*14);
       if(td>1.7){var lv=Math.min(7,(td-1.6)/Math.max(0.08,(axe.hits[0]||0.3)-axe.t))*dt;pp.x+=tdx/td*Math.min(lv,td-1.6);pp.z+=tdz/td*Math.min(lv,td-1.6);}
     }
-    if(axe.t>=0&&axe.kind==='spin'){var u=Math.max(0,Math.min(1,(axe.t-(axe.hits[0]-0.2))/0.5));pp.face=axe.spin0+u*Math.PI*2;}
+    if(axe.t>=0&&axe.kind==='spin'&&axe.clip!==ATK.spin){var u=Math.max(0,Math.min(1,(axe.t-(axe.hits[0]-0.2))/0.5));pp.face=axe.spin0+u*Math.PI*2;}
     if(axe.t>=axe.dur){lastAtk.kind=axe.kind;lastAtk.end=time;axe.t=-1;axe.cd=0.12;
       if(axe.ql&&axe.ql.length){var q=axe.ql.shift();axe.cd=0;attack(q==='down'?null:q);}}
   }
@@ -2221,14 +2266,14 @@ function combatTick(dt,playing){
     }
     if(e.rig&&e.hitAt>0&&e.atkA>0){
       e.hitAt-=dt;
-      if(e.hitAt<=0){e.hitAt=0;if(playing&&!DEATH.on&&d<2.1&&!(CB.inv>0)){calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;if(calm<=0){calm=0;shBiteKill(e);}}}
+      if(e.hitAt<=0){e.hitAt=0;if(playing&&!DEATH.on&&d<2.1&&!(CB.inv>0)){calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);dmnHurt(e.x,e.z);if(calm<=0){calm=0;shBiteKill(e);}}}
     }
     if(e.rig&&playing&&!DEATH.on&&e.spawn>=0.7&&!rigBusy&&d<1.7&&e.atk<=0&&e.stun<=0){
       /* the swipe: wind-up first, the hit lands about a second in, so Damian can still dodge or strike first */
       e.atk=2.4;e.atkA=1.6;e.hitAt=1.0;shAct(e,'attack',0.15);
     }
     if(!e.rig&&playing&&!DEATH.on&&e.spawn>=0.7&&d<1.5&&e.atk<=0&&e.stun<=0){
-      e.atk=1.5;calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);if(HURT&&axe.t<0&&!jmp.active)dmn.hurtT=0;
+      e.atk=1.5;calm-=0.14;sfxHit(true);buzz([90],0.7);flash(tr('shadows'),900);dmnHurt(e.x,e.z);
       e.x-=dx/d*0.8;e.z-=dz/d*0.8;
       if(calm<=0){calm=0;dmnDie(tr('shadowsCaught'));}
     }
@@ -3582,7 +3627,7 @@ function retryNow(){
   $('vCaught').classList.remove('on');state='play';dragging=false;
 }
 function retryInner(){
-  pp.x=checkpoint.x;pp.z=checkpoint.z;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;calm=1;DEATH.on=false;dmn.dieT=-1;
+  pp.x=checkpoint.x;pp.z=checkpoint.z;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;calm=1;DEATH.on=false;dmn.dieT=-1;dmn.upT=MOB.getup?0:-1;dmn.hurtT=-1;
   axe.t=-1;axe.cd=0;jmp.active=false;jumpCd=0;pp.phase=0;keys={};
   spawnPresence(46);clearShadows();
   if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
@@ -3894,13 +3939,16 @@ function frame(){
   }
   var len=Math.hypot(fwd,str);if(len>1){fwd/=len;str/=len;len=1;}
   var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null||GP.run||GP.on&&len>0.95)&&len>0;
-  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev?0:1);
+  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev||dmn.upT>=0?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
   pp.vx+=(tvx-pp.vx)*kk;pp.vz+=(tvz-pp.vz)*kk;
   if(state==='play'||state==='title'){
     pp.x+=pp.vx*dt;pp.z+=pp.vz*dt;
-    if(CB.dodgeT>0&&state==='play'){var dv=DODGE_V*Math.min(1,CB.dodgeT/DODGE_T*1.6);pp.x+=CB.dx*dv*dt;pp.z+=CB.dz*dv*dt;pp.face=Math.atan2(CB.dx,CB.dz);CB.dodgeT=Math.max(0,CB.dodgeT-dt);}
+    if(CB.dodgeT>0&&state==='play'){
+      if(MOB.slide){var S=MOB.slide,ct=(DODGE_T-CB.dodgeT+dt)*SLIDE_TS,r1=curveAt(S.rt,S.root,Math.min(S.dur,ct))*SLIDE_K,dr=r1-(CB.sl0||0);CB.sl0=r1;pp.x+=CB.dx*dr;pp.z+=CB.dz*dr;pp.vx=pp.vz=0;}
+      else{var dv=DODGE_V*Math.min(1,CB.dodgeT/DODGE_T*1.6);pp.x+=CB.dx*dv*dt;pp.z+=CB.dz*dv*dt;}
+      pp.face=Math.atan2(CB.dx,CB.dz);CB.dodgeT=Math.max(0,CB.dodgeT-dt);}
     for(var i=0;i<trees.length;i++){
       var tr=trees[i],ddx=pp.x-tr.x,ddz=pp.z-tr.z;
       if(Math.abs(ddx)<1.2&&Math.abs(ddz)<1.2){var dd=Math.hypot(ddx,ddz),rr=tr.r?tr.r+0.42:0.75;if(dd<rr&&dd>0.001){pp.x=tr.x+ddx/dd*rr;pp.z=tr.z+ddz/dd*rr;}}
@@ -3914,7 +3962,7 @@ function frame(){
   pp.phase+=spd*dt*1.7;movementSound(dt,spd,playing);
   jumpTick(dt,playing);
   var py=H(pp.x,pp.z)+pp.jy,sw=Math.sin(pp.phase)*Math.min(1,spd/4)*0.75;
-  hero.position.set(pp.x,py,pp.z);hero.rotation.y=pp.face;hero.rotation.order='YXZ';hero.rotation.x=CB.dodgeT>0?0.55*Math.sin((1-CB.dodgeT/DODGE_T)*Math.PI):0;
+  hero.position.set(pp.x,py,pp.z);hero.rotation.y=pp.face;hero.rotation.order='YXZ';hero.rotation.x=(CB.dodgeT>0&&!MOB.slide)?0.55*Math.sin((1-CB.dodgeT/DODGE_T)*Math.PI):0;
   var pr=hero.userData;
   pr.legL.rotation.x=sw;pr.legR.rotation.x=-sw;pr.kneeL.rotation.x=Math.max(0,sw)*1.1+0.04;pr.kneeR.rotation.x=Math.max(0,-sw)*1.1+0.04;pr.armL.rotation.x=-sw*0.8;pr.armR.rotation.x=sw*0.8;pr.elbowL.rotation.x=-0.25-Math.max(0,sw)*0.5;pr.elbowR.rotation.x=-0.25-Math.max(0,-sw)*0.5;
   hero.position.y=py+(dmn.ready?0:Math.abs(Math.sin(pp.phase))*0.04*Math.min(1,spd/4));
