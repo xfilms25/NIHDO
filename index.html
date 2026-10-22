@@ -249,10 +249,10 @@ var $=function(id){return document.getElementById(id);};
 var touch=false;
 /* ---------- languages: Español / English ---------- */
 var I18N={
-es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
+es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
  go:'Entrar al bosque',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
- keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span>',
+ keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
  keysTouch:'<span><b>Arrastra izq.</b> mover</span><span><b>Arrastra der.</b> mirar</span><span><b>Ver</b> examinar</span><span><b>Hacha / Patada</b> atacar</span>',
  pause:'Pausa',pauseP:'El bosque espera.',resume:'Continuar',restart:'Volver a empezar',menu:'Menú principal',caughtP:'Vuelves al último lugar donde viste a Luna.',retry:'Reintentar',
  statTime:'Tiempo',statDeaths:'Muertes',statLooks:'Miradas a Hollow',rank0:'No miraste atrás.',rank1:'Intacto',rank2:'Sobreviviente',rank3:'Perdido en el sueño',bestTimes:'Mejores tiempos',yourName:'Tu nombre',saveTime:'Guardar tiempo',
@@ -264,10 +264,10 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
-en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
+en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Enter the forest',controls:'Controls',lang:'Language: English',small:'Best with headphones',
- keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span>',
+ keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
  keysTouch:'<span><b>Drag left</b> move</span><span><b>Drag right</b> look</span><span><b>Look</b> examine</span><span><b>Axe / Kick</b> attack</span>',
  pause:'Paused',pauseP:'The forest is waiting.',resume:'Continue',restart:'Start over',menu:'Main menu',caughtP:'You return to the last place you saw Luna.',retry:'Try again',
  statTime:'Time',statDeaths:'Deaths',statLooks:'Looks at Hollow',rank0:"You didn't look back.",rank1:'Untouched',rank2:'Survivor',rank3:'Lost in the dream',bestTimes:'Best times',yourName:'Your name',saveTime:'Save time',
@@ -1908,7 +1908,7 @@ function dodge(){
   if(state!=='play'||hol.grab||DEATH.on||CB.dodgeCd>0||CB.dodgeT>0||TRAP.hold>0||pp.jy>0.2)return;
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},Rt={x:-Math.cos(yaw),z:Math.sin(yaw)},fw=0,st=0;
   if(keys.KeyW||keys.ArrowUp)fw+=1;if(keys.KeyS||keys.ArrowDown)fw-=1;if(keys.KeyD||keys.ArrowRight)st+=1;if(keys.KeyA||keys.ArrowLeft)st-=1;
-  fw+=-joy.y;st+=joy.x;
+  fw+=-joy.y;st+=joy.x;fw+=-GP.my;st+=GP.mx;
   var mx=F.x*fw+Rt.x*st,mz=F.z*fw+Rt.z*st,ml=Math.hypot(mx,mz);
   if(ml<0.2){mx=-Math.sin(pp.face);mz=-Math.cos(pp.face);ml=1;}
   CB.dx=mx/ml;CB.dz=mz/ml;CB.dodgeT=DODGE_T;CB.inv=DODGE_T+0.1;CB.dodgeCd=0.75;
@@ -3824,6 +3824,42 @@ function raysTick(dt){
     var near=Math.min(1,Math.max(0,(d-3)/6));f.s.material.opacity=f.o*f.fade*near;
   });
 }
+/* ---------- controllers (Xbox / PlayStation / any standard gamepad) ---------- */
+var GP={on:false,prev:[],mx:0,my:0,run:false,told:false};
+function gpDown(g,i){var b=g.buttons[i];return !!b&&(b.pressed||b.value>0.5);}
+function gpTick(rdt){
+  var gps=navigator.getGamepads?navigator.getGamepads():[],g=null;
+  for(var i=0;i<gps.length;i++)if(gps[i]&&gps[i].connected&&gps[i].buttons&&gps[i].buttons.length>9){g=gps[i];break;}
+  if(!g){GP.on=false;GP.mx=GP.my=0;GP.run=false;return;}
+  GP.on=true;
+  if(!GP.told){GP.told=true;flash(tr('padOn'),1800);}
+  var dz=function(v){v=v||0;return Math.abs(v)<0.16?0:(v-(v>0?0.16:-0.16))/0.84;};
+  GP.mx=dz(g.axes[0]);GP.my=dz(g.axes[1]);
+  var rx=dz(g.axes[2]),ry=dz(g.axes[3]);
+  if(state==='play'||state==='title'&&false){yaw-=rx*Math.abs(rx)*3.0*rdt;pitch=Math.max(-0.25,Math.min(1.0,pitch+ry*Math.abs(ry)*2.0*rdt));}
+  var P=function(i){return gpDown(g,i)&&!GP.prev[i];},R=function(i){return !gpDown(g,i)&&GP.prev[i];};
+  /* standard layout: 0 A/Cross 1 B/Circle 2 X/Square 3 Y/Triangle 4 LB/L1 5 RB/R1 6 LT/L2 7 RT/R2 8 View/Share 9 Menu/Options 10 L3 */
+  if(state==='title'){if(P(0)||P(9))$('goBtn').click();}
+  else if(state==='caught'){if(P(0)||P(9))retryNow();}
+  else if(state==='ending'){if(P(0)||P(9))$('againBtn').click();}
+  else if(state==='paused'){if(P(9)||P(1)||P(0))resumeGame();}
+  else if(state==='finale'){if(FIN.phase==='clip'&&(P(0)||P(9)))endFinale();}
+  else if(state==='play'){
+    if(P(2)||P(7))atkPress();if(R(2)||R(7))atkRelease();
+    if(P(3))kick();
+    if(P(0))jumpReq=true;
+    if(P(1))dodge();
+    if(P(5))spinAttack();
+    if(P(4))examine();
+    if(P(9))pauseGame();
+    if(P(8))toggleMute();
+    if(P(10))GP.runLock=!GP.runLock;
+  }
+  GP.run=gpDown(g,6)||!!GP.runLock;
+  if(Math.hypot(GP.mx,GP.my)<0.1)GP.runLock=false;
+  for(var j=0;j<g.buttons.length;j++)GP.prev[j]=gpDown(g,j);
+}
+window.addEventListener('gamepadconnected',function(){GP.told=false;});
 /* ---------- loop ---------- */
 function resize(){
   var w=window.innerWidth,h=window.innerHeight;
@@ -3838,6 +3874,7 @@ function frame(){
   requestAnimationFrame(frame);
   var dt=Math.min(clock.getDelta(),0.05);if(state==='paused')dt=0;
   var rdt=dt;
+  gpTick(rdt);
   if(CB.hitstop>0){CB.hitstop-=dt;dt*=0.06;}
   if(CIN.slow>0){CIN.slow-=rdt;dt*=0.3;}
   time+=dt;
@@ -3853,9 +3890,10 @@ function frame(){
     if(keys.KeyW||keys.ArrowUp)fwd+=1;if(keys.KeyS||keys.ArrowDown)fwd-=1;
     if(keys.KeyD||keys.ArrowRight)str+=1;if(keys.KeyA||keys.ArrowLeft)str-=1;
     fwd+=-joy.y;str+=joy.x;
+    fwd+=-GP.my;str+=GP.mx;
   }
   var len=Math.hypot(fwd,str);if(len>1){fwd/=len;str/=len;len=1;}
-  var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null)&&len>0;
+  var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null||GP.run||GP.on&&len>0.95)&&len>0;
   var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
