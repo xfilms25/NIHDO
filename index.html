@@ -1737,7 +1737,8 @@ function carryTick(w){
     RD_UP=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(eu,hu,eu.clone().cross(hu)));}
   hero.updateMatrixWorld(true);
   axe.hand.getWorldQuaternion(_cq1).invert().multiply(hero.getWorldQuaternion(_cq2)).multiply(RD_UP);
-  var loco=(1-(dmn.atkW||0))*(1-(dmn.jW||0))*(1-(dmn.hW||0));
+  /* jumping keeps the same carry grip as idle / walk / run */
+  var loco=(1-(dmn.atkW||0))*(1-(dmn.hW||0));
   var G=window.__gripQ||GRIP_Q;_cq4.set(G[0],G[1],G[2],G[3]);
   axe.g.quaternion.copy(_cq4.slerp(_cq1,loco)).multiply(axtQ(AXT.ar,_cq6));
   var sc=axe.sc||1;
@@ -1747,13 +1748,13 @@ function carryTick(w){
 }
 var RD_UP=null,GRIP_Q=[-0.2723,0.9402,-0.1252,-0.162],GRIP_IDLE=[0.4232,0.3401,-0.2123,0.8125],GRIP_WALK=[0.5775,0.0952,0.3727,0.7201],GRIP_RUN=[0.5206,0.2804,0.3902,0.7058],GRIP_P=[0,0.09,0];
 /* ---------- axe grip tuning (press G in game) ---------- */
-var AXT_DEF={ar:[0,0,0],ao:[0,0,0],slide:0};
+var AXT_DEF={ar:[-46,-9.5,-70.5],ao:[0,4,0],slide:0};
 var AXT=JSON.parse(JSON.stringify(AXT_DEF));
-try{var _sv0=localStorage.getItem('nihd_axe_v2');if(_sv0){var _o=JSON.parse(_sv0);for(var _k in AXT_DEF)if(_o[_k]!==undefined)AXT[_k]=_o[_k];}}catch(e){}
+try{var _sv0=localStorage.getItem('nihd_axe_v3');if(_sv0){var _o=JSON.parse(_sv0);for(var _k in AXT_DEF)if(_o[_k]!==undefined)AXT[_k]=_o[_k];}}catch(e){}
 var _cq5=new THREE.Quaternion(),_cq6=new THREE.Quaternion(),_ce=new THREE.Euler();
 function axtQ(r,q){var D=Math.PI/180;_ce.set(r[0]*D,r[1]*D,r[2]*D,'XYZ');return q.setFromEuler(_ce);}
 var axtUI=null,axtScrub=-1;
-function axtSave(){try{localStorage.setItem('nihd_axe_v2',JSON.stringify(AXT));}catch(e){}}
+function axtSave(){try{localStorage.setItem('nihd_axe_v3',JSON.stringify(AXT));}catch(e){}}
 function axtOpen(){
   if(axtUI){axtUI.style.display=axtUI.style.display==='none'?'block':'none';if(axtUI.style.display==='none')axtScrub=-1;return;}
   try{if(document.exitPointerLock)document.exitPointerLock();}catch(e){}
