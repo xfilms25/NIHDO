@@ -349,6 +349,7 @@ function smooth(a,b,x){var t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 var RIVERP={"n":{"gz":5.1776,"xs":[-4.825,-4.725,-4.625,-4.525,-4.425,-4.325,-4.225,-4.125,-4.025,-3.925,-3.825,-3.725,-3.625,-3.525,-3.425,-3.325,-3.225,-3.125,-3.025,-2.925,-2.825,-2.725,-2.625,-2.525,-2.425,-2.325,-2.225,-2.125,-2.025,-1.925,-1.825,-1.725,-1.625,-1.525,-1.425,-1.325,-1.225,-1.125,-1.025,-0.925,-0.825,-0.725,-0.625,-0.525,-0.425,-0.325,-0.225,-0.125,-0.025,0.075,0.175,0.275,0.375,0.475,0.575,0.675,0.775,0.875,0.975,1.075,1.175,1.275,1.375,1.475,1.575,1.675,1.775,1.875,1.975,2.075,2.175,2.275,2.375,2.475,2.575,2.675,2.775,2.875,2.975,3.075,3.175,3.275,3.375,3.475,3.575,3.675,3.775,3.875,3.975,4.075,4.175,4.275,4.375,4.475,4.575,4.675],"e":[6.0667,4.36,2.2733,0.46,0.08,0.0733,0.0667,0.06,0.0533,0.04,0.0267,0.02,0.0133,0.0067,-0.0,0.0067,0.0133,0.02,0.02,0.0267,0.0333,0.04,0.04,0.0333,0.0267,0.02,0.02,0.0133,0.0067,-0.0,-0.0,0.0067,0.0133,0.02,0.0267,0.0333,0.0467,0.0533,0.06,0.06,0.06,0.06,0.06,0.0533,0.0467,0.04,0.04,0.0333,0.0267,0.02,0.02,0.0133,0.0067,-0.0,-0.0,-0.0,-0.0,-0.0,0.0067,0.0133,0.02,0.0267,0.0333,0.04,0.0467,0.0533,0.06,0.06,0.0667,0.0733,0.08,0.08,0.0733,0.0667,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.0667,0.0733,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.7933,1.72,2.6467],"h":[0.3843,0.2785,0.1196,0.054,0.003,0.006,0.0132,0.0232,0.0371,0.0506,0.0653,0.0797,0.0906,0.0979,0.1017,0.1072,0.1108,0.112,0.1104,0.1094,0.109,0.1083,0.1074,0.1049,0.1049,0.106,0.1122,0.1157,0.1194,0.1195,0.1189,0.1114,0.0978,0.0716,0.0392,0.0068,-0.014,-0.0216,-0.0175,-0.0069,0.0051,0.0148,0.0229,0.029,0.0349,0.0414,0.0488,0.0559,0.0629,0.0702,0.0781,0.0843,0.0896,0.0939,0.0983,0.1015,0.1029,0.1027,0.1,0.0956,0.0883,0.0807,0.0733,0.0657,0.0574,0.047,0.0373,0.0274,0.0196,0.0138,0.0109,0.0105,0.0123,0.0161,0.0207,0.0254,0.0285,0.0297,0.0284,0.0253,0.0205,0.0155,0.0107,0.0065,0.0033,0.0014,0.0006,0.0002,0.0,0.0,0.0,0.0,0.0,0.0198,0.1216,0.2234]},"s":{"gz":-4.2624,"xs":[-4.825,-4.725,-4.625,-4.525,-4.425,-4.325,-4.225,-4.125,-4.025,-3.925,-3.825,-3.725,-3.625,-3.525,-3.425,-3.325,-3.225,-3.125,-3.025,-2.925,-2.825,-2.725,-2.625,-2.525,-2.425,-2.325,-2.225,-2.125,-2.025,-1.925,-1.825,-1.725,-1.625,-1.525,-1.425,-1.325,-1.225,-1.125,-1.025,-0.925,-0.825,-0.725,-0.625,-0.525,-0.425,-0.325,-0.225,-0.125,-0.025,0.075,0.175,0.275,0.375,0.475,0.575,0.675,0.775,0.875,0.975,1.075,1.175,1.275,1.375,1.475,1.575,1.675,1.775,1.875,1.975,2.075,2.175,2.275,2.375,2.475,2.575,2.675,2.775,2.875,2.975,3.075,3.175,3.275,3.375,3.475,3.575,3.675,3.775,3.875,3.975,4.075,4.175,4.275,4.375,4.475,4.575,4.675],"e":[2.1933,1.3067,0.4133,0.1733,0.1467,0.1133,0.0867,0.06,0.04,0.02,0.0067,0.0,0.0,0.0,0.0,0.0,0.0067,0.0133,0.0267,0.0333,0.0467,0.0533,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.0667,0.0733,0.0867,0.0933,0.1067,0.1133,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.1267,0.1333,0.14,0.1467,0.1533,0.16,0.1667,0.18,0.1933,0.2067,0.2133,0.2267,0.2333,0.2467,0.2533,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.26,0.2533,0.2467,0.2333,0.2267,0.2133,0.2067,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2067,0.2133,1.72,3.22],"h":[0.4232,0.2636,0.1115,0.0668,0.0966,0.1275,0.1655,0.2028,0.2425,0.2746,0.3065,0.3378,0.3677,0.3889,0.4018,0.4086,0.4179,0.4246,0.4365,0.4417,0.4539,0.4613,0.4712,0.4772,0.4833,0.4884,0.4894,0.4868,0.4772,0.4673,0.4504,0.4348,0.4128,0.4008,0.3885,0.3826,0.376,0.3779,0.3855,0.3991,0.4153,0.4339,0.4537,0.4711,0.4892,0.5038,0.5186,0.5285,0.5355,0.5371,0.537,0.5314,0.5208,0.5044,0.4822,0.4547,0.4207,0.383,0.3406,0.2946,0.2452,0.1982,0.1534,0.1143,0.0809,0.054,0.0332,0.0179,0.0074,0.0018,-0.0007,-0.0003,0.0019,0.0052,0.0109,0.0187,0.03,0.0454,0.0663,0.0915,0.1205,0.1495,0.1783,0.2021,0.2229,0.238,0.249,0.2533,0.2517,0.2428,0.2283,0.2071,0.1831,0.1547,0.1501,0.1539]}};
 var MAPH={ready:false,h:null},RIVER={ready:false};
+var MAPT={south:3,north:1,L:0,tiles:[],mz:null};
 function H(x,z){
   if(MAPH.ready)return MAPH.h(x,z);
   return 5*Math.sin(x*0.021+1.3)*Math.cos(z*0.017)+2.2*Math.sin(x*0.07+z*0.05)+1.1*Math.cos(x*0.15-z*0.11)+0.3*Math.sin(x*0.5)*Math.sin(z*0.45);
@@ -1605,14 +1606,23 @@ function buildMap(root){
   ground.material.onBeforeCompile=function(sh){floorPatch(sh,false);};ground.material.needsUpdate=true;
   var _bedOBC=bedM.onBeforeCompile;bedM.onBeforeCompile=function(sh){_bedOBC(sh);floorPatch(sh,true);};
   /* place it: the start of the road is the origin, with mirrored copies north and south so the world never ends */
+  /* the forest goes on like a dream: the same woods repeat, mirrored and shifted, tile after tile to the south (and one behind the start) */
+  var L=gz1-gz0;MAPT.L=L;MAPT.tiles=[];
   var G=new THREE.Group();G.scale.set(MAPS,MAPS,MAPS);G.position.set(-M0[0]*MAPS,-y0*MAPS,-M0[1]*MAPS);G.add(root);scene.add(G);
-  [gz0,gz1].forEach(function(ez){
-    var Gm=new THREE.Group();Gm.scale.set(MAPS,MAPS,-MAPS);Gm.position.set(-M0[0]*MAPS,-y0*MAPS,(2*ez-M0[1])*MAPS);
+  MAPT.tiles.push({g:G,i:0,z0:(gz0-M0[1])*MAPS,z1:(gz1-M0[1])*MAPS});
+  for(var ti=-MAPT.south;ti<=MAPT.north;ti++){
+    if(ti===0)continue;
+    var Gm=new THREE.Group(),odd=Math.abs(ti)%2===1;
+    if(odd){var P=gz0+(ti+1)/2*L;Gm.scale.set(MAPS,MAPS,-MAPS);Gm.position.set(-M0[0]*MAPS,-y0*MAPS,(2*P-M0[1])*MAPS);}
+    else{Gm.scale.set(MAPS,MAPS,MAPS);Gm.position.set(-M0[0]*MAPS,-y0*MAPS,(-M0[1]+ti*L)*MAPS);}
     var c=root.clone();c.traverse(function(o){if(o.isMesh){o.castShadow=false;}});Gm.add(c);scene.add(Gm);
-  });
+    MAPT.tiles.push({g:Gm,i:ti,z0:(gz0+ti*L-M0[1])*MAPS,z1:(gz0+(ti+1)*L-M0[1])*MAPS});
+  }
+  /* map-unit z of a point of the real tile, seen in tile ti */
+  MAPT.mz=function(mz,ti){if(ti===0)return mz;if(Math.abs(ti)%2===1){var P=gz0+(ti+1)/2*L;return 2*P-mz;}return mz+ti*L;};
   procObjs.forEach(function(o){o.visible=false;});
   trees.length=0;
-  TRUNKS.forEach(function(q){trees.push({x:(q[0]-M0[0])*MAPS,z:(q[1]-M0[1])*MAPS,r:q[2]*MAPS,y:0,h:10,s:1,ry:0,t:0});});
+  MAPT.tiles.forEach(function(T){TRUNKS.forEach(function(q){trees.push({x:(q[0]-M0[0])*MAPS,z:(MAPT.mz(q[1],T.i)-M0[1])*MAPS,r:q[2]*MAPS,y:0,h:10,s:1,ry:0,t:0});});});
   /* bushes that rustle when Damian walks through them */
   brush.length=0;
   leafM.forEach(function(m){
@@ -1620,10 +1630,10 @@ function buildMap(root){
     for(var i=0;i<ps.count;i+=46){
       var bx=(ps.getX(i)-M0[0])*MAPS,bz=(ps.getZ(i)-M0[1])*MAPS;
       if(distPath(bx,bz)<2.0)continue;
-      brush.push({x:bx,z:bz,y:0,s:0.7});
+      MAPT.tiles.forEach(function(T){brush.push({x:bx,z:(MAPT.mz(ps.getZ(i),T.i)-M0[1])*MAPS,y:0,s:0.7});});
     }
   });
-  WB.x0=(gx0-M0[0])*MAPS+4;WB.x1=(gx1-M0[0])*MAPS-4;WB.z0=(gz0-M0[1])*MAPS-34;WB.z1=(gz1-M0[1])*MAPS+30;
+  WB.x0=(gx0-M0[0])*MAPS+4;WB.x1=(gx1-M0[0])*MAPS-4;WB.z0=(gz0-MAPT.south*L-M0[1])*MAPS+6;WB.z1=(gz1-M0[1])*MAPS+30;
   hemi.intensity=0.95;
   MAPH.ready=true;try{tryPlaceRocks();}catch(e){console.warn("rocks",e);}
   cloths.forEach(function(c,i){c.g.position.y=H(WP[i][0],WP[i][1]);});
@@ -3398,8 +3408,8 @@ function tryPlaceRocks(){
 function randomizeWP(){
   tryPlaceRocks();
   if(!MAPH.ready)return;
-  /* inside the real map tile only (no mirrored copies), with a margin from its edges */
-  var X0=-46,X1=35,Z0=-80,Z1=1,prev=[0,0],out=[];
+  /* spread along the whole long forest, one stop roughly every 60 m, heading south */
+  var X0=-46,X1=35,Z0=WB.z0+14,Z1=1,prev=[0,0],out=[];
   function ok(x,z,minGap){
     if(x<X0||x>X1||z<Z0||z>Z1)return false;
     if(MAPH.riverDist&&MAPH.riverDist(x,z)<7)return false;
@@ -3410,14 +3420,14 @@ function randomizeWP(){
   }
   for(var n=0;n<6;n++){
     var best=null;
+    var zc=-34+(Z0+6+34)*(n/5);
     for(var tr=0;tr<400&&!best;tr++){
-      var relax=tr>250?0.6:1;
-      var a=Math.random()*6.283,d=(n===0?24:30)+Math.random()*(n===0?14:22);
-      var x=prev[0]+Math.sin(a)*d*relax,z=prev[1]+Math.cos(a)*d*relax;
-      if(ok(x,z,22*relax))best=[x,z];
+      var relax=tr>250?1.8:1;
+      var x=prev[0]+(Math.random()-0.5)*44*relax,z=zc+(Math.random()-0.5)*16*relax;
+      if(ok(x,z,30))best=[x,z];
     }
-    if(!best){for(var t2=0;t2<300&&!best;t2++){var x2=X0+Math.random()*(X1-X0),z2=Z0+Math.random()*(Z1-Z0);if(ok(x2,z2,16))best=[x2,z2];}}
-    if(!best)best=[Math.max(X0,Math.min(X1,prev[0]+(Math.random()-0.5)*20)),Math.max(Z0,Math.min(Z1,prev[1]-20))];
+    if(!best){for(var t2=0;t2<300&&!best;t2++){var x2=X0+Math.random()*(X1-X0),z2=zc+(Math.random()-0.5)*40;if(ok(x2,z2,16))best=[x2,z2];}}
+    if(!best)best=[Math.max(X0,Math.min(X1,prev[0]+(Math.random()-0.5)*20)),Math.max(Z0,Math.min(Z1,-34+(Z0+6+34)*(n/5)))];
     out.push(best);prev=best;
   }
   for(var w=0;w<6;w++){WP[w][0]=out[w][0];WP[w][1]=out[w][1];}
@@ -3998,6 +4008,7 @@ function frame(){
   var shk=shAmp+SHK.imp;if(hol.grab){shk=0;SHK.imp=0;}
   if(shk>0.002&&state!=='title'){camera.position.x+=Math.sin(time*47.0)*shk*0.7;camera.position.y+=Math.sin(time*53.0+1.3)*shk;camera.position.z+=Math.cos(time*41.0+0.4)*shk*0.7;camera.rotateZ(Math.sin(time*37.0)*shk*0.12);}
   cinPost(rdt,spd);raysTick(dt);
+  for(var mti=0;mti<MAPT.tiles.length;mti++){var MT=MAPT.tiles[mti],zz=camPos.z;MT.g.visible=zz>Math.min(MT.z0,MT.z1)-75&&zz<Math.max(MT.z0,MT.z1)+75;}
   camera.getWorldDirection(camDir);
 
   /* sun follows */
