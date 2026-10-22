@@ -2045,7 +2045,7 @@ function spawnShadow(){
     var x=pp.x+dx*d,z=pp.z+dz*d;
     if(x<WB.x0+4||x>WB.x1-4||z<WB.z0+4||z>WB.z1-4)continue;
     if(dx*Math.sin(yaw)+dz*Math.cos(yaw)>0.35)continue;
-    e.x=x;e.z=z;e.alive=true;e.dying=0;e.hp=2;e.spawn=0;e.flash=0;e.stun=0;e.atk=1.2;e.sc=(e.rig?0.95:e.model?1.0:1.2)+Math.random()*0.2;e.g.visible=true;
+    e.x=x;e.z=z;e.alive=true;e.dying=0;e.hp=6;e.spawn=0;e.flash=0;e.stun=0;e.atk=1.2;e.sc=(e.rig?0.95:e.model?1.0:1.2)+Math.random()*0.2;e.g.visible=true;
     if(e.rig){e.gsnap=true;e.loco=Math.random()<0.35?'crawl':'run';e.scr=2.2;e.atkA=0;e.kd=0;e.biting=false;e.mat.opacity=0.97;shAct(e,'scream',0);}
     sfxShadow();return;
   }
@@ -2276,10 +2276,10 @@ function loadHollow(){
         m.scale.setScalar(s);hol.sc=s;
         m.traverse(function(o){
           if(!o.isMesh)return;
-          o.frustumCulled=false;o.castShadow=false;
-          var mt=o.material.clone();mt.transparent=true;mt.opacity=0;mt.depthWrite=true;
+          o.frustumCulled=false;o.castShadow=true;
+          var mt=o.material.clone();mt.transparent=false;mt.opacity=1;mt.depthWrite=true;
           mt.metalness=0;mt.roughness=Math.max(0.8,mt.roughness||0.8);
-          if(mt.map){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a909c);mt.emissiveIntensity=1.1;}
+          if(mt.map){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a909c);mt.emissiveIntensity=0.35;}
           o.material=mt;hol.mats.push(mt);
         });
         var g=new THREE.Group();g.add(m);g.visible=false;scene.add(g);hol.g=g;
@@ -2352,7 +2352,7 @@ function holPick(mode){
   }
   return false;
 }
-function holSetOp(v){hol.op=v;for(var i=0;i<hol.mats.length;i++)hol.mats[i].opacity=v;if(hol.spr){hol.spr[0].material.opacity=0.5*v;hol.spr[1].material.opacity=0.42*v;}}
+function holSetOp(v){hol.op=v;if(hol.spr){hol.spr[0].material.opacity=0;hol.spr[1].material.opacity=0*v;}}
 var HOL_GRAB_HIT=1.55,HOL_HOLD=0.95,HOL_DEATH=5.0,_hv=new THREE.Vector3();
 function holGrabStart(){
   if(hol.grab)return;
@@ -2440,6 +2440,24 @@ function holBreathTick(dt,d){
   if(hol.chest){var ph=hol.bPh=(hol.bPh||0)+dt*(1.2+2.2*near);hol.chest.scale.setScalar(1+(0.018+0.03*near)*Math.sin(ph*Math.PI*2*0.5));}
   if(hol.bT<=0&&d<55){hol.bT=2.6-1.5*near+Math.random()*0.4;holBreath(near,false);if(near>0.5)buzz([35,110,55],near);}
 }
+/* teleport: a burst of black ash and a hard electric crack where he appears or vanishes */
+function holTeleFX(appear){
+  var gy=H(hol.x,hol.z);
+  for(var k=0;k<4;k++)hitBurst(hol.x+(Math.random()-0.5)*1.2,gy+1+k*1.5,hol.z+(Math.random()-0.5)*1.2,true);
+  hol.tele=0.18;sfxTele(appear);
+  var dd=Math.hypot(hol.x-pp.x,hol.z-pp.z);if(dd<40){SHK.imp=Math.max(SHK.imp,0.06*(1-dd/40));buzz([40],0.5*(1-dd/40));}
+}
+function sfxTele(appear){
+  if(!ac)return;
+  try{
+    var t=ac.currentTime,len=Math.floor(ac.sampleRate*0.35),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<len;i++){var x=i/len;d[i]=(Math.random()*2-1)*(appear?Math.pow(1-x,3):Math.pow(1-x,2))*(Math.random()<0.15?1:0.4);}
+    var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=appear?900:1400;bp.Q.value=0.7;var g=ac.createGain();g.gain.value=0.35;
+    s.connect(bp);bp.connect(g);g.connect(sfxBus);s.start(t);
+    var o=ac.createOscillator(),og=ac.createGain();o.type='sine';o.frequency.setValueAtTime(appear?70:120,t);o.frequency.exponentialRampToValueAtTime(appear?30:40,t+0.4);
+    og.gain.setValueAtTime(0.0001,t);og.gain.exponentialRampToValueAtTime(0.4,t+0.01);og.gain.exponentialRampToValueAtTime(0.0001,t+0.45);o.connect(og);og.connect(sfxBus);o.start(t);o.stop(t+0.5);
+  }catch(e){}
+}
 function holReset(){hol.mode='normal';hol.state='hide';hol.t=2;hol.seenT=0;holGrabEnd();if(hol.g)hol.g.visible=false;holSetOp(0);}
 
 /* wood under Hollow's weight: a sharp crack (sometimes a double snap) and a slow creak */
@@ -2514,6 +2532,9 @@ function holTick(dt,playing){
   var dx=pp.x-hol.x,dz=pp.z-hol.z,d=Math.hypot(dx,dz)||1;
   var gy=H(hol.x,hol.z);
   hol.g.position.set(hol.x,gy,hol.z);hol.g.rotation.order='YXZ';hol.g.rotation.y=Math.atan2(dx,dz);
+  if(hol.tele>0){hol.tele-=dt;var gl=hol.tele/0.18;hol.g.scale.set(1+(Math.random()-0.5)*0.5*gl,1+(Math.random()-0.5)*0.15*gl,1+(Math.random()-0.5)*0.5*gl);}else if(hol.g.scale.x!==1&&!(hol.hitT>0))hol.g.scale.set(1,hol.g.scale.y,1);
+  /* he's physical: Damian can't walk through him */
+  if(hol.op>0.5&&!hol.grab){var bx=pp.x-hol.x,bz=pp.z-hol.z,bd=Math.hypot(bx,bz),BR=1.4;if(bd<BR&&bd>0.001){pp.x=hol.x+bx/bd*BR;pp.z=hol.z+bz/bd*BR;}}
   var rc=hol.hitT>0?Math.sin(Math.min(1,hol.hitT/0.6)*Math.PI):0;
   hol.g.rotation.x=-0.32*rc;hol.g.scale.y=1-0.05*rc;
   var fe=hol.flash>0?hol.flash/0.28:0;
@@ -2550,8 +2571,8 @@ function holTick(dt,playing){
     return;
   }
   if(hol.state==='in'){
-    holSetOp(Math.min(1,hol.op+dt*0.7));
-    if(hol.op>=1)hol.state='watch';
+    /* he is solid flesh: he doesn't fade in, he is suddenly there */
+    holTeleFX(true);holSetOp(1);hol.state='watch';
   }else if(hol.state==='watch'&&hol.hunt){
     /* the bar is nearly empty: Hollow stops watching and comes for Damian */
     holSetOp(1);hol.watch=99;
@@ -2563,12 +2584,12 @@ function holTick(dt,playing){
   }else if(hol.state==='watch'){
     hol.watch-=dt;
     if(inView&&!CIN.rev){hol.drain=true;calm=Math.max(0.0,calm-dt*(d<24?0.08:0.04)*(hol.mode==='behind'?1.4:1));if(!hol.warned||time-hol.warned>14){hol.warned=time;flash(tr(hol.mode==='behind'?'dontLookBack':'dontLook'),1600);}}
-    if(looked){hol.seenT+=dt;holSetOp(hol.seenT>2.2?0.75+0.25*Math.sin(time*38):1);}
+    if(looked){hol.seenT+=dt;holSetOp(1);}
     else{hol.seenT=Math.max(0,hol.seenT-dt*0.5);holSetOp(1);}
     if(hol.seenT>4.2||hol.watch<=0){hol.state='out';}
   }else if(hol.state==='out'){
-    holSetOp(Math.max(0,hol.op-dt*3.2));
-    if(hol.op<=0){hol.g.visible=false;hol.state='hide';hol.t=1.5+Math.random()*3.5;sfxHollow();}
+    holTeleFX(false);holSetOp(0);
+    hol.g.visible=false;hol.state='hide';hol.t=1.5+Math.random()*3.5;
   }
   var moving=false;
   if(hol.state==='watch'&&!hol.hunt&&hol.mode!=='ahead'){
@@ -3745,7 +3766,7 @@ function cinPre(rdt,spd){
   var wantF=CIN.rev?0.72:CIN.slow>0?0.84:CIN.combat>0?1.06:1;
   CIN.fovK+=(wantF-CIN.fovK)*Math.min(1,rdt*(CIN.rev||CIN.slow>0?3:1.5));
   var bf=camera.userData.baseFov||62,nf=bf*CIN.fovK;if(Math.abs(camera.fov-nf)>0.01){camera.fov=nf;camera.updateProjectionMatrix();}
-  var lbWant=(CIN.rev||hol.grab||DEATH.on||CIN.slow>0||luna.state==='run'||state==='finale')?1:0;
+  var lbWant=(CIN.rev||hol.grab||DEATH.on||luna.state==='run'||state==='finale')?1:0;
   CIN.lb+=(lbWant-CIN.lb)*Math.min(1,rdt*(lbWant?3.5:2.5));
   if(Math.abs(CIN.lb-CIN.lbShown)>0.004){CIN.lbShown=CIN.lb;var tf='scaleY('+CIN.lb.toFixed(3)+')';$('lbT').style.transform=tf;$('lbB').style.transform=tf;}
   CIN.lens=1+(1-calm)*1.6+(CIN.slow>0?1.2:0)+(CIN.rev?0.6:0);
