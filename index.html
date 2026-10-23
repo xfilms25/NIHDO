@@ -27,6 +27,11 @@ body{position:relative}
 #vig{position:absolute;inset:0;pointer-events:none;opacity:.55;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(0,0,0,.85) 100%)}
 #grade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(110,140,170,.16),rgba(20,18,20,.14));mix-blend-mode:multiply}
 #grain{position:absolute;inset:0;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#trapUI{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);z-index:6;display:none;text-align:center;pointer-events:none}
+#trapTxt{font-family:'Cinzel',serif;font-size:clamp(15px,2.4vw,24px);letter-spacing:.06em;color:#efe6d6;text-shadow:0 2px 14px rgba(0,0,0,.95);margin-bottom:10px;animation:trapP .5s ease-in-out infinite alternate}
+@keyframes trapP{from{transform:scale(1)}to{transform:scale(1.06)}}
+#trapBar{width:min(320px,70vw);height:9px;margin:0 auto;background:rgba(0,0,0,.55);border:1px solid rgba(239,230,214,.6)}
+#trapFill{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a1e14,#e3c48a)}
 #introFade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:4}
 #introTitle{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:'Cinzel',serif;font-size:clamp(26px,5.2vw,64px);letter-spacing:.06em;color:#e6dccb;text-shadow:0 2px 24px rgba(0,0,0,.9);opacity:0;pointer-events:none;z-index:5;padding:0 16px}
 #introSkip{position:absolute;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(11vh + 14px);z-index:6;display:none;background:rgba(10,10,12,.55);color:#e2dccd;border:1px solid rgba(226,220,205,.4);padding:8px 16px;font:600 12px var(--hud,system-ui);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;pointer-events:auto}
@@ -164,6 +169,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 <div id="grade"></div>
 <div id="grain"></div>
 <div id="lbT" class="lb"></div><div id="lbB" class="lb"></div>
+<div id="trapUI"><div id="trapTxt"></div><div id="trapBar"><i id="trapFill"></i></div></div>
 <div id="introFade"></div><div id="introTitle"></div><button id="introSkip" type="button" data-i18n="skipIntro">Saltar</button>
 <div id="panic"></div>
 
@@ -253,7 +259,7 @@ var $=function(id){return document.getElementById(id);};
 var touch=false;
 /* ---------- languages: Español / English ---------- */
 var I18N={
-es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
+es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
  go:'Entrar al bosque',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
@@ -268,7 +274,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
-en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
+en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Enter the forest',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
@@ -1964,7 +1970,7 @@ function kick(){attack('kick');}
 var CHAIN={down:'combo',combo:'kick'};
 var CB={hitstop:0,pressT:-1,heavyQ:false,spinCd:0,dodgeT:0,dodgeCd:0,inv:0,dx:0,dz:0};
 var SPIN_CD=3.5,DODGE_T=0.3,DODGE_V=13,SLIDE_TS=1.7,SLIDE_K=0.72,RJ_TS=1.15;
-function atkPress(){if(state!=='play')return;CB.pressT=time;CB.heavyQ=false;attack();}
+function atkPress(){if(state!=='play')return;if(TRAP.hold>0){trapStruggle();return;}CB.pressT=time;CB.heavyQ=false;attack();}
 function atkRelease(){CB.pressT=-1;}
 function spinAttack(){attack('spin');}
 /* dodge: a quick dash in the stick direction (or backwards), untouchable for a moment */
@@ -2020,7 +2026,7 @@ function sfxThump(){
 }
 function attack(force){
   if(typeof force!=='string')force=null;
-  if(TRAP.hold>0){trapStruggle();dmn.hurtT=-1;}
+  if(TRAP.hold>0){trapStruggle();dmn.hurtT=-1;return;}
   if(state!=='play'||hol.grab||DEATH.on||!axe.g||pp.jy>0.2||jmp.active||dmn.hurtT>=0||CB.dodgeT>0||dmn.upT>=0)return;
   /* pressing again during a swing queues the next link of the chain: chop -> 3-hit combo -> kick finisher */
   if(axe.t>=0){var ql=axe.ql||(axe.ql=[]),lastK=ql.length?ql[ql.length-1]:axe.kind,nx=force==='heavy'?'heavy':force==='spin'?null:force==='kick'?(lastK==='kick'?null:'kick'):CHAIN[lastK];if(nx&&ql.length<2)ql.push(nx);return;}
@@ -3293,16 +3299,19 @@ function placeTraps(){
 }
 function trapSpring(t){
   SHK.imp=Math.max(SHK.imp,0.16);
-  t.used=true;TRAP.active=t;TRAP.hold=4.2;TRAP.hits=0;TRAP.t=0;
+  t.used=true;TRAP.active=t;TRAP.hold=999;TRAP.hits=0;TRAP.t=0;TRAP.prog=0;TRAP.need=10;CB.pressT=-1;
+  $('trapTxt').textContent=tr(touch?'trapMashT':'trapMash');$('trapFill').style.width='0%';$('trapUI').style.display='block';
   pp.vx=pp.vz=0;if(HURT&&axe.t<0)dmn.hurtT=0;
   calm=Math.max(0,calm-0.08);sfxGrab();
   flash(tr('hands'),2400);
   TRAP.hands.forEach(function(h,i){h.ang=i/TRAP.hands.length*6.283+Math.random()*0.4;h.rad=0.32+Math.random()*0.2;h.g.visible=true;h.ph=Math.random()*6;h.dl=i*0.06+Math.random()*0.1;h.burst=false;});
 }
+/* every press pulls a leg a little further out of their grip; stop mashing and they pull him back */
 function trapStruggle(){
-  if(!TRAP.active||TRAP.hold<=0)return;
-  TRAP.hits++;sfxHit(false);
-  if(TRAP.hits>=3)TRAP.hold=Math.min(TRAP.hold,0.01);
+  if(!TRAP.active||TRAP.hold<=0||state!=='play')return;
+  TRAP.hits++;TRAP.prog=Math.min(TRAP.need,(TRAP.prog||0)+1);sfxHit(false);buzz([25],0.4);
+  SHK.imp=Math.max(SHK.imp,0.05);mudSplash(pp.x+(Math.random()-0.5)*0.5,pp.z+(Math.random()-0.5)*0.5,4,0.8);
+  if(TRAP.prog>=TRAP.need){TRAP.hold=0.01;sfxThump();mudSplash(pp.x,pp.z,18,1.4);}
 }
 function trapsTick(dt,playing){
   if(TRAP.patchTex)TRAP.list.forEach(function(t){if(t.m&&!t.used)t.m.material.opacity=0.42+0.13*Math.sin(time*1.7+t.x);});
@@ -3314,7 +3323,8 @@ function trapsTick(dt,playing){
   var A=TRAP.active;if(!A)return;
   TRAP.t+=dt;
   var holding=TRAP.hold>0;
-  if(holding){TRAP.hold-=dt;calm=Math.max(0,calm-dt*0.06);if(TRAP.hold<=0){TRAP.t=0;TRAP.release=true;if(TRAP.hits<3)calm=Math.max(0,calm-0.12);}}
+  if(holding){TRAP.hold-=dt;calm=Math.max(0,calm-dt*0.06);TRAP.prog=Math.max(0,(TRAP.prog||0)-dt*1.3);$('trapFill').style.width=(100*TRAP.prog/TRAP.need).toFixed(1)+'%';
+    if(TRAP.hold<=0){TRAP.t=0;TRAP.release=true;$('trapUI').style.display='none';}}
   if(A.m){var pu=Math.min(1,TRAP.t/0.4);A.m.scale.setScalar(holding?1+0.6*pu:1.6);A.m.material.opacity=holding?0.55+0.4*pu:Math.max(0,0.95*(1-TRAP.t/0.6));}
   TRAP.hands.forEach(function(h,i){
     var x=pp.x+Math.cos(h.ang)*h.rad,z=pp.z+Math.sin(h.ang)*h.rad,gy=H(x,z);
@@ -3330,7 +3340,7 @@ function trapsTick(dt,playing){
     h.f.forEach(function(f,k){var c=(k===4?0.9:1.2)*grip+0.15*Math.sin(time*9+k+h.ph)*(holding?1:0.3);f.a.rotation.x=c;f.b.rotation.x=c*1.1;});
   });
   if(!holding&&TRAP.t>0.6){TRAP.hands.forEach(function(h){h.g.visible=false;});TRAP.active=null;if(A.m){scene.remove(A.m);A.m=null;}}
-  if(calm<=0&&state==='play'){calm=0;respawn(tr('handsCaught'));TRAP.hands.forEach(function(h){h.g.visible=false;});TRAP.active=null;TRAP.hold=0;}
+  if(calm<=0&&state==='play'){calm=0;$('trapUI').style.display='none';respawn(tr('handsCaught'));TRAP.hands.forEach(function(h){h.g.visible=false;});TRAP.active=null;TRAP.hold=0;}
 }
 function sfxGrab(){
   if(!ac)return;
@@ -3452,7 +3462,7 @@ function randomizeWP(){
   if(typeof dress!=='undefined')dress.position.set(WP[5][0],H(WP[5][0],WP[5][1])+1.2,WP[5][1]);
 }
 function resetGame(){
-  randomizeWP();placeTraps();try{placePuddles();}catch(e){console.warn('puddles',e);}TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
+  randomizeWP();placeTraps();try{placePuddles();}catch(e){console.warn('puddles',e);}TRAP.active=null;TRAP.hold=0;$('trapUI').style.display='none';TRAP.hands.forEach(function(h){h.g.visible=false;});
   k=0;collected=0;calm=1;fol.active=false;presence.visible=false;RUN={t:0,deaths:0,looks:0,on:true};CIN.revSeen={};CIN.rev=null;CIN.slow=0;
   pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;checkpoint={x:0,z:0};if(window.clearShadows)clearShadows();yaw=Math.PI;pitch=0.26;
   finaleReset();cloths.forEach(function(c){c.g.visible=false;});lunaPlace();
@@ -3651,7 +3661,7 @@ function respawn(msg){
 function retryNow(){
   if(state!=='caught'||performance.now()-caughtAt<250)return;
   try{retryInner();}catch(err){console.warn('retry',err);}
-  TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
+  TRAP.active=null;TRAP.hold=0;$('trapUI').style.display='none';TRAP.hands.forEach(function(h){h.g.visible=false;});
   $('vCaught').classList.remove('on');state='play';dragging=false;
 }
 function retryInner(){
@@ -3689,6 +3699,7 @@ window.addEventListener('keydown',function(e){
   if(state==='intro'&&(e.code==='Escape'||e.code==='Enter'||e.code==='Space')){e.preventDefault();endIntro();}
   if(e.code==='KeyP'||(e.code==='Escape'&&state==='paused')){if(state==='play')pauseGame();else if(state==='paused')resumeGame();}
   if(state==='caught'&&(e.code==='Enter'||e.code==='KeyR'||e.code==='Space')){e.preventDefault();retryNow();}
+  if(TRAP.hold>0&&state==='play'&&!e.repeat&&['Space','KeyE','KeyC','KeyL','Enter','KeyF'].indexOf(e.code)>-1)trapStruggle();
   if((e.code==='KeyQ'||e.code==='KeyJ')&&!e.repeat)atkPress();
   if(e.code==='KeyR'&&state==='play'&&!e.repeat)spinAttack();
   if((e.code==='KeyC'||e.code==='KeyL')&&!e.repeat)dodge();
@@ -3712,6 +3723,7 @@ window.addEventListener('mousemove',function(e){
 var joy={id:null,ox:0,oy:0,x:0,y:0},look={id:null,lx:0,ly:0};
 var joyEl=$('joy'),joyKnob=joyEl.querySelector('b');
 canvas.addEventListener('touchstart',function(e){
+  if(TRAP.hold>0&&state==='play')trapStruggle();
   e.preventDefault();
   for(var i=0;i<e.changedTouches.length;i++){
     var t=e.changedTouches[i];
@@ -3747,12 +3759,12 @@ $('btnE').addEventListener('click',examine);
 $('btnA').addEventListener('pointerdown',function(e){e.preventDefault();atkPress();});
 ['pointerup','pointercancel','pointerleave'].forEach(function(n){$('btnA').addEventListener(n,atkRelease);});
 $('btnS').addEventListener('click',spinAttack);
-$('btnD').addEventListener('pointerdown',function(e){e.preventDefault();dodge();});
+$('btnD').addEventListener('pointerdown',function(e){e.preventDefault();if(TRAP.hold>0){trapStruggle();return;}dodge();});
 $('btnK').addEventListener('click',kick);
 canvas.addEventListener('contextmenu',function(e){e.preventDefault();});
 ['click','pointerup','touchend'].forEach(function(ev){$('retryBtn').addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();retryNow();});});
 $('vCaught').addEventListener('click',function(){retryNow();});
-$('btnJ').addEventListener('click',function(){jumpReq=true;});
+$('btnJ').addEventListener('click',function(){if(TRAP.hold>0){trapStruggle();return;}jumpReq=true;});
 $('langBtn').addEventListener('click',toggleLang);
 $('setBtn').addEventListener('click',openSettings);$('setBtn2').addEventListener('click',openSettings);$('setClose').addEventListener('click',closeSettings);
 [['Sfx','sfx'],['Amb','amb'],['Mus','mus']].forEach(function(p){$('vol'+p[0]).addEventListener('input',function(e){VOL[p[1]]=+e.target.value/100;applyVol();
@@ -3933,7 +3945,7 @@ var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
     for(var i=0;i<sg.attributes.position.count;i++){var yy=sg.attributes.position.getY(i)/10,cc=yy>0?[0.55+0.25*yy,0.6+0.25*yy,0.62+0.25*yy]:[0.12,0.13,0.12];sc[i*3]=cc[0];sc[i*3+1]=cc[1];sc[i*3+2]=cc[2];}
     sg.setAttribute('color',new THREE.BufferAttribute(sc,3));es.add(new THREE.Mesh(sg,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
     var pg=new THREE.PMREMGenerator(renderer);PUDS.env=pg.fromScene(es,0.04).texture;pg.dispose();}catch(e){}
-  PUDS.mat=new THREE.MeshStandardMaterial({color:0x9c8d79,emissive:0x2a2621,emissiveMap:base,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.5});
+  PUDS.mat=new THREE.MeshStandardMaterial({color:0x9c8d79,emissive:0x262d31,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.5});
   PUDS.mat.normalScale.set(0.8,0.8);
   if(THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
     var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
@@ -4198,6 +4210,7 @@ function gpTick(rdt){
   else if(state==='paused'){if(P(9)||P(1)||P(0))resumeGame();}
   else if(state==='finale'){if(FIN.phase==='clip'&&(P(0)||P(9)))endFinale();}
   else if(state==='intro'){if(P(0)||P(9)||P(1))endIntro();}
+  else if(state==='play'&&TRAP.hold>0){if(P(0)||P(1)||P(2)||P(3)||P(4)||P(5)||P(7))trapStruggle();}
   else if(state==='play'){
     if(P(2)||P(7))atkPress();if(R(2)||R(7))atkRelease();
     if(P(3))kick();
