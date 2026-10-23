@@ -3838,8 +3838,8 @@ function cinPre(rdt,spd){
   CIN.idleT=spd<0.3?CIN.idleT+rdt:0;
   var wantD=CIN.combat>0?3.3:CIN.idleT>1.5?1.95:2.2,wantH=CIN.combat>0?0.35:0;
   CIN.dist+=(wantD-CIN.dist)*Math.min(1,rdt*(CIN.combat>0?2.5:1.2));CIN.hgt+=(wantH-CIN.hgt)*Math.min(1,rdt*2);
-  var wantF=CIN.rev?0.72:CIN.slow>0?0.84:CIN.combat>0?1.06:1;
-  CIN.fovK+=(wantF-CIN.fovK)*Math.min(1,rdt*(CIN.rev||CIN.slow>0?3:1.5));
+  var wantF=state==='intro'?(INTRO.fovK||1):CIN.rev?0.72:CIN.slow>0?0.84:CIN.combat>0?1.06:1;
+  CIN.fovK+=(wantF-CIN.fovK)*Math.min(1,rdt*(state==='intro'?6:CIN.rev||CIN.slow>0?3:1.5));
   var bf=camera.userData.baseFov||62,nf=bf*CIN.fovK;if(Math.abs(camera.fov-nf)>0.01){camera.fov=nf;camera.updateProjectionMatrix();}
   var lbWant=(state==='intro'||CIN.rev||hol.grab||DEATH.on||luna.state==='run'||state==='finale')?1:0;
   CIN.lb+=(lbWant-CIN.lb)*Math.min(1,rdt*(lbWant?3.5:2.5));
@@ -3933,11 +3933,11 @@ var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
     for(var i=0;i<sg.attributes.position.count;i++){var yy=sg.attributes.position.getY(i)/10,cc=yy>0?[0.55+0.25*yy,0.6+0.25*yy,0.62+0.25*yy]:[0.12,0.13,0.12];sc[i*3]=cc[0];sc[i*3+1]=cc[1];sc[i*3+2]=cc[2];}
     sg.setAttribute('color',new THREE.BufferAttribute(sc,3));es.add(new THREE.Mesh(sg,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
     var pg=new THREE.PMREMGenerator(renderer);PUDS.env=pg.fromScene(es,0.04).texture;pg.dispose();}catch(e){}
-  PUDS.mat=new THREE.MeshStandardMaterial({color:0x8a7b68,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.1});
+  PUDS.mat=new THREE.MeshStandardMaterial({color:0x9c8d79,emissive:0x2a2621,emissiveMap:base,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.5});
   PUDS.mat.normalScale.set(0.8,0.8);
   if(THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
     var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
-    m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.5;}}});
+    m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.6;if(o.material.map){o.material.emissiveMap=o.material.map;o.material.emissive=new THREE.Color(0x6a6258);o.material.emissiveIntensity=0.55;}}}});
     PUDS.mud=m;try{placePuddles();}catch(e){}
   },undefined,function(e){console.warn('mud puddle not used',e);});
 })();
@@ -3997,19 +3997,52 @@ function startIntro(){
   if(!introReady())return false;
   INTRO.on=true;INTRO.t=0;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
   state='intro';keys={};
-  /* Damian kneels at the start, facing north; the journey (and Luna) lie behind him, to the south */
-  pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.face=0;yaw=0;pitch=0.2;
-  var fx=Math.sin(pp.face),fz=Math.cos(pp.face);
-  if(INTRO.pud){scene.remove(INTRO.pud.g);}INTRO.pud=makePuddle(pp.x+fx*0.7,pp.z+fz*0.7);
-  /* Luna's pine: a trunk behind him, 7-13 m away */
-  var best=null,bs=1e9;
+  /* find a good place near the start: flat, open, no bushes around, with a pine 7-13 m away in clear view */
   function segD(px,pz,x0,z0,x1,z1){var vx=x1-x0,vz=z1-z0,l2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((px-x0)*vx+(pz-z0)*vz)/l2));return Math.hypot(px-(x0+vx*u),pz-(z0+vz*u));}
-  trees.forEach(function(t){if(t.rock)return;var dx=t.x-pp.x,dz=t.z-pp.z,d=Math.hypot(dx,dz);if(d<6||d>20)return;var back=-(dx*fx+dz*fz)/d;if(back<-0.1)return;
-    var r0=(t.r||0.4)+1.0,sx=t.x-dx/d*r0,sz=t.z-dz/d*r0,blk=0;
-    /* she must be visible from Damian: no bush on the spot or between them */
-    for(var i=0;i<brush.length;i++){var b=brush[i];if(Math.abs(b.x-sx)>d+2||Math.abs(b.z-sz)>d+2)continue;if(Math.hypot(b.x-sx,b.z-sz)<1.8||segD(b.x,b.z,pp.x,pp.z,sx,sz)<1.0)blk++;}
-    for(var j=0;j<trees.length;j++){var q=trees[j];if(q===t)continue;if(segD(q.x,q.z,pp.x,pp.z,sx,sz)<(q.r||0.4)+0.5)blk+=3;}
-    var sc=blk*6+Math.abs(d-10)*0.6-back*3;if(sc<bs){bs=sc;best=t;}});
+  function pineFor(x0,z0){
+    var best=null,bs=1e9;
+    trees.forEach(function(t){if(t.rock)return;var dx=t.x-x0,dz=t.z-z0,d=Math.hypot(dx,dz);if(d<5||d>9.5)return;
+      var r0=(t.r||0.4)+1.0,sx=t.x-dx/d*r0,sz=t.z-dz/d*r0,blk=0;
+      for(var i=0;i<brush.length;i++){var b=brush[i];if(Math.abs(b.x-sx)>d+2||Math.abs(b.z-sz)>d+2)continue;if(Math.hypot(b.x-sx,b.z-sz)<2.0||segD(b.x,b.z,x0,z0,sx,sz)<1.2)blk++;}
+      for(var j=0;j<trees.length;j++){var q=trees[j];if(q===t)continue;if(segD(q.x,q.z,x0,z0,sx,sz)<(q.r||0.4)+0.6)blk+=3;}
+      var sc=blk*6+Math.abs(d-7)*0.5;if(sc<bs){bs=sc;best=t;}});
+    return {t:best,s:bs};
+  }
+  var site=null,cands=[];
+  for(var gx=-30;gx<=30;gx+=3)for(var gz=-30;gz<=30;gz+=3){
+    var x0=gx,z0=gz;if(Math.hypot(x0,z0)>30)continue;
+    if(MAPH.riverDist&&MAPH.riverDist(x0,z0)<7)continue;
+    var h0=H(x0,z0),fl=Math.abs(H(x0+1.2,z0)-h0)+Math.abs(H(x0-1.2,z0)-h0)+Math.abs(H(x0,z0+1.2)-h0)+Math.abs(H(x0,z0-1.2)-h0);if(fl>0.9)continue;
+    var bad=false,nb=0;
+    for(var i2=0;i2<trees.length;i2++){var q2=trees[i2];if(Math.hypot(q2.x-x0,q2.z-z0)<(q2.r||0.4)+3){bad=true;break;}}if(bad)continue;
+    for(var i3=0;i3<brush.length;i3++){var b3=brush[i3],bd=Math.hypot(b3.x-x0,b3.z-z0);if(bd<3.2){bad=true;break;}if(bd<7)nb++;}if(bad)continue;
+    var pf=pineFor(x0,z0);if(!pf.t)continue;
+    var sc0=pf.s+nb*0.8+fl*4+Math.hypot(x0,z0)*0.05;cands.push({x:x0,z:z0,t:pf.t,s:sc0});
+  }
+  /* test the actual camera lines against the forest (grass, bushes, trunks): Luna must be seen in the shots */
+  cands.sort(function(a,b){return a.s-b.s;});
+  var rc=new THREE.Raycaster(),tiles=MAPT.tiles.map(function(T){return T.g;}),_o=new THREE.Vector3(),_d=new THREE.Vector3();
+  function clear(ax,ay,az,bx,by,bz){_o.set(ax,ay,az);_d.set(bx-ax,by-ay,bz-az);var L=_d.length();_d.normalize();rc.set(_o,_d);rc.far=L-0.6;rc.near=0.3;
+    var hit=rc.intersectObjects(tiles,true);return hit.length===0;}
+  for(var ci=0;ci<Math.min(8,cands.length)&&!site;ci++){
+    var c=cands[ci],tt=c.t,dx=tt.x-c.x,dz=tt.z-c.z,dl=Math.hypot(dx,dz),lx=dx/dl,lz=dz/dl,r1=(tt.r||0.4)+1.0,sx=tt.x-lx*r1,sz=tt.z-lz*r1,sy=H(sx,sz),cy=H(c.x,c.z);
+    var c2x=c.x-lx*1.5-lz*0.55,c2z=c.z-lz*1.5+lx*0.55,osx=c.x-lx*0.8-lz*0.45,osz=c.z-lz*0.8+lx*0.45,ok=0;
+    try{
+      if(clear(c2x,cy+0.95,c2z,sx,sy+1.2,sz))ok++;if(clear(c2x,cy+0.95,c2z,sx,sy+0.6,sz))ok++;
+      if(clear(osx,cy+1.6,osz,sx,sy+1.2,sz))ok++;if(clear(osx,cy+1.6,osz,sx,sy+0.6,sz))ok++;
+    }catch(e){ok=4;}
+    c.ok=ok;if(ok>=4)site=c;
+  }
+  if(!site&&cands.length){var top=cands.slice(0,8).sort(function(a,b){return (b.ok||0)-(a.ok||0)||a.s-b.s;});site=top[0];}
+  var best=site?site.t:null;
+  pp.x=site?site.x:0;pp.z=site?site.z:0;pp.vx=pp.vz=0;
+  /* he kneels with his back to the pine */
+  pp.face=best?Math.atan2(pp.x-best.x,pp.z-best.z):0;yaw=pp.face;pitch=0.2;
+  var fx=Math.sin(pp.face),fz=Math.cos(pp.face);
+  checkpoint={x:pp.x,z:pp.z};INTRO.face0=pp.face;
+  if(INTRO.pud){scene.remove(INTRO.pud.g);}INTRO.pud=makePuddle(pp.x+fx*0.7,pp.z+fz*0.7);
+  /* keep the set clean: no other puddles in the shot */
+  PUDS.list=PUDS.list.filter(function(q){if(Math.hypot(q.x-pp.x,q.z-pp.z)<11){scene.remove(q.o);return false;}return true;});
   var tx=best?best.x:pp.x-fx*10,tz=best?best.z:pp.z-fz*10,r=best?(best.r||0.4):0.4;
   var ux=pp.x-tx,uz=pp.z-tz,ul=Math.hypot(ux,uz)||1;ux/=ul;uz/=ul;
   INTRO.tree=[tx,tz];INTRO.spot=[tx+ux*(r+1.0),tz+uz*(r+1.0)];
@@ -4101,24 +4134,25 @@ function introTick(dt){
   if(t>=22.1)endIntro();
 }
 function introCam(dt){
-  var T=INTRO,t=T.t,D=_iv1.set(pp.x,H(pp.x,pp.z),pp.z),F={x:0,z:1},R={x:-1,z:0},S=T.spot,L=luna.g.position,cp=_iv2,lk=_iv3,fp=T.fp||(T.fp=new THREE.Vector3());
+  var T=INTRO,t=T.t,D=_iv1.set(pp.x,H(pp.x,pp.z),pp.z),F={x:Math.sin(T.face0),z:Math.cos(T.face0)},R={x:-Math.cos(T.face0),z:Math.sin(T.face0)},S=T.spot,L=luna.g.position,cp=_iv2,lk=_iv3,fp=T.fp||(T.fp=new THREE.Vector3());
   var hd=T.head?T.head.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(D.x,D.y+0.9,D.z);
   var dl=Math.hypot(S[0]-D.x,S[1]-D.z)||1,lx=(S[0]-D.x)/dl,lz=(S[1]-D.z)/dl,px=-lz,pz=lx;
   if(t<4){
     /* 1. POV from the puddle */
-    var P=T.pud;cp.set(P.x-F.x*0.12,P.y+0.06,P.z-F.z*0.12);lk.copy(hd);lk.y+=0.05;fp.copy(hd);}
+    T.fovK=1;var P=T.pud;cp.set(P.x-F.x*0.12,P.y+0.06,P.z-F.z*0.12);lk.copy(hd);lk.y+=0.05;fp.copy(hd);}
   else if(t<13){
     /* 2. reverse diagonal: Damian in the foreground, Luna walks behind him to the pine; he stands and turns */
-    cp.set(T.c2x,D.y+0.95,T.c2z);
+    T.fovK=0.72;cp.set(T.c2x,D.y+0.95,T.c2z);
     var mx=(S[0]+T.lstart[0])/2,mz=(S[1]+T.lstart[1])/2;lk.set(mx,H(mx,mz)+1.0,mz);
     var rk=Math.max(0,Math.min(1,(t-5)/1.2));fp.set(D.x+(L.x-D.x)*rk,D.y+0.9+(L.y+1.2-D.y-0.9)*rk,D.z+(L.z-D.z)*rk);}
-  else if(t<16){
-    /* 3. over the shoulder: she runs */
-    cp.set(D.x-lx*0.8+px*0.45,D.y+1.6,D.z-lz*0.8+pz*0.45);lk.set(L.x,L.y+1.0,L.z);fp.set(L.x,L.y+1.2,L.z);}
   else{
-    /* 4. behind Damian, looking where she went; hand over to the game camera */
-    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u7=ss01((t-16)/4);
-    cp.set(D.x-hx*(1.4+0.9*u7),D.y+0.9+0.8*u7,D.z-hz*(1.4+0.9*u7));lk.set(D.x+hx*6,D.y+1.2,D.z+hz*6);fp.set(D.x,D.y+1.2,D.z);
+    /* 3. one move: over his shoulder as she runs, then the camera drifts back and up behind him as he turns to where she went */
+    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u=ss01((t-14.8)/3.6);
+    var ax=D.x-lx*0.8+px*0.45,ay=D.y+1.6,az=D.z-lz*0.8+pz*0.45,bx=D.x-hx*2.3,by=D.y+1.7,bz=D.z-hz*2.3;
+    T.fovK=0.62+0.38*u;cp.set(ax+(bx-ax)*u,ay+(by-ay)*u,az+(bz-az)*u);
+    var tx1=L.x,ty1=L.y+1.0,tz1=L.z,tx2=D.x+hx*6,ty2=D.y+1.2,tz2=D.z+hz*6;
+    lk.set(tx1+(tx2-tx1)*u,ty1+(ty2-ty1)*u,tz1+(tz2-tz1)*u);
+    fp.set(L.x+(D.x-L.x)*u,L.y+1.2,L.z+(D.z-L.z)*u);
     if(t>18){var w=ss01((t-18)/3.6);cp.lerp(camPos,w);lk.lerp(_iv1.set(pp.x+Math.sin(yaw)*6,hero.position.y+1.45-1.2,pp.z+Math.cos(yaw)*6),w);}}
   camera.position.copy(cp);camera.lookAt(lk);
 }
