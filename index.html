@@ -894,7 +894,7 @@ function dmnUpdate(dt,spd){
   a.idle.setEffectiveWeight(dmn.w.idle*loco*(1-dmn.lkW));if(MOB.look)MOB.look.act.setEffectiveWeight(dmn.w.idle*loco*dmn.lkW);
   a.walk.setEffectiveWeight(dmn.w.walk*loco);
   if(INJ)INJ.act.setEffectiveWeight(0);
-  if(MOB.run&&!air){a.run.setEffectiveWeight(0);MOB.run.act.setEffectiveWeight(dmn.w.run*loco);MOB.run.act.timeScale=Math.max(0.8,Math.min(2.0,spd/2.23));}
+  if(false&&MOB.run&&!air){a.run.setEffectiveWeight(0);MOB.run.act.setEffectiveWeight(dmn.w.run*loco);MOB.run.act.timeScale=Math.max(0.8,Math.min(2.0,spd/2.23));}
   else{a.run.setEffectiveWeight(dmn.w.run*loco);if(MOB.run)MOB.run.act.setEffectiveWeight(0);}
   a.walk.timeScale=Math.max(0.7,Math.min(2.6,spd/0.95));
   a.run.timeScale=Math.max(0.6,Math.min(1.8,spd/4.6));
