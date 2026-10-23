@@ -3452,7 +3452,7 @@ function randomizeWP(){
   if(typeof dress!=='undefined')dress.position.set(WP[5][0],H(WP[5][0],WP[5][1])+1.2,WP[5][1]);
 }
 function resetGame(){
-  randomizeWP();placeTraps();TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
+  randomizeWP();placeTraps();try{placePuddles();}catch(e){console.warn('puddles',e);}TRAP.active=null;TRAP.hold=0;TRAP.hands.forEach(function(h){h.g.visible=false;});
   k=0;collected=0;calm=1;fol.active=false;presence.visible=false;RUN={t:0,deaths:0,looks:0,on:true};CIN.revSeen={};CIN.rev=null;CIN.slow=0;
   pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;checkpoint={x:0,z:0};if(window.clearShadows)clearShadows();yaw=Math.PI;pitch=0.26;
   finaleReset();cloths.forEach(function(c){c.g.visible=false;});lunaPlace();
@@ -3920,10 +3920,74 @@ function waterBurst(x,y,z,n,up){
     HB.life[i]=0.5+Math.random()*0.4;A.a.setX(i,0.85);A.sz.setX(i,0.012+Math.random()*0.014);A.c.setX(i,0.92);}
   A.position.needsUpdate=A.a.needsUpdate=A.sz.needsUpdate=A.c.needsUpdate=true;
 }
+/* ---------- puddles: scanned puddle decals and mud-puddle models along the way ---------- */
+var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
+(function(){
+  var tl=new THREE.TextureLoader();
+  var base=tl.load('pdl_base.jpg'),nrm=tl.load('pdl_nrm.jpg'),mr=tl.load('pdl_mr.jpg');base.encoding=THREE.sRGBEncoding;
+  /* soft irregular edge so the decal melts into the forest floor */
+  var c=document.createElement('canvas');c.width=c.height=128;var g=c.getContext('2d'),at=null;
+  if(g){var im=g.createImageData(128,128);for(var y=0;y<128;y++)for(var x=0;x<128;x++){var dx=(x-63.5)/63.5,dy=(y-63.5)/63.5,a=Math.atan2(dy,dx),r=Math.hypot(dx,dy)*(1+0.12*Math.sin(a*3+1.3)+0.07*Math.sin(a*7+0.4)),v=1-Math.min(1,Math.max(0,(r-0.45)/0.45));v=v*v*(3-2*v);var k=(y*128+x)*4;im.data[k]=im.data[k+1]=im.data[k+2]=Math.round(v*255);im.data[k+3]=255;}g.putImageData(im,0,0);at=new THREE.CanvasTexture(c);}
+  /* a small dim sky for the wet reflections */
+  try{var es=new THREE.Scene(),sg=new THREE.SphereGeometry(10,24,12),sc=new Float32Array(sg.attributes.position.count*3);
+    for(var i=0;i<sg.attributes.position.count;i++){var yy=sg.attributes.position.getY(i)/10,cc=yy>0?[0.55+0.25*yy,0.6+0.25*yy,0.62+0.25*yy]:[0.12,0.13,0.12];sc[i*3]=cc[0];sc[i*3+1]=cc[1];sc[i*3+2]=cc[2];}
+    sg.setAttribute('color',new THREE.BufferAttribute(sc,3));es.add(new THREE.Mesh(sg,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
+    var pg=new THREE.PMREMGenerator(renderer);PUDS.env=pg.fromScene(es,0.04).texture;pg.dispose();}catch(e){}
+  PUDS.mat=new THREE.MeshStandardMaterial({color:0x8a7b68,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.1});
+  PUDS.mat.normalScale.set(0.8,0.8);
+  if(THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
+    var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
+    m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.5;}}});
+    PUDS.mud=m;try{placePuddles();}catch(e){}
+  },undefined,function(e){console.warn('mud puddle not used',e);});
+})();
+/* a decal that follows the ground: a small grid draped over the terrain */
+function puddleDecal(x,z,size,rot){
+  var N=10,geo=new THREE.PlaneGeometry(size,size,N,N);geo.rotateX(-Math.PI/2);geo.rotateY(rot);
+  var p=geo.attributes.position,y0=H(x,z);
+  for(var i=0;i<p.count;i++)p.setY(i,H(x+p.getX(i),z+p.getZ(i))-y0+0.03);
+  p.needsUpdate=true;geo.computeVertexNormals();
+  var m=new THREE.Mesh(geo,PUDS.mat);m.position.set(x,y0,z);m.renderOrder=1;m.receiveShadow=true;scene.add(m);return m;
+}
+function placePuddles(){
+  if(!MAPH.ready||!PUDS.mat)return;
+  PUDS.list.forEach(function(q){scene.remove(q.o);if(!q.mud&&q.o.geometry)q.o.geometry.dispose();});PUDS.list=[];
+  var route=[[0,0]].concat(WP.map(function(w){return [w[0],w[1]];})),rr=Math.random;
+  function okAt(x,z,r){
+    if(x<WB.x0+3||x>WB.x1-3||z<WB.z0+3||z>WB.z1-3)return false;
+    if(MAPH.riverDist&&MAPH.riverDist(x,z)<r+3)return false;
+    for(var i=0;i<trees.length;i++){var t=trees[i];if(Math.abs(t.x-x)>r+4||Math.abs(t.z-z)>r+4)continue;if(Math.hypot(t.x-x,t.z-z)<(t.r||0.4)+r+0.6)return false;}
+    for(var j=0;j<route.length;j++)if(Math.hypot(route[j][0]-x,route[j][1]-z)<r+2.5)return false;
+    for(var b2=0;b2<brush.length;b2++){var bb=brush[b2];if(Math.abs(bb.x-x)<r+1.2&&Math.abs(bb.z-z)<r+1.2&&Math.hypot(bb.x-x,bb.z-z)<r*0.55+0.4)return false;}
+    for(var k2=0;k2<PUDS.list.length;k2++)if(Math.hypot(PUDS.list[k2].x-x,PUDS.list[k2].z-z)<PUDS.list[k2].r+r+1.5)return false;
+    return true;
+  }
+  function add(x,z,mud){
+    var r=mud?1.6:0.8+rr()*0.8;if(!okAt(x,z,r))return;
+    var o;
+    if(mud&&PUDS.mud){o=PUDS.mud.clone();var y=H(x,z),gx=H(x+0.5,z)-H(x-0.5,z),gz=H(x,z+0.5)-H(x,z-0.5);
+      o.position.set(x,y,z);o.rotation.set(Math.atan2(gz,1)*0.9,rr()*6.28,-Math.atan2(gx,1)*0.9,'YXZ');var sc=1.2+rr()*0.6;o.scale.set(sc,sc,sc);scene.add(o);}
+    else o=puddleDecal(x,z,r*2.4,rr()*6.28);
+    PUDS.list.push({o:o,x:x,z:z,r:mud?1.1:r*0.7,mud:!!mud});
+  }
+  /* along the way from stop to stop, plus some scattered in the woods around it */
+  for(var s2=0;s2<route.length-1;s2++){
+    var A=route[s2],B=route[s2+1],L=Math.hypot(B[0]-A[0],B[1]-A[1]),n=Math.max(1,Math.round(L/13));
+    for(var i=0;i<n;i++){var u=(i+rr())/n,side=(rr()-0.5)*12;var dx=(B[0]-A[0])/(L||1),dz=(B[1]-A[1])/(L||1);
+      for(var tr=0;tr<8;tr++){var x=A[0]+(B[0]-A[0])*u-dz*side*(1+tr*0.3),z=A[1]+(B[1]-A[1])*u+dx*side*(1+tr*0.3),before=PUDS.list.length;add(x,z,rr()<0.3);if(PUDS.list.length>before)break;}}
+  }
+  for(var e=0;e<26;e++){var q=route[(rr()*route.length)|0];add(q[0]+(rr()-0.5)*50,q[1]+(rr()-0.5)*40,rr()<0.25);}
+}
+/* Damian splashes when he walks or runs through one */
+function puddleSteps(dt,spd){
+  PUDS.stepT-=dt;if(spd<0.8||PUDS.stepT>0||pp.jy>0.05)return;
+  for(var i=0;i<PUDS.list.length;i++){var q=PUDS.list[i];if(Math.abs(q.x-pp.x)>3||Math.abs(q.z-pp.z)>3)continue;
+    if(Math.hypot(q.x-pp.x,q.z-pp.z)<q.r){PUDS.stepT=spd>3?0.28:0.42;waterBurst(pp.x,H(pp.x,pp.z)+0.04,pp.z,spd>3?9:5,1.2);sfxSplash(spd>3?0.35:0.22);return;}}
+}
+function puddleCull(){var cx=camera.position.x,cz=camera.position.z;for(var i=0;i<PUDS.list.length;i++){var q=PUDS.list[i];q.o.visible=Math.abs(q.x-cx)<85&&Math.abs(q.z-cz)<85;}}
 function makePuddle(x,z){
   var g=new THREE.Group(),y=H(x,z)+0.025;
-  var m=new THREE.Mesh(new THREE.CircleGeometry(0.62,48),new THREE.MeshStandardMaterial({color:0x56656c,roughness:0.06,metalness:0.55,transparent:true,opacity:0.7,depthWrite:false}));
-  m.rotation.x=-Math.PI/2;m.scale.set(1,0.7,1);m.receiveShadow=true;g.add(m);
+  var m=puddleDecal(x,z,1.9,Math.random()*6.28);scene.remove(m);m.position.set(0,H(x,z)-y,0);g.add(m);
   var rings=[];for(var i=0;i<4;i++){var r=new THREE.Mesh(new THREE.RingGeometry(0.9,1.0,40),new THREE.MeshBasicMaterial({color:0xcfd8de,transparent:true,opacity:0,depthWrite:false}));r.rotation.x=-Math.PI/2;r.position.y=0.004;g.add(r);rings.push({m:r,t:9});}
   g.position.set(x,y,z);scene.add(g);return {g:g,rings:rings,ri:0,x:x,z:z,y:y};
 }
@@ -4184,6 +4248,7 @@ function frame(){
   var shk=shAmp+SHK.imp;if(hol.grab){shk=0;SHK.imp=0;}
   if(shk>0.002&&state!=='title'){camera.position.x+=Math.sin(time*47.0)*shk*0.7;camera.position.y+=Math.sin(time*53.0+1.3)*shk;camera.position.z+=Math.cos(time*41.0+0.4)*shk*0.7;camera.rotateZ(Math.sin(time*37.0)*shk*0.12);}
   cinPost(rdt,spd);raysTick(dt);
+  if(state==='play')puddleSteps(dt,spd);if(((time*4)|0)!==(PUDS.ct||0)){PUDS.ct=(time*4)|0;puddleCull();}
   for(var mti=0;mti<MAPT.tiles.length;mti++){var MT=MAPT.tiles[mti],zz=camPos.z;MT.g.visible=zz>Math.min(MT.z0,MT.z1)-75&&zz<Math.max(MT.z0,MT.z1)+75;}
   camera.getWorldDirection(camDir);
 
