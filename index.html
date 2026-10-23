@@ -320,6 +320,15 @@ try{
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+canvas.addEventListener('webglcontextlost',function(e){
+  e.preventDefault();console.warn('WebGL context lost');
+  var d=document.getElementById('glLost');if(d)return;
+  d=document.createElement('div');d.id='glLost';
+  d.style.cssText='position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(0,0,0,.85);color:#e2dccd;font:600 15px system-ui;text-align:center;padding:24px';
+  d.innerHTML='<div>'+(LANG==='es'?'El navegador reinici\u00f3 los gr\u00e1ficos.':'The browser reset the graphics.')+'</div><button type="button" style="padding:10px 22px;font:600 13px system-ui;letter-spacing:.12em;text-transform:uppercase;background:#e2dccd;color:#111;border:0;cursor:pointer">'+(LANG==='es'?'Recargar':'Reload')+'</button>';
+  d.querySelector('button').onclick=function(){location.reload();};
+  document.body.appendChild(d);
+},false);
 
 var FOG=0x9aa1a4;
 /* realistic fog: exponential with distance + a thick layer hugging the ground (thins out with height),
@@ -1076,7 +1085,7 @@ function loadLunaModel(){
           if(!o.isMesh)return;
           o.frustumCulled=false;o.castShadow=false;
           var mt=o.material.clone();mt.transparent=true;mt.metalness=Math.min(mt.metalness===undefined?0:mt.metalness,0.2);mt.roughness=Math.max(mt.roughness===undefined?1:mt.roughness,0.7);
-          if(mt.map){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x9098b8);mt.emissiveIntensity=0.7;}
+          if(mt.map&&mt.emissive){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x9098b8);mt.emissiveIntensity=0.7;}
           mt.opacity=luna.op;o.material=mt;mats.push(mt);
         });
         luna.g.children.slice().forEach(function(c){if(c!==luna.spr)luna.g.remove(c);});
@@ -1113,7 +1122,7 @@ function loadLily(){
         if(n){cx/=n;cz/=n;}else{cx=(bb.min.x+bb.max.x)/2;cz=(bb.min.z+bb.max.z)/2;}
         geo.translate(-cx,-(bb.min.y+h*0.08),-cz);var s=0.36/h;geo.scale(s,s,s);geo.computeVertexNormals();
         var mt=mesh.material.clone();mt.side=THREE.DoubleSide;mt.metalness=0;mt.roughness=0.7;
-        if(mt.map){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a8f9a);mt.emissiveIntensity=0.55;}
+        if(mt.map&&mt.emissive){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a8f9a);mt.emissiveIntensity=0.55;}
         var lm=new THREE.Mesh(geo,mt);lm.visible=false;LILY=lm;
       }catch(e){console.warn('lily not used',e);}
     },function(e){console.warn('lily failed',e);});
@@ -2361,7 +2370,7 @@ function loadHollow(){
           o.frustumCulled=false;o.castShadow=true;
           var mt=o.material.clone();mt.transparent=false;mt.opacity=1;mt.depthWrite=true;
           mt.metalness=0;mt.roughness=Math.max(0.8,mt.roughness||0.8);
-          if(mt.map){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a909c);mt.emissiveIntensity=0.35;}
+          if(mt.map&&mt.emissive){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x8a909c);mt.emissiveIntensity=0.35;}
           o.material=mt;hol.mats.push(mt);
         });
         var g=new THREE.Group();g.add(m);g.visible=false;scene.add(g);hol.g=g;
@@ -3465,6 +3474,7 @@ function randomizeWP(){
   if(typeof dress!=='undefined')dress.position.set(WP[5][0],H(WP[5][0],WP[5][1])+1.2,WP[5][1]);
 }
 function resetGame(){
+  gpuPrewarm();
   randomizeWP();placeTraps();try{placePuddles();}catch(e){console.warn('puddles',e);}TRAP.active=null;TRAP.hold=0;$('trapUI').style.display='none';TRAP.hands.forEach(function(h){h.g.visible=false;});
   k=0;collected=0;calm=1;fol.active=false;presence.visible=false;RUN={t:0,deaths:0,looks:0,on:true};CIN.revSeen={};CIN.rev=null;CIN.slow=0;
   pp.x=0;pp.z=0;pp.vx=pp.vz=0;pp.jy=0;pp.vj=0;checkpoint={x:0,z:0};if(window.clearShadows)clearShadows();yaw=Math.PI;pitch=0.26;
@@ -3952,7 +3962,7 @@ var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
   PUDS.mat.normalScale.set(0.8,0.8);
   if(THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
     var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
-    m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.6;if(o.material.map){o.material.emissiveMap=o.material.map;o.material.emissive=new THREE.Color(0x6a6258);o.material.emissiveIntensity=0.55;}}}});
+    m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material&&!o.material.isMeshStandardMaterial){var om=o.material;o.material=new THREE.MeshStandardMaterial({map:om.map||null,color:om.color?om.color.clone():0xffffff,transparent:om.transparent,opacity:om.opacity,alphaTest:om.alphaTest||0,side:om.side});}if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.6;if(o.material.map){o.material.emissiveMap=o.material.map;o.material.emissive=new THREE.Color(0x6a6258);o.material.emissiveIntensity=0.55;}}}});
     PUDS.mud=m;try{placePuddles();}catch(e){}
   },undefined,function(e){console.warn('mud puddle not used',e);});
 })();
@@ -4008,6 +4018,23 @@ function makePuddle(x,z){
 }
 function puddleRipple(P,cx,cz){var R=P.rings[P.ri];P.ri=(P.ri+1)%P.rings.length;R.t=0;R.m.position.x=cx-P.x;R.m.position.z=cz-P.z;}
 function puddleTick(P,dt){P.rings.forEach(function(R){if(R.t>3)return;R.t+=dt;var u=R.t/1.6;R.m.scale.setScalar(0.05+u*0.55);R.m.material.opacity=Math.max(0,0.35*(1-u));});}
+/* build the GPU shaders for the rigged shadows and Hollow ahead of time (off-screen),
+   so their first appearance after Luna's first stop doesn't stall or drop the graphics context */
+var WARM={sh:false,hol:false},_wf=new THREE.Vector3();
+function gpuPrewarm(){
+  try{
+    var items=[];
+    if(!WARM.sh){for(var i=0;i<enemies.length;i++){if(enemies[i].rig&&!enemies[i].alive&&!enemies[i].g.visible){items.push(enemies[i].g);WARM.sh=true;break;}}}
+    if(!WARM.hol&&hol.g&&!hol.g.visible){items.push(hol.g);WARM.hol=true;}
+    if(!items.length)return;
+    camera.updateMatrixWorld();camera.getWorldDirection(_wf);
+    var saved=items.map(function(g,j){var o={g:g,v:g.visible,p:g.position.clone()};
+      g.position.set(camera.position.x+_wf.x*(6+j*3),camera.position.y-1,camera.position.z+_wf.z*(6+j*3));g.visible=true;g.updateMatrixWorld(true);return o;});
+    var rt=new THREE.WebGLRenderTarget(64,64);
+    renderer.setRenderTarget(rt);renderer.render(scene,camera);renderer.setRenderTarget(null);rt.dispose();
+    saved.forEach(function(o){o.g.visible=o.v;o.g.position.copy(o.p);});
+  }catch(err){console.warn('prewarm skipped',err);}
+}
 function startIntro(){
   if(!introReady())return false;
   INTRO.on=true;INTRO.t=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
@@ -4085,6 +4112,7 @@ function startIntro(){
   INTRO.head=null;hero.traverse(function(o){if(!INTRO.head&&o.isBone&&/Head$/.test(o.name))INTRO.head=o;});
   $('hud').style.transition='opacity .4s';$('hud').style.opacity='0';
   $('introFade').style.opacity='1';$('introSkip').style.display='block';$('introTitle').style.opacity='0';$('introTitle').textContent=tr('endTitle');
+  gpuPrewarm();
   return true;
 }
 function introLunaWalk(dt){
@@ -4198,7 +4226,7 @@ function endIntro(){
   if(luna.act){luna.act.timeScale=0;luna.act.time=LUNA_POSE;luna.mixer.update(0);}INTRO.run=false;
   luna.state='idle';luna.poseIdx=-1;if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);
   if(luna.rest)for(var bn in luna.rest)luna.bones[bn].quaternion.copy(luna.rest[bn]);
-  lunaPlace();
+  lunaPlace();gpuPrewarm();
   state='play';clock.getDelta();
   showSub(tr('followLight'),3200);
 }
