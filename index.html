@@ -4009,15 +4009,18 @@ function startIntro(){
     return {t:best,s:bs};
   }
   var site=null,cands=[];
-  for(var gx=-30;gx<=30;gx+=3)for(var gz=-30;gz<=30;gz+=3){
-    var x0=gx,z0=gz;if(Math.hypot(x0,z0)>30)continue;
+  for(var gx=-45;gx<=45;gx+=3)for(var gz=-45;gz<=45;gz+=3){
+    var x0=gx,z0=gz;if(Math.hypot(x0,z0)>45)continue;
+    if(x0<WB.x0+10||x0>WB.x1-10||z0<WB.z0+10||z0>WB.z1-10)continue;
     if(MAPH.riverDist&&MAPH.riverDist(x0,z0)<7)continue;
     var h0=H(x0,z0),fl=Math.abs(H(x0+1.2,z0)-h0)+Math.abs(H(x0-1.2,z0)-h0)+Math.abs(H(x0,z0+1.2)-h0)+Math.abs(H(x0,z0-1.2)-h0);if(fl>0.9)continue;
     var bad=false,nb=0;
-    for(var i2=0;i2<trees.length;i2++){var q2=trees[i2];if(Math.hypot(q2.x-x0,q2.z-z0)<(q2.r||0.4)+3){bad=true;break;}}if(bad)continue;
-    for(var i3=0;i3<brush.length;i3++){var b3=brush[i3],bd=Math.hypot(b3.x-x0,b3.z-z0);if(bd<3.2){bad=true;break;}if(bd<7)nb++;}if(bad)continue;
+    var dens=0;
+    for(var i2=0;i2<trees.length;i2++){var q2=trees[i2],qd=Math.hypot(q2.x-x0,q2.z-z0);if(qd<(q2.r||0.4)+2.4){bad=true;break;}if(!q2.rock&&qd<10)dens++;}if(bad)continue;
+    for(var i3=0;i3<brush.length;i3++){var b3=brush[i3],bd=Math.hypot(b3.x-x0,b3.z-z0);if(bd<2.6){bad=true;break;}if(bd<7)nb++;}if(bad)continue;
     var pf=pineFor(x0,z0);if(!pf.t)continue;
-    var sc0=pf.s+nb*0.8+fl*4+Math.hypot(x0,z0)*0.05;cands.push({x:x0,z:z0,t:pf.t,s:sc0});
+    /* deep in the pines: the more trunks around, the better */
+    var sc0=pf.s+nb*0.3+fl*4-dens*1.6+Math.hypot(x0,z0)*0.03;cands.push({x:x0,z:z0,t:pf.t,s:sc0});
   }
   /* test the actual camera lines against the forest (grass, bushes, trunks): Luna must be seen in the shots */
   cands.sort(function(a,b){return a.s-b.s;});
@@ -4040,6 +4043,7 @@ function startIntro(){
   pp.face=best?Math.atan2(pp.x-best.x,pp.z-best.z):0;yaw=pp.face;pitch=0.2;
   var fx=Math.sin(pp.face),fz=Math.cos(pp.face);
   checkpoint={x:pp.x,z:pp.z};INTRO.face0=pp.face;
+  INTRO.hemi0=hemi.intensity;hemi.intensity*=0.72;
   if(INTRO.pud){scene.remove(INTRO.pud.g);}INTRO.pud=makePuddle(pp.x+fx*0.7,pp.z+fz*0.7);
   /* keep the set clean: no other puddles in the shot */
   PUDS.list=PUDS.list.filter(function(q){if(Math.hypot(q.x-pp.x,q.z-pp.z)<11){scene.remove(q.o);return false;}return true;});
@@ -4159,7 +4163,7 @@ function introCam(dt){
 function ss01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
 function endIntro(){
   if(!INTRO.on)return;
-  INTRO.on=false;INTRO.done=true;INTRO.dW=0;
+  INTRO.on=false;INTRO.done=true;INTRO.dW=0;if(INTRO.hemi0!==undefined)hemi.intensity=INTRO.hemi0;
   $('introFade').style.opacity='0';$('introTitle').style.opacity='0';$('introSkip').style.display='none';
   $('hud').style.opacity='';setTimeout(function(){$('hud').style.transition='';},500);
   if(axe.g)axe.g.visible=true;
