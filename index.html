@@ -4017,6 +4017,8 @@ function startIntro(){
   /* she passes behind Damian and walks straight toward the pine */
   INTRO.lstart=[INTRO.spot[0]+ux*back+px*2.2,INTRO.spot[1]+uz*back+pz*2.2];
   INTRO.ldir=[INTRO.spot[0]-INTRO.lstart[0],INTRO.spot[1]-INTRO.lstart[1]];
+  var dl0=Math.hypot(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z)||1,lx0=(INTRO.spot[0]-pp.x)/dl0,lz0=(INTRO.spot[1]-pp.z)/dl0;
+  INTRO.c2x=pp.x-lx0*1.5-lz0*0.55;INTRO.c2z=pp.z-lz0*1.5+lx0*0.55;
   /* Luna starts out of sight, walks in later */
   luna.state='intro';luna.poseIdx=-1;lunaSetPose(1);
   if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);
@@ -4040,23 +4042,24 @@ function introLunaWalk(dt){
 }
 function introTick(dt){
   var T=INTRO;T.t+=dt;var t=T.t,ss=function(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x);};
-  $('introFade').style.opacity=String(Math.max(0,1-t/2.2));
+  $('introFade').style.opacity=String(Math.max(0,1-t/1.6));
   /* Damian: already kneeling and washing when we fade in */
-  if(t<2.5)T.pct=0.8+t/2.5*0.5;
-  else if(t<8.5)T.pct=1.3+(t-2.5)/6*1.0;
-  else if(t<14)T.pct=2.3+(t-8.5)/5.5*0.15;
-  else if(t<17)T.pct=2.45+(t-14)/3*0.5;
+  if(t<1.2)T.pct=1.05+t/1.2*0.25;
+  else if(t<4)T.pct=1.3+(t-1.2)/2.8*1.0;
+  else if(t<8.5)T.pct=2.3+(t-4)/4.5*0.2;
+  else if(t<10)T.pct=2.5+(t-8.5)/1.5*0.45;
   else T.pct=2.95;
   if(!T.splash&&T.pct>1.15){T.splash=true;var P=T.pud;sfxSplash(1);waterBurst(P.x,P.y+0.02,P.z,26,1.6);puddleRipple(P,P.x,P.z);setTimeout(function(){if(INTRO.on){puddleRipple(INTRO.pud,INTRO.pud.x+0.15,INTRO.pud.z-0.1);sfxSplash(0.5);}},420);}
-  if(t>4.5&&t<9&&INTRO.head){T.dripT-=dt;if(T.dripT<=0){T.dripT=0.35+Math.random()*0.5;INTRO.head.getWorldPosition(_iv1);waterBurst(_iv1.x,_iv1.y-0.12,_iv1.z,2,-0.4);var P2=T.pud;setTimeout(function(){if(INTRO.on){puddleRipple(P2,P2.x+(Math.random()-0.5)*0.3,P2.z+(Math.random()-0.5)*0.3);}},300);}}
+  if(t>1.5&&t<5&&INTRO.head){T.dripT-=dt;if(T.dripT<=0){T.dripT=0.35+Math.random()*0.5;INTRO.head.getWorldPosition(_iv1);waterBurst(_iv1.x,_iv1.y-0.12,_iv1.z,2,-0.4);var P2=T.pud;setTimeout(function(){if(INTRO.on){puddleRipple(P2,P2.x+(Math.random()-0.5)*0.3,P2.z+(Math.random()-0.5)*0.3);}},300);}}
   /* he stands up from his knee and turns around toward her */
-  if(t>=17){T.sw=ss(17,17.35,t);T.sct=Math.min(INTRO.stand.dur-0.02,(t-17)*1.0);}
-  if(t>18&&t<21){var ty=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z);pp.face+=Math.atan2(Math.sin(ty-pp.face),Math.cos(ty-pp.face))*Math.min(1,dt*2.4);}
-  if(t>=20.4)T.dW=Math.max(0,1-(t-20.4)/0.6);
-  if(t>=19.6&&axe.g&&!axe.g.visible)axe.g.visible=true;
-  if(t>=17){var gy=T.run?T.runYaw:pp.face;yaw+=Math.atan2(Math.sin(gy-yaw),Math.cos(gy-yaw))*Math.min(1,dt*1.5);}
+  if(t>=10){T.sw=ss(10,10.35,t);T.sct=Math.min(INTRO.stand.dur-0.02,(t-10)*1.0);}
+  if(t>10.8&&t<13.2){var ty=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z);pp.face+=Math.atan2(Math.sin(ty-pp.face),Math.cos(ty-pp.face))*Math.min(1,dt*2.4);}
+  if(t>=13.2)T.dW=Math.max(0,1-(t-13.2)/0.6);
+  if(T.run&&t>14.6){pp.face+=Math.atan2(Math.sin(T.runYaw-pp.face),Math.cos(T.runYaw-pp.face))*Math.min(1,dt*2.2);}
+  if(t>=12.4&&axe.g&&!axe.g.visible)axe.g.visible=true;
+  if(t>=10){var gy=T.run?T.runYaw:pp.face;yaw+=Math.atan2(Math.sin(gy-yaw),Math.cos(gy-yaw))*Math.min(1,dt*1.5);}
   /* Luna walks behind him to the pine, stops, enchanted */
-  if(t>=7.5&&!T.lstop){if(luna.op<1)lunaOp(Math.min(1,luna.op+dt*0.8));if(introLunaWalk(dt)){T.lstop=true;T.lstopT=t;T.lfrom=lunaSnapshot();}}
+  if(t>=1.5&&!T.lstop){if(luna.op<1)lunaOp(Math.min(1,luna.op+dt*0.8));if(introLunaWalk(dt)){T.lstop=true;T.lstopT=t;T.lfrom=lunaSnapshot();}}
   if(T.lstop&&!T.run){
     var tf=Math.atan2(INTRO.tree[0]-luna.g.position.x,INTRO.tree[1]-luna.g.position.z);
     luna.g.rotation.y+=Math.atan2(Math.sin(tf-luna.g.rotation.y),Math.cos(tf-luna.g.rotation.y))*Math.min(1,dt*1.6);
@@ -4077,7 +4080,7 @@ function introTick(dt){
     }
   }
   /* he has turned: she sees him and runs off into the forest */
-  if(t>=20.8&&!T.run&&luna.act){
+  if(t>=13.3&&!T.run&&luna.act){
     if(!T.lstop){T.lstop=true;}
     T.run=true;T.runT=0;var lp=luna.g.position,ax=lp.x-pp.x,az=lp.z-pp.z;
     T.runYaw=Math.atan2(ax,az)+(Math.random()<0.5?-0.45:0.45);
@@ -4093,42 +4096,30 @@ function introTick(dt){
   }
   luna.g.position.y=H(luna.g.position.x,luna.g.position.z);
   /* title card */
-  var tt=t<24.7?0:t<26.1?(t-24.7)/1.4:t<28.1?1:Math.max(0,1-(t-28.1)/1.2);$('introTitle').style.opacity=String(tt);
+  var tt=t<16.7?0:t<18.1?(t-16.7)/1.4:t<20.1?1:Math.max(0,1-(t-20.1)/1.2);$('introTitle').style.opacity=String(tt);
   puddleTick(T.pud,dt);
-  if(t>=30.1)endIntro();
+  if(t>=22.1)endIntro();
 }
 function introCam(dt){
   var T=INTRO,t=T.t,D=_iv1.set(pp.x,H(pp.x,pp.z),pp.z),F={x:0,z:1},R={x:-1,z:0},S=T.spot,L=luna.g.position,cp=_iv2,lk=_iv3,fp=T.fp||(T.fp=new THREE.Vector3());
   var hd=T.head?T.head.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(D.x,D.y+0.9,D.z);
   var dl=Math.hypot(S[0]-D.x,S[1]-D.z)||1,lx=(S[0]-D.x)/dl,lz=(S[1]-D.z)/dl,px=-lz,pz=lx;
-  if(t<5){
-    /* 1. diagonal 3/4, low, slow push in */
-    var u=t/5,dx=(F.x+R.x)*0.7071,dz=(F.z+R.z)*0.7071,r=1.85-0.25*u;
-    cp.set(D.x+dx*r,D.y+0.72,D.z+dz*r);lk.set(D.x+F.x*0.35,D.y+0.55,D.z+F.z*0.35);fp.copy(hd);}
-  else if(t<8.5){
-    /* 2. POV from the puddle */
+  if(t<4){
+    /* 1. POV from the puddle */
     var P=T.pud;cp.set(P.x-F.x*0.12,P.y+0.06,P.z-F.z*0.12);lk.copy(hd);lk.y+=0.05;fp.copy(hd);}
-  else if(t<14){
-    /* 3. reverse diagonal: Damian blurred in the foreground, Luna walking behind him */
-    cp.set(D.x-lx*1.5+px*0.55,D.y+0.95,D.z-lz*1.5+pz*0.55);
+  else if(t<13){
+    /* 2. reverse diagonal: Damian in the foreground, Luna walks behind him to the pine; he stands and turns */
+    cp.set(T.c2x,D.y+0.95,T.c2z);
     var mx=(S[0]+T.lstart[0])/2,mz=(S[1]+T.lstart[1])/2;lk.set(mx,H(mx,mz)+1.0,mz);
-    var rk=Math.max(0,Math.min(1,(t-9.6)/1.2));fp.set(D.x+(L.x-D.x)*rk,D.y+0.9+(L.y+1.2-D.y-0.9)*rk,D.z+(L.z-D.z)*rk);}
-  else if(t<17){
-    /* 4. close 3/4 on Damian, other side */
-    var ex=(F.x-R.x)*0.7071,ez=(F.z-R.z)*0.7071;cp.set(D.x+ex*1.1,D.y+0.78,D.z+ez*1.1);lk.copy(hd);lk.y-=0.05;fp.copy(hd);}
-  else if(t<21){
-    /* 5. he stands and turns; the camera circles with him to end over his shoulder */
-    var u5=ss01((t-17)/4),a0=Math.atan2(-F.x,-F.z),a1=Math.atan2(-lx,-lz)+0.5,da=Math.atan2(Math.sin(a1-a0),Math.cos(a1-a0)),ag=a0+da*u5,rr=1.8-1.0*u5;
-    cp.set(D.x+Math.sin(ag)*rr,D.y+0.6+1.0*u5,D.z+Math.cos(ag)*rr);
-    lk.set(D.x+(S[0]-D.x)*u5*0.9,D.y+1.1+(H(S[0],S[1])+1.0-D.y-1.1)*u5,D.z+(S[1]-D.z)*u5*0.9);fp.copy(hd);}
-  else if(t<24){
-    /* 6. over the shoulder: she runs */
+    var rk=Math.max(0,Math.min(1,(t-5)/1.2));fp.set(D.x+(L.x-D.x)*rk,D.y+0.9+(L.y+1.2-D.y-0.9)*rk,D.z+(L.z-D.z)*rk);}
+  else if(t<16){
+    /* 3. over the shoulder: she runs */
     cp.set(D.x-lx*0.8+px*0.45,D.y+1.6,D.z-lz*0.8+pz*0.45);lk.set(L.x,L.y+1.0,L.z);fp.set(L.x,L.y+1.2,L.z);}
   else{
-    /* 7. behind Damian, looking where she went; hand over to the game camera */
-    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u7=ss01((t-24)/4);
+    /* 4. behind Damian, looking where she went; hand over to the game camera */
+    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u7=ss01((t-16)/4);
     cp.set(D.x-hx*(1.4+0.9*u7),D.y+0.9+0.8*u7,D.z-hz*(1.4+0.9*u7));lk.set(D.x+hx*6,D.y+1.2,D.z+hz*6);fp.set(D.x,D.y+1.2,D.z);
-    if(t>26){var w=ss01((t-26)/3.6);cp.lerp(camPos,w);lk.lerp(_iv1.set(pp.x+Math.sin(yaw)*6,hero.position.y+1.45-1.2,pp.z+Math.cos(yaw)*6),w);}}
+    if(t>18){var w=ss01((t-18)/3.6);cp.lerp(camPos,w);lk.lerp(_iv1.set(pp.x+Math.sin(yaw)*6,hero.position.y+1.45-1.2,pp.z+Math.cos(yaw)*6),w);}}
   camera.position.copy(cp);camera.lookAt(lk);
 }
 function ss01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
