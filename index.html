@@ -3960,7 +3960,8 @@ var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
     var pg=new THREE.PMREMGenerator(renderer);PUDS.env=pg.fromScene(es,0.04).texture;pg.dispose();}catch(e){}
   PUDS.mat=new THREE.MeshStandardMaterial({color:0x9c8d79,emissive:0x262d31,map:base,normalMap:nrm,roughnessMap:mr,roughness:1,metalness:0,alphaMap:at,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,envMap:PUDS.env,envMapIntensity:1.5});
   PUDS.mat.normalScale.set(0.8,0.8);
-  if(THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
+  /* mud puddle models removed (they rendered as dark blobs); only the scanned water puddles remain */
+  if(false&&THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
     var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
     m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material&&!o.material.isMeshStandardMaterial){var om=o.material;o.material=new THREE.MeshStandardMaterial({map:om.map||null,color:om.color?om.color.clone():0xffffff,transparent:om.transparent,opacity:om.opacity,alphaTest:om.alphaTest||0,side:om.side});}if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.6;if(o.material.map){o.material.emissiveMap=o.material.map;o.material.emissive=new THREE.Color(0x6a6258);o.material.emissiveIntensity=0.55;}}}});
     PUDS.mud=m;try{placePuddles();}catch(e){}
@@ -4035,6 +4036,20 @@ function gpuPrewarm(){
     saved.forEach(function(o){o.g.visible=o.v;o.g.position.copy(o.p);});
   }catch(err){console.warn('prewarm skipped',err);}
 }
+/* how far (yaw, radians) the turn clip rotates Damian's hips away from his current pose, sampled along the clip */
+function turnYawTable(TA){
+  try{
+    var clip=TA.act.getClip(),tr=null;clip.tracks.forEach(function(k){if(/Hips\.quaternion$/.test(k.name))tr=k;});if(!tr)return null;
+    var hips=null;hero.traverse(function(o){if(!hips&&o.isBone&&/Hips$/.test(o.name))hips=o;});if(!hips||!hips.parent)return null;
+    var it=tr.createInterpolant(),P=new THREE.Quaternion(),Pi,q=new THREE.Quaternion(),q0i,r=new THREE.Quaternion(),v=new THREE.Vector3(),N=40,dur=clip.duration,out=[],prev=0,acc=0;
+    hips.parent.getWorldQuaternion(P);Pi=P.clone().invert();q0i=hips.quaternion.clone().invert();   /* relative to the standing pose he holds right before the turn */
+    for(var i=0;i<=N;i++){
+      q.fromArray(it.evaluate(dur*i/N));r.copy(P).multiply(q).multiply(q0i).multiply(Pi);
+      v.set(0,0,1).applyQuaternion(r);var y=Math.atan2(v.x,v.z),d=Math.atan2(Math.sin(y-prev),Math.cos(y-prev));acc+=d;prev=y;out.push(acc);
+    }
+    return {dur:dur,y:out};
+  }catch(e){return null;}
+}
 function startIntro(){
   if(!introReady())return false;
   INTRO.on=true;INTRO.t=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
@@ -4100,9 +4115,11 @@ function startIntro(){
   INTRO.c2x=pp.x-lx0*1.5-lz0*0.55;INTRO.c2z=pp.z-lz0*1.5+lx0*0.55;
   /* how many quarter turns he needs to face her, and which way */
   INTRO.tf0=pp.face;var need=Math.atan2(lx0,lz0),dlt=Math.atan2(Math.sin(need-pp.face),Math.cos(need-pp.face));
-  INTRO.tsign=dlt>=0?1:-1;INTRO.tn=Math.max(1,Math.round(Math.abs(dlt)/(Math.PI/2)));INTRO.tw=0;INTRO.tct=0;
-  INTRO.tdur=INTRO.turnL?(INTRO.tsign>0?INTRO.turnL.dur:INTRO.turnR.dur):1.7;
-  INTRO.off=INTRO.turnL?Math.max(0,12.55+INTRO.tn*INTRO.tdur+0.7-14.4):0;
+  INTRO.tsign=dlt>=0?1:-1;INTRO.tn=1;INTRO.tw=0;INTRO.tct=0;
+  /* one single turn: the 90-degree clip plays once, slowed down, and the rest of the angle is blended in underneath it */
+  INTRO.textra=Math.abs(dlt)-Math.PI/2;INTRO.tdlt=dlt;INTRO.tyt=null;INTRO.tk=Math.max(1,Math.abs(dlt)/(Math.PI/2)*0.85);
+  INTRO.tdur=(INTRO.turnL?(INTRO.tsign>0?INTRO.turnL.dur:INTRO.turnR.dur):1.7)*INTRO.tk;
+  INTRO.off=INTRO.turnL?Math.max(0,12.55+INTRO.tdur+0.7-14.4):0;
   /* Luna starts out of sight, walks in later */
   luna.state='intro';luna.poseIdx=-1;lunaSetPose(1);
   if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);
@@ -4141,9 +4158,16 @@ function introTick(dt){
   /* he turns toward her with the turn-in-place animation, in 90-degree steps */
   var TS0=12.55,TD=T.tdur||1.7,O=T.off||0;
   if(T.turnL&&t>=TS0&&T.tn>0){
-    var el=t-TS0,si=Math.min(T.tn-1,Math.floor(el/TD));
-    if(el<T.tn*TD){T.tw=ss(TS0,TS0+0.3,t);T.tct=el-si*TD;pp.face=T.tf0+T.tsign*(Math.PI/2)*si;}
-    else{/* last quarter turn done: hand the rotation over to his facing and settle on her */var ty=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z),base=T.tf0+T.tsign*(Math.PI/2)*T.tn;var rem=Math.atan2(Math.sin(ty-base),Math.cos(ty-base));pp.face=base+rem*ss(TS0+T.tn*TD,TS0+T.tn*TD+0.7,t);T.tw=0;T.tct=0;}
+    /* one smooth eased turn: the body follows a single curve, and his facing cancels out
+       whatever rotation the turn clip itself carries (it turns about 135 degrees, not 90) */
+    var el=t-TS0,tk=T.tk||1,TA=T.tsign>0?T.turnL:T.turnR;
+    if(!T.tyt)T.tyt=turnYawTable(TA)||{dur:TA.dur,y:[0,0]};
+    var cy=function(ct){var Y=T.tyt.y,f=Math.max(0,Math.min(1,ct/T.tyt.dur))*(Y.length-1),i=Math.min(Y.length-2,Math.floor(f));return Y[i]+(Y[i+1]-Y[i])*(f-i);};
+    if(el<TD){T.tw=ss(TS0,TS0+0.3,t);T.tct=el/tk;pp.face=T.tf0+T.tdlt*ss(0,TD,el)-cy(T.tct)*T.tw;}
+    else{/* turn done: fade the clip out while his facing takes over, then settle on her */
+      T.tct=TA.dur;T.tw=1-ss(TS0+TD,TS0+TD+0.45,t);
+      var ty=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z),base=T.tf0+T.tdlt;var rem=Math.atan2(Math.sin(ty-base),Math.cos(ty-base));
+      pp.face=base+rem*ss(TS0+TD,TS0+TD+0.7,t)-cy(TA.dur)*T.tw;}
   }else if(!T.turnL&&t>10.4&&t<14.4){var ty2=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z);if(T.tf0===undefined)T.tf0=pp.face;var du=Math.atan2(Math.sin(ty2-T.tf0),Math.cos(ty2-T.tf0));pp.face=T.tf0+du*ss(10.4,14.2,t);}
   if(t>=14.4+O)T.dW=Math.max(0,1-(t-14.4-O)/0.6);
   if(T.run&&t>15.8+O){pp.face+=Math.atan2(Math.sin(T.runYaw-pp.face),Math.cos(T.runYaw-pp.face))*Math.min(1,dt*1.1);}
