@@ -2946,10 +2946,26 @@ function loadMusic(){
     },function(){});
   }).catch(function(e){console.warn('music not loaded',e);});
 }
+/* menu-only theme: "El Lirio" plays on the main menu and fades out when the game starts */
+var MENU_MUS={g:null,buf:null,src:null,loading:false,on:false};
+function menuMusicTick(){
+  if(!ac)return;var M=MENU_MUS,want=state==='title';
+  if(!M.g){M.g=ac.createGain();M.g.gain.value=0;M.g.connect(musBus);}
+  if(!M.buf&&!M.loading){M.loading=true;fetch('menu_music.mp3').then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.arrayBuffer();}).then(function(b){ac.decodeAudioData(b,function(buf){M.buf=buf;},function(){});}).catch(function(e){console.warn('menu music not loaded',e);});}
+  if(want&&!M.on&&M.buf){
+    /* (re)start from the top each time the menu comes back */
+    try{if(M.src)M.src.stop();}catch(e){}
+    M.src=ac.createBufferSource();M.src.buffer=M.buf;M.src.loop=true;M.src.connect(M.g);M.src.start();M.on=true;
+    M.g.gain.cancelScheduledValues(ac.currentTime);M.g.gain.setValueAtTime(0.0001,ac.currentTime);M.g.gain.linearRampToValueAtTime(0.6,ac.currentTime+2.5);
+  }else if(!want&&M.on){
+    M.on=false;var t=ac.currentTime,src=M.src;M.g.gain.cancelScheduledValues(t);M.g.gain.setValueAtTime(M.g.gain.value,t);M.g.gain.linearRampToValueAtTime(0.0001,t+2.2);
+    setTimeout(function(){try{if(src&&!MENU_MUS.on)src.stop();}catch(e){}},2400);
+  }
+}
 function musicTick(){
-  if(!ac)return;if(!musicLoaded)loadMusic();
+  if(!ac)return;if(!musicLoaded)loadMusic();menuMusicTick();
   duck+=((ac.currentTime<lunaUntil?0.42:1)-duck)*0.06;
-  var v=(state==='play'?0.27:state==='caught'?0.1:state==='ending'?0.42:0.38)*duck;
+  var v=(state==='title'?0:state==='play'?0.27:state==='caught'?0.1:state==='ending'?0.42:0.38)*duck;
   if(musicG)musicG.gain.setTargetAtTime(v,ac.currentTime,state==='caught'?0.3:1.2);
 }
 /* Luna's voice calling Damian from somewhere in the forest */
