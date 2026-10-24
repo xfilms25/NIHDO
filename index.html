@@ -1233,7 +1233,7 @@ function lunaPlace(){
 }
 loadLunaModel();
 /* at these stops Luna doesn't just fade: she runs off ahead of Damian */
-var LUNA_RUN_CP=[1,3];
+var LUNA_RUN_CP=[0,1,2,3,4];   /* every stop before the clearing */
 function lunaRunStart(){
   var N=WP[Math.min(k+1,5)],p=luna.g.position,dx=N[0]-p.x,dz=N[1]-p.z;
   if(Math.hypot(dx,dz)<1){dx=p.x-pp.x;dz=p.z-pp.z;}
