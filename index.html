@@ -130,7 +130,47 @@ button.go:hover{background:#fff}
 .ctl{max-width:480px;border-left:2px solid rgba(217,178,76,.5);padding:8px 14px 8px 16px;background:rgba(3,4,5,.78);position:relative;z-index:2}
 .ctl .keys,.ctl .keys span{color:#d9d3c6}
 .ctl .keys{justify-content:flex-start;gap:8px 20px}
-.menuWrap .small{font-weight:500;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--mist)}
+.menuWrap .small,.mfoot .small{font-weight:500;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--mist)}
+
+/* ===== fancy main menu ===== */
+#tfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#vTitle .bg{filter:saturate(.9)}
+#vTitle .bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 74% 48%,rgba(255,250,235,.10),rgba(0,0,0,0) 46%);animation:flick 7s ease-in-out infinite}
+@keyframes flick{0%,100%{opacity:.55}43%{opacity:.85}46%{opacity:.5}49%{opacity:.9}70%{opacity:.7}}
+.fcorner{position:absolute;width:42px;height:42px;border:1px solid rgba(217,178,76,.42);z-index:2;pointer-events:none;animation:rise 1.4s ease 2.4s both}
+.fcorner.tl{top:18px;left:18px;border-right:0;border-bottom:0}.fcorner.tr{top:18px;right:18px;border-left:0;border-bottom:0}
+.fcorner.bl{bottom:18px;left:18px;border-right:0;border-top:0}.fcorner.br{bottom:18px;right:18px;border-left:0;border-top:0}
+.menuWrap h1{animation:rise 1s ease 1.1s both,tglow 6s ease-in-out 2.4s infinite alternate}
+@keyframes tglow{from{text-shadow:0 4px 28px #000}to{text-shadow:0 4px 28px #000,0 0 22px rgba(232,220,201,.28)}}
+.orn{display:flex;align-items:center;gap:12px;width:min(340px,70%);margin:-4px 0 -2px}
+.orn::before,.orn::after{content:'';height:1px;flex:1;background:linear-gradient(90deg,rgba(217,178,76,0),rgba(217,178,76,.75))}
+.orn::after{background:linear-gradient(90deg,rgba(217,178,76,.75),rgba(217,178,76,0))}
+.orn b{width:9px;height:9px;border:1px solid var(--gold);transform:rotate(45deg);box-shadow:0 0 10px rgba(217,178,76,.6)}
+.mi.start{position:relative;overflow:hidden;padding:14px 38px 14px 22px;margin:2px 0 12px;border:1px solid rgba(217,178,76,.6);background:linear-gradient(90deg,rgba(217,178,76,.2),rgba(217,178,76,.03) 85%);color:#f3ead8;font-size:clamp(24px,2.8vw,32px);letter-spacing:.34em;box-shadow:0 0 24px rgba(217,178,76,.08),inset 0 0 18px rgba(0,0,0,.4);transition:color .2s,transform .2s,box-shadow .3s,border-color .3s}
+.mi.start::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,244,214,.22),rgba(255,255,255,0));transform:skewX(-20deg);animation:sheen 4.5s ease-in-out 3s infinite}
+@keyframes sheen{0%{left:-60%}35%,100%{left:130%}}
+.mi.start:hover,.mi.start:focus-visible{border-color:var(--gold);box-shadow:0 0 34px rgba(217,178,76,.28),inset 0 0 18px rgba(0,0,0,.4)}
+.mi.start:disabled{border-color:rgba(217,178,76,.25)}
+.mi.start:disabled::after{animation-duration:1.6s;animation-delay:0s}
+.mfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.mfoot .chip{font-weight:600;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(217,178,76,.4);padding:4px 10px}
+.mfoot .chip[hidden]{display:none}
+.mcredit{position:absolute;right:max(26px,env(safe-area-inset-right,0px));bottom:max(24px,env(safe-area-inset-bottom,0px));z-index:2;font-weight:600;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:rgba(226,220,205,.5);animation:rise 1.4s ease 2.6s both}
+@media (max-width:700px){.mcredit{display:none}.fcorner{width:26px;height:26px}}
+/* controls diagrams */
+#vCtl{z-index:8;background:rgba(2,3,4,.93);padding:max(14px,env(safe-area-inset-top,0px)) 12px}
+#vCtl .cbox{position:relative;width:min(940px,100%);max-height:100%;overflow:auto;box-sizing:border-box;padding:22px clamp(12px,3vw,34px) 20px;border:1px solid rgba(217,178,76,.35);background:linear-gradient(180deg,rgba(18,19,20,.96),rgba(6,7,8,.96));text-align:center}
+#vCtl h2{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(24px,4vw,38px);letter-spacing:.06em;margin:0 0 6px;color:#e8dcc9}
+.ctabs{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
+.ctabs button{pointer-events:auto;cursor:pointer;background:none;border:1px solid rgba(226,220,205,.22);color:#a9a59b;font:600 15px var(--hud);letter-spacing:.18em;text-transform:uppercase;padding:8px 16px}
+.ctabs button[aria-selected=true]{color:#111;background:var(--gold);border-color:var(--gold)}
+.ctabs button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.cpanel svg{width:100%;height:auto;display:block;margin:0 auto}
+.cpanel svg text{font-family:var(--hud);letter-spacing:.06em}
+.cnote{margin:12px 0 0;font-size:15px;letter-spacing:.06em;color:var(--mist)}
+.cnote b{color:var(--bone);font-weight:600}
+#ctlClose{margin-top:16px}
+#ctlX{position:absolute;top:10px;right:12px;pointer-events:auto;cursor:pointer;background:none;border:0;color:var(--bone);font:400 30px/1 var(--hud);padding:4px 8px}
 @keyframes bgIn{from{opacity:0;transform:scale(1.1)}to{opacity:1;transform:scale(1.03)}}
 @keyframes bgDrift{from{transform:scale(1.03)}to{transform:scale(1.09)}}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -144,6 +184,7 @@ button.go:hover{background:#fff}
   .menuWrap{width:100%;padding-bottom:max(28px,env(safe-area-inset-bottom,0px))}
   .menuWrap>:last-child{margin-bottom:0}
 }
+@media (max-height:820px) and (min-width:701px){.menuWrap{gap:11px;padding-block:22px}.menuWrap h1{font-size:clamp(26px,min(5vw,8.6vh),68px)}.mi{padding:6px 0}.mi.start{padding:10px 30px 10px 18px;margin:2px 0 6px}.menuWrap .tag{font-size:17px}}
 @media (max-height:520px){.menuWrap{gap:8px;padding-block:14px}.menuWrap .tag{display:none}.mi{padding:6px 0}}
 @media (prefers-reduced-motion:reduce){#vTitle .bg,.menuWrap>*{animation:none}}
 
@@ -202,21 +243,35 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
   <div class="bg" aria-hidden="true"></div>
   <div class="shade" aria-hidden="true"></div>
   <div class="tgrain" aria-hidden="true"></div>
+  <canvas id="tfx" aria-hidden="true"></canvas>
+  <i class="fcorner tl" aria-hidden="true"></i><i class="fcorner tr" aria-hidden="true"></i><i class="fcorner bl" aria-hidden="true"></i><i class="fcorner br" aria-hidden="true"></i>
+  <div class="mcredit" data-i18n="credit">Un juego de XFilms</div>
   <div class="menuWrap">
     <div class="eyebrow" data-i18n="eyebrow">The Official Videogame</div>
     <h1>Nothing I haven't Dreamed of</h1>
+    <div class="orn" aria-hidden="true"><b></b></div>
     <div class="rule" data-i18n="rule">No mires atrás.</div>
     <p class="tag" data-i18n="tag">Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.</p>
     <nav class="menu" aria-label="Menú principal">
-      <button class="mi primary" id="goBtn" type="button"><i></i><span data-i18n="go">Entrar al bosque</span></button>
-      <button class="mi" id="ctlBtn" type="button" aria-expanded="false" aria-controls="ctlPanel"><i></i><span data-i18n="controls">Controles</span></button>
+      <button class="mi primary start" id="goBtn" type="button"><i></i><span data-i18n="go">Comenzar</span></button>
+      <button class="mi" id="ctlBtn" type="button" aria-haspopup="dialog"><i></i><span data-i18n="controls">Controles</span></button>
       <button class="mi" id="langBtn" type="button"><i></i><span data-i18n="lang">Idioma: Español</span></button>
       <button class="mi" id="setBtn" type="button"><i></i><span data-i18n="settings">Sonido</span></button>
     </nav>
-    <div class="ctl" id="ctlPanel" hidden><div class="keys" id="keysHelp" data-i18n="keys"><span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic</b> hachazo</span><span><b>Clic der. / V</b> patada</span><span><b>G</b> ajustar hacha</span><span><b>Clic / Q</b> hacha</span><span><b>Espacio</b> saltar</span><span><b>M</b> silenciar</span></div></div>
-    <div class="small" data-i18n="small">Mejor con audífonos</div>
+    <div class="mfoot"><span class="small" data-i18n="small">Mejor con audífonos</span><span class="chip" id="bestChip" hidden></span><span class="small" id="padHint" hidden data-i18n="padStart">Pulsa A / ✕ para comenzar</span></div>
   </div>
 </div>
+<div class="veil" id="vCtl" role="dialog" aria-modal="true" aria-labelledby="ctlH"><div class="cbox">
+  <button id="ctlX" type="button" aria-label="Cerrar">&times;</button>
+  <h2 id="ctlH" data-i18n="controls">Controles</h2>
+  <div class="ctabs" role="tablist">
+    <button type="button" role="tab" data-tab="kb" data-i18n="tabKb">Teclado y ratón</button>
+    <button type="button" role="tab" data-tab="pad" data-i18n="tabPad">Control</button>
+    <button type="button" role="tab" data-tab="touch" data-i18n="tabTouch">Táctil</button>
+  </div>
+  <div class="cpanel" id="ctlBody"></div>
+  <button class="go" id="ctlClose" type="button" data-i18n="done">Listo</button>
+</div></div>
 <button id="pauseBtn" type="button" aria-label="Pausa"><i></i><i></i></button>
 <button id="fsBtn" type="button" aria-label="Pantalla completa" style="position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(70px,calc(env(safe-area-inset-right,0px) + 56px));width:44px;height:44px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.55);pointer-events:auto;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;z-index:4;color:var(--bone);font:600 18px var(--hud);letter-spacing:.1em;">⛶</button>
 <div class="veil" id="vPause"><div class="card"><h1 data-i18n="pause">Pausa</h1><p data-i18n="pauseP">El bosque espera.</p><div class="row"><button class="go" id="resumeBtn" type="button" data-i18n="resume">Continuar</button><button class="ghost" id="restartBtn" type="button" data-i18n="restart">Volver a empezar</button><button class="ghost" id="menuBtn" type="button" data-i18n="menu">Men&uacute; principal</button><button class="ghost" id="setBtn2" type="button" data-i18n="settings">Sonido</button><button class="ghost" id="langBtn2" type="button" data-i18n="lang">Idioma: Español</button></div></div></div>
@@ -261,7 +316,7 @@ var touch=false;
 var I18N={
 es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
- go:'Entrar al bosque',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
+ go:'Comenzar',credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'L3 / LT: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
  keysTouch:'<span><b>Arrastra izq.</b> mover</span><span><b>Arrastra der.</b> mirar</span><span><b>Ver</b> examinar</span><span><b>Hacha / Patada</b> atacar</span>',
  pause:'Pausa',pauseP:'El bosque espera.',resume:'Continuar',restart:'Volver a empezar',menu:'Menú principal',caughtP:'Vuelves al último lugar donde viste a Luna.',retry:'Reintentar',
@@ -276,7 +331,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
 en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
- go:'Enter the forest',controls:'Controls',lang:'Language: English',small:'Best with headphones',
+ go:'Start',credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'L3 / LT: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
  keysTouch:'<span><b>Drag left</b> move</span><span><b>Drag right</b> look</span><span><b>Look</b> examine</span><span><b>Axe / Kick</b> attack</span>',
  pause:'Paused',pauseP:'The forest is waiting.',resume:'Continue',restart:'Start over',menu:'Main menu',caughtP:'You return to the last place you saw Luna.',retry:'Try again',
@@ -304,6 +359,7 @@ function applyLang(){
   if(typeof updateObjective==='function'&&typeof k!=='undefined')try{updateObjective();}catch(e){}
   if(typeof axtUI!=='undefined'&&axtUI){var vis=axtUI.style.display;axtUI.remove();axtUI=null;if(vis!=='none')axtOpen();}
   if(typeof gateCheck==='function')try{gateCheck();}catch(e){}
+  try{if(CTL.open)ctlRender();menuBest();}catch(e){}
 }
 function toggleLang(){LANG=LANG==='es'?'en':'es';try{localStorage.setItem('nihd_lang',LANG);}catch(e){}applyLang();}
 
@@ -3798,10 +3854,144 @@ if(document.fullscreenEnabled||document.webkitFullscreenEnabled||document.mozFul
 }
 $('resumeBtn').addEventListener('click',resumeGame);
 $('restartBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='play';clock.getDelta();});
-$('menuBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='title';$('vTitle').classList.add('on');});
-$('ctlBtn').addEventListener('click',function(){
-  var p=$('ctlPanel'),open=p.hidden;p.hidden=!open;this.setAttribute('aria-expanded',open?'true':'false');
-});
+$('menuBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='title';$('vTitle').classList.add('on');try{menuBest();}catch(e){}});
+/* ---------- controls: diagram panel (keyboard & mouse / controller / touch) ---------- */
+var CTL={tab:'kb',open:false};
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function svgKb(){
+  var U=54,G=6,o='',x,y,H=50;
+  var rows=[
+    [['Esc',1,'cPause'],['',0.6],['1',1],['2',1],['3',1],['4',1],['5',1]],
+    [['Tab',1.5],['Q',1,'cAxe'],['W',1,'cMove','▲'],['E',1,'cExam'],['R',1,'cSpin'],['T',1]],
+    [['Caps',1.8],['A',1,'cMove','◀'],['S',1,'cMove','▼'],['D',1,'cMove','▶'],['F',1],['G',1,'cGrip']],
+    [['Shift',2.3,'cRun'],['Z',1],['X',1],['C',1,'cDodge'],['V',1,'cKick'],['B',1]],
+    [['Ctrl',1.4],['Alt',1.3],['Space',4.6,'cJump']]];
+  function key(x,y,w,lab,act,sub){
+    var hi=!!act,mv=act==='cMove';
+    o+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+H+'" rx="7" fill="'+(hi?'rgba(217,178,76,.17)':'rgba(255,255,255,.025)')+'" stroke="'+(hi?'#d9b24c':'rgba(226,220,205,.18)')+'" stroke-width="'+(hi?1.6:1)+'"/>';
+    o+='<text x="'+(x+w/2)+'" y="'+(y+(hi&&!mv?22:30))+'" text-anchor="middle" font-size="'+(lab.length>2?14:19)+'" font-weight="600" fill="'+(hi?'#f3ead8':'#6d7076')+'">'+esc(mv?sub:lab)+'</text>';
+    if(hi&&!mv)o+='<text x="'+(x+w/2)+'" y="'+(y+40)+'" text-anchor="middle" font-size="'+(tr(act).length>6?9:10.5)+'" font-weight="600" fill="#d9b24c">'+esc(tr(act).toUpperCase())+'</text>';
+    if(mv)o+='<text x="'+(x+w/2)+'" y="'+(y+44)+'" text-anchor="middle" font-size="10" fill="#d9b24c">'+lab+'</text>';
+  }
+  for(var r=0;r<rows.length;r++){x=20;y=18+r*(H+G);
+    for(var c=0;c<rows[r].length;c++){var k=rows[r][c],w=k[1]*U+(k[1]-1)*G;if(k[0])key(x,y,w,k[0],k[2],k[3]);x+=w+G;}}
+  /* P and M on their own */
+  var px=430;key(px,18+1*(H+G),U,'P','cPause');key(px,18+3*(H+G)-(H+G),U,'M','cMute');
+  /* the mouse */
+  var mx=560,my=40;
+  o+='<path d="M'+mx+' '+(my+70)+' C'+mx+' '+(my+10)+' '+(mx+16)+' '+my+' '+(mx+52)+' '+my+' C'+(mx+88)+' '+my+' '+(mx+104)+' '+(my+10)+' '+(mx+104)+' '+(my+70)+' L'+(mx+104)+' '+(my+150)+' C'+(mx+104)+' '+(my+205)+' '+(mx+80)+' '+(my+222)+' '+(mx+52)+' '+(my+222)+' C'+(mx+24)+' '+(my+222)+' '+mx+' '+(my+205)+' '+mx+' '+(my+150)+' Z" fill="rgba(255,255,255,.03)" stroke="rgba(226,220,205,.45)" stroke-width="1.5"/>';
+  o+='<path d="M'+(mx+2)+' '+(my+80)+' L'+(mx+2)+' '+(my+66)+' C'+(mx+4)+' '+(my+14)+' '+(mx+20)+' '+(my+3)+' '+(mx+49)+' '+(my+3)+' L'+(mx+49)+' '+(my+80)+' Z" fill="rgba(217,178,76,.22)" stroke="#d9b24c" stroke-width="1.4"/>';
+  o+='<path d="M'+(mx+102)+' '+(my+80)+' L'+(mx+102)+' '+(my+66)+' C'+(mx+100)+' '+(my+14)+' '+(mx+84)+' '+(my+3)+' '+(mx+55)+' '+(my+3)+' L'+(mx+55)+' '+(my+80)+' Z" fill="rgba(217,178,76,.12)" stroke="#d9b24c" stroke-width="1.4"/>';
+  o+='<rect x="'+(mx+47)+'" y="'+(my+24)+'" width="10" height="26" rx="5" fill="#111" stroke="rgba(226,220,205,.5)"/>';
+  o+='<text x="'+(mx+52)+'" y="'+(my+150)+'" text-anchor="middle" font-size="26" fill="rgba(226,220,205,.55)">✥</text>';
+  /* callouts */
+  var lx=mx+128;
+  o+='<path d="M'+(mx+24)+' '+(my+40)+' L'+(mx+24)+' '+(my-22)+' L'+(lx-6)+' '+(my-22)+'" fill="none" stroke="rgba(217,178,76,.7)" stroke-width="1"/>';
+  o+='<text x="'+lx+'" y="'+(my-24)+'" font-size="16" font-weight="600" fill="#f3ead8">'+esc(tr('cAxe').toUpperCase())+'</text><text x="'+lx+'" y="'+(my-8)+'" font-size="12" fill="#a9a59b">'+esc(tr('cHeavy'))+'</text>';
+  o+='<path d="M'+(mx+80)+' '+(my+42)+' L'+(lx-6)+' '+(my+42)+'" stroke="rgba(217,178,76,.7)" stroke-width="1"/>';
+  o+='<text x="'+lx+'" y="'+(my+47)+'" font-size="16" font-weight="600" fill="#f3ead8">'+esc(tr('cKick').toUpperCase())+'</text>';
+  o+='<path d="M'+(mx+70)+' '+(my+145)+' L'+(lx-6)+' '+(my+145)+'" stroke="rgba(217,178,76,.7)" stroke-width="1"/>';
+  o+='<text x="'+lx+'" y="'+(my+150)+'" font-size="16" font-weight="600" fill="#f3ead8">'+esc(tr('cLook').toUpperCase())+'</text>';
+  return '<svg viewBox="0 0 820 300" role="img" aria-label="'+esc(tr('tabKb'))+'">'+o+'</svg>'+
+    '<p class="cnote">'+esc(tr('cAlt'))+': <b>J</b> '+esc(tr('cAxe'))+' · <b>K</b> '+esc(tr('cKick'))+' · <b>L</b> '+esc(tr('cDodge'))+' · <b>Shift</b> '+esc(tr('cRun'))+' · '+esc(tr('cMash'))+'</p>';
+}
+function svgPad(){
+  var o='',X=180,Y=40;
+  function T(x,y){return (X+x)+' '+(Y+y);}
+  /* body */
+  o+='<path d="M'+T(90,40)+' C'+T(130,18)+' '+T(310,18)+' '+T(350,40)+' C'+T(400,46)+' '+T(430,104)+' '+T(445,186)+' C'+T(456,246)+' '+T(420,268)+' '+T(390,242)+' C'+T(365,220)+' '+T(350,200)+' '+T(318,198)+' L'+T(122,198)+' C'+T(90,200)+' '+T(75,220)+' '+T(50,242)+' C'+T(20,268)+' '+T(-16,246)+' '+T(-5,186)+' C'+T(10,104)+' '+T(40,46)+' '+T(90,40)+' Z" fill="rgba(255,255,255,.035)" stroke="rgba(226,220,205,.5)" stroke-width="1.6"/>';
+  function circ(x,y,r,hi,lab,col){o+='<circle cx="'+(X+x)+'" cy="'+(Y+y)+'" r="'+r+'" fill="'+(hi?'rgba(217,178,76,.18)':'rgba(255,255,255,.04)')+'" stroke="'+(col||(hi?'#d9b24c':'rgba(226,220,205,.35)'))+'" stroke-width="1.5"/>';if(lab)o+='<text x="'+(X+x)+'" y="'+(Y+y+5)+'" text-anchor="middle" font-size="14" font-weight="600" fill="'+(col||'#f3ead8')+'">'+lab+'</text>';}
+  function rr(x,y,w,h,lab){o+='<rect x="'+(X+x)+'" y="'+(Y+y)+'" width="'+w+'" height="'+h+'" rx="8" fill="rgba(217,178,76,.15)" stroke="#d9b24c" stroke-width="1.4"/><text x="'+(X+x+w/2)+'" y="'+(Y+y+h/2+5)+'" text-anchor="middle" font-size="13" font-weight="600" fill="#f3ead8">'+lab+'</text>';}
+  rr(70,-6,60,22,'LT');rr(310,-6,60,22,'RT');rr(62,22,74,18,'LB');rr(304,22,74,18,'RB');
+  circ(105,95,26,true,'L');circ(255,150,26,true,'R');
+  /* d-pad */
+  o+='<path d="M'+T(138,135)+' h16 v16 h16 v16 h-16 v16 h-16 v-16 h-16 v-16 h16 Z" fill="rgba(255,255,255,.04)" stroke="rgba(226,220,205,.35)"/>';
+  circ(335,72,13,true,'Y','#e3c35b');circ(310,96,13,true,'X','#7fa7e0');circ(360,96,13,true,'B','#e07f7f');circ(335,120,13,true,'A','#8fd18a');
+  rr(176,80,26,14,'');rr(238,80,26,14,'');
+  function call(fx,fy,side,ty,l1,l2){var tx=side<0?X-30:X+470;o+='<path d="M'+(X+fx)+' '+(Y+fy)+' L'+(side<0?tx+8:tx-8)+' '+ty+'" fill="none" stroke="rgba(217,178,76,.6)" stroke-width="1"/>';
+    o+='<text x="'+(side<0?tx:tx)+'" y="'+(ty-1)+'" text-anchor="'+(side<0?'end':'start')+'" font-size="15" font-weight="600" fill="#f3ead8">'+esc(l1)+'</text>';
+    if(l2)o+='<text x="'+tx+'" y="'+(ty+15)+'" text-anchor="'+(side<0?'end':'start')+'" font-size="12" fill="#a9a59b">'+esc(l2)+'</text>';}
+  call(100,5,-1,30,'LT · '+tr('cRun'));
+  call(70,31,-1,72,'LB · '+tr('cExam'));
+  call(82,95,-1,124,tr('cMove'),tr('cL3'));
+  /* View / Menu: straight down under the controller */
+  o+='<path d="M'+T(189,94)+' L'+T(189,232)+' L'+T(150,232)+'" fill="none" stroke="rgba(217,178,76,.6)" stroke-width="1"/><text x="'+(X+144)+'" y="'+(Y+237)+'" text-anchor="end" font-size="15" font-weight="600" fill="#f3ead8">'+esc('View · '+tr('cMute'))+'</text>';
+  o+='<path d="M'+T(251,94)+' L'+T(251,108)+' L'+T(218,120)+' L'+T(218,232)+' L'+T(290,232)+'" fill="none" stroke="rgba(217,178,76,.6)" stroke-width="1"/><text x="'+(X+296)+'" y="'+(Y+237)+'" font-size="15" font-weight="600" fill="#f3ead8">'+esc('Menu · '+tr('cPause'))+'</text>';
+  call(340,5,1,22,'RT · '+tr('cAxe'),tr('cHeavy'));
+  call(370,31,1,62,'RB · '+tr('cSpin'));
+  call(348,72,1,98,'Y / △ · '+tr('cKick'));
+  call(373,96,1,128,'B / ○ · '+tr('cDodge'));
+  call(348,120,1,158,'A / ✕ · '+tr('cJump'));
+  o+='<path d="M'+T(297,109)+' L'+T(297,148)+' L'+T(442,148)+'" fill="none" stroke="rgba(217,178,76,.6)" stroke-width="1"/>';
+  o+='<text x="'+(X+470)+'" y="'+(Y+147)+'" font-size="15" font-weight="600" fill="#f3ead8">'+esc('X / □ · '+tr('cAxe'))+'</text><text x="'+(X+470)+'" y="'+(Y+163)+'" font-size="12" fill="#a9a59b">'+esc(tr('cHeavy'))+'</text>';
+  call(281,150,1,228,'R · '+tr('cLook'));
+  return '<svg viewBox="0 0 820 300" role="img" aria-label="'+esc(tr('tabPad'))+'" style="overflow:visible">'+o+'</svg><p class="cnote">'+esc(tr('cPadNote'))+'</p>';
+}
+function svgTouch(){
+  var o='',SX=60,SY=26,K=0.66;
+  o+='<rect x="'+(SX-26)+'" y="'+(SY-16)+'" width="'+(844*K+52)+'" height="'+(390*K+32)+'" rx="34" fill="rgba(255,255,255,.03)" stroke="rgba(226,220,205,.5)" stroke-width="1.6"/>';
+  o+='<rect x="'+SX+'" y="'+SY+'" width="'+(844*K)+'" height="'+(390*K)+'" rx="8" fill="rgba(0,0,0,.35)" stroke="rgba(226,220,205,.15)"/>';
+  o+='<line x1="'+(SX+422*K)+'" y1="'+(SY+10)+'" x2="'+(SX+422*K)+'" y2="'+(SY+390*K-10)+'" stroke="rgba(226,220,205,.18)" stroke-dasharray="5 6"/>';
+  /* joystick */
+  var jx=SX+150*K,jy=SY+270*K;
+  o+='<circle cx="'+jx+'" cy="'+jy+'" r="'+(55*K)+'" fill="none" stroke="rgba(226,220,205,.45)" stroke-width="1.5"/><circle cx="'+(jx+12)+'" cy="'+(jy-8)+'" r="'+(23*K)+'" fill="rgba(217,178,76,.35)" stroke="#d9b24c"/>';
+  o+='<text x="'+jx+'" y="'+(jy-55*K-10)+'" text-anchor="middle" font-size="14" font-weight="600" fill="#f3ead8">'+esc(tr('cMove').toUpperCase())+'</text>';
+  o+='<text x="'+(SX+211*K)+'" y="'+(SY+40)+'" text-anchor="middle" font-size="12" fill="#a9a59b">'+esc(tr('cLeftHalf'))+'</text>';
+  o+='<text x="'+(SX+560*K)+'" y="'+(SY+40)+'" text-anchor="middle" font-size="12" fill="#a9a59b">'+esc(tr('cRightHalf'))+'</text>';
+  o+='<path d="M'+(SX+470*K)+' '+(SY+150*K)+' q 50 -24 100 0" fill="none" stroke="#d9b24c" stroke-width="1.6" marker-end="url(#ah)"/><text x="'+(SX+505*K)+'" y="'+(SY+150*K+22)+'" text-anchor="middle" font-size="13" font-weight="600" fill="#f3ead8">'+esc(tr('cLook').toUpperCase())+'</text>';
+  var B=[['cExam',782,262,38],['cKick',702,268,32],['cAxe',788,182,32],['cJump',702,182,32],['cSpin',788,100,28],['cDodge',702,100,28]];
+  B.forEach(function(b){var cx=SX+b[1]*K,cy=SY+b[2]*K,r=b[3]*K;o+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="rgba(217,178,76,.16)" stroke="#d9b24c" stroke-width="1.4"/><text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="'+(tr(b[0]).length>6?8.5:b[3]>30?11:9.5)+'" font-weight="600" fill="#f3ead8">'+esc(tr(b[0]).toUpperCase())+'</text>';});
+  o+='<circle cx="'+(SX+808*K)+'" cy="'+(SY+36*K)+'" r="'+(22*K)+'" fill="none" stroke="rgba(226,220,205,.55)"/><text x="'+(SX+808*K)+'" y="'+(SY+36*K+4)+'" text-anchor="middle" font-size="10" fill="#f3ead8">II</text>';
+  o+='<text x="'+(SX+808*K-22)+'" y="'+(SY+36*K+4)+'" text-anchor="end" font-size="11" fill="#a9a59b">'+esc(tr('cPause'))+'</text>';
+  o='<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d9b24c"/></marker></defs>'+o;
+  return '<svg viewBox="0 0 680 320" role="img" aria-label="'+esc(tr('tabTouch'))+'">'+o+'</svg><p class="cnote">'+esc(tr('cAxe'))+' · '+esc(tr('cHeavy'))+' · '+esc(tr('cMash'))+'</p>';
+}
+function ctlRender(){
+  var b=$('ctlBody');if(!b)return;
+  b.innerHTML=CTL.tab==='pad'?svgPad():CTL.tab==='touch'?svgTouch():svgKb();
+  [].forEach.call(document.querySelectorAll('.ctabs button'),function(t){t.setAttribute('aria-selected',t.getAttribute('data-tab')===CTL.tab?'true':'false');});
+}
+function ctlOpen(){CTL.tab=(typeof GP!=='undefined'&&GP.on)?'pad':touch?'touch':'kb';CTL.open=true;ctlRender();$('vCtl').classList.add('on');setTimeout(function(){var t=document.querySelector('.ctabs button[aria-selected=true]');if(t)t.focus();},30);}
+function ctlClose(){CTL.open=false;$('vCtl').classList.remove('on');try{$('ctlBtn').focus();}catch(e){}}
+function ctlTab(d){var T=['kb','pad','touch'],i=T.indexOf(CTL.tab);CTL.tab=T[(i+d+3)%3];ctlRender();}
+$('ctlBtn').addEventListener('click',ctlOpen);
+$('ctlClose').addEventListener('click',ctlClose);$('ctlX').addEventListener('click',ctlClose);
+[].forEach.call(document.querySelectorAll('.ctabs button'),function(t){t.addEventListener('click',function(){CTL.tab=t.getAttribute('data-tab');ctlRender();});});
+$('vCtl').addEventListener('click',function(e){if(e.target===this)ctlClose();});
+document.addEventListener('keydown',function(e){if(!CTL.open)return;if(e.code==='Escape'){e.preventDefault();ctlClose();}else if(e.code==='ArrowRight'||e.code==='ArrowLeft'){e.preventDefault();ctlTab(e.code==='ArrowRight'?1:-1);var t=document.querySelector('.ctabs button[aria-selected=true]');if(t)t.focus();}},true);
+/* best time on the menu */
+function menuBest(){var b=boardLoad(),el=$('bestChip');if(!el)return;if(!b.length){el.hidden=true;return;}var m=Math.min.apply(null,b.map(function(r){return r.t;}));el.textContent=tr('bestRun')+' · '+fmtTime(m);el.hidden=false;}
+menuBest();
+/* the menu's living background: fog drifting, embers rising, fireflies, and a far light breathing like Luna's */
+(function(){
+  var cv=$('tfx');if(!cv||!cv.getContext)return;var cx=cv.getContext('2d'),W=0,H=0,DPR=Math.min(1.5,window.devicePixelRatio||1);
+  var red=false;try{red=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  var E=[],F=[],L=[],last=performance.now();
+  function rs(){W=cv.clientWidth;H=cv.clientHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cx.setTransform(DPR,0,0,DPR,0,0);}
+  function ember(init){return {x:Math.random()*W,y:init?Math.random()*H:H+10,r:0.6+Math.random()*1.8,vy:8+Math.random()*22,vx:-4+Math.random()*8,ph:Math.random()*6.28,w:0.6+Math.random()*1.6,warm:Math.random()<0.55};}
+  rs();window.addEventListener('resize',rs);
+  for(var i=0;i<70;i++)E.push(ember(true));
+  for(var j=0;j<7;j++)F.push({x:Math.random()*W,y:H*(0.45+Math.random()*0.55),r:160+Math.random()*260,vx:(Math.random()<0.5?-1:1)*(4+Math.random()*8),a:0.05+Math.random()*0.06});
+  for(var k2=0;k2<9;k2++)L.push({x:W*(0.45+Math.random()*0.5),y:H*(0.3+Math.random()*0.6),ph:Math.random()*6.28,sp:0.5+Math.random()*0.8,dx:Math.random()*6.28});
+  function tick(now){
+    requestAnimationFrame(tick);
+    var on=$('vTitle').classList.contains('on')&&!$('vTitle').classList.contains('out');if(!on)return;
+    var dt=Math.min(0.05,(now-last)/1000);last=now;if(red)dt=0;var t=now/1000;
+    cx.clearRect(0,0,W,H);
+    /* far light */
+    var lx=W*0.74,ly=H*0.5,lr=Math.max(W,H)*0.28,la=0.07+0.04*Math.sin(t*0.8)+0.02*Math.sin(t*2.3);
+    var g=cx.createRadialGradient(lx,ly,0,lx,ly,lr);g.addColorStop(0,'rgba(255,248,230,'+la+')');g.addColorStop(1,'rgba(255,248,230,0)');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+    /* fog */
+    F.forEach(function(f){f.x+=f.vx*dt;if(f.x<-f.r)f.x=W+f.r;if(f.x>W+f.r)f.x=-f.r;var gg=cx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);gg.addColorStop(0,'rgba(170,176,180,'+f.a+')');gg.addColorStop(1,'rgba(170,176,180,0)');cx.fillStyle=gg;cx.fillRect(f.x-f.r,f.y-f.r,f.r*2,f.r*2);});
+    /* fireflies */
+    L.forEach(function(p){p.dx+=dt*0.4;var x=p.x+Math.sin(p.dx)*30,y=p.y+Math.cos(p.dx*1.3)*18,a=Math.max(0,Math.sin(t*p.sp+p.ph))*0.75;if(a<0.02)return;var gg=cx.createRadialGradient(x,y,0,x,y,14);gg.addColorStop(0,'rgba(236,240,200,'+a+')');gg.addColorStop(1,'rgba(236,240,200,0)');cx.fillStyle=gg;cx.fillRect(x-14,y-14,28,28);});
+    /* embers */
+    for(var i=0;i<E.length;i++){var e=E[i];e.y-=e.vy*dt;e.x+=(e.vx+Math.sin(t*e.w+e.ph)*6)*dt;if(e.y<-10)E[i]=e=ember(false);
+      var a=(0.35+0.45*Math.sin(t*3*e.w+e.ph))*Math.min(1,e.y/(H*0.25));if(a<=0)continue;
+      cx.fillStyle=e.warm?'rgba(232,170,90,'+a+')':'rgba(226,220,205,'+a*0.8+')';cx.beginPath();cx.arc(e.x,e.y,e.r,0,6.283);cx.fill();}
+  }
+  requestAnimationFrame(tick);
+})();
 $('vTitle').addEventListener('keydown',function(e){
   if(e.code!=='ArrowDown'&&e.code!=='ArrowUp')return;
   var items=[].slice.call(this.querySelectorAll('.mi:not(:disabled)')),i=items.indexOf(document.activeElement);
@@ -4269,7 +4459,7 @@ function gpTick(rdt){
   if(state==='play'||state==='title'&&false){yaw-=rx*Math.abs(rx)*3.0*rdt;pitch=Math.max(-0.25,Math.min(1.0,pitch+ry*Math.abs(ry)*2.0*rdt));}
   var P=function(i){return gpDown(g,i)&&!GP.prev[i];},R=function(i){return !gpDown(g,i)&&GP.prev[i];};
   /* standard layout: 0 A/Cross 1 B/Circle 2 X/Square 3 Y/Triangle 4 LB/L1 5 RB/R1 6 LT/L2 7 RT/R2 8 View/Share 9 Menu/Options 10 L3 */
-  if(state==='title'){if(P(0)||P(9))$('goBtn').click();}
+  if(state==='title'){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4))ctlTab(-1);else if(P(5))ctlTab(1);}else if(P(0)||P(9))$('goBtn').click();}
   else if(state==='caught'){if(P(0)||P(9))retryNow();}
   else if(state==='ending'){if(P(0)||P(9))$('againBtn').click();}
   else if(state==='paused'){if(P(9)||P(1)||P(0))resumeGame();}
