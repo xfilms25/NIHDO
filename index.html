@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IM+Fell+English:ital@0;1&display=swap">
 <style>
-@font-face{font-family:'Special Elite';src:url(SpecialElite.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Cinzel';src:url(Cinzel.ttf) format('truetype');font-weight:400 900;font-display:swap}
 /* Layout: full-bleed 3D view, HUD laid over it. Compass top centre, title top left, calm bar bottom left, subtitles bottom centre. */
 :root{
@@ -125,7 +124,7 @@ button.go:hover{background:#fff}
 .menuWrap h1{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(26px,min(5.6vw,10vh),76px);line-height:1.04;letter-spacing:.03em;margin:0;color:#e8dcc9;text-shadow:0 4px 28px #000;text-wrap:balance;max-width:10em}
 .menuWrap .tag{margin:0;max-width:30em;font-size:clamp(16px,1.7vw,20px);line-height:1.4;color:#b4b1a8;letter-spacing:.02em}
 .menu{display:flex;flex-direction:column;gap:2px;margin-top:8px}
-.mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:400 clamp(20px,2.3vw,26px) 'Special Elite','Courier New',monospace;letter-spacing:.16em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
+.mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:500 clamp(20px,2.3vw,26px) 'Cinzel',var(--display);letter-spacing:.2em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
 .mi i{width:10px;height:10px;background:var(--gold);transform:rotate(45deg);opacity:0;transition:opacity .2s;flex:none}
 .mi.primary{color:var(--bone)}
 .mi:hover,.mi:focus-visible{color:#fff;transform:translateX(6px)}
