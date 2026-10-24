@@ -1207,7 +1207,7 @@ function lunaLook(){
   var hr=new THREE.Mesh(new THREE.SphereGeometry(0.13,14,10),hair);hr.scale.set(1.0,1.15,1.0);hr.position.set(0,1.64,-0.035);g.add(hr);
   var long=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.07,0.6,10),hair);long.position.set(0,1.38,-0.09);g.add(long);
   [-1,1].forEach(function(sx){var a=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.025,0.62,6),skin);a.position.set(sx*0.2,1.2,0.02);a.rotation.z=sx*0.12;g.add(a);});
-  var spr=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0.5,color:0xbcd4ff}));spr.scale.set(4,4,1);spr.position.y=1.2;g.add(spr);
+  var spr=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0.25,color:0xbcd4ff}));spr.scale.set(4,4,1);spr.position.y=1.2;g.add(spr);
   luna.spr=spr;g.scale.setScalar(1.12);scene.add(g);luna.g=g;
 })();
 function loadLunaModel(){
@@ -1221,7 +1221,7 @@ function loadLunaModel(){
           if(!o.isMesh)return;
           o.frustumCulled=false;o.castShadow=false;
           var mt=o.material.clone();mt.transparent=true;mt.metalness=Math.min(mt.metalness===undefined?0:mt.metalness,0.2);mt.roughness=Math.max(mt.roughness===undefined?1:mt.roughness,0.7);
-          if(mt.map&&mt.emissive){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x9098b8);mt.emissiveIntensity=0.7;}
+          if(mt.map&&mt.emissive){mt.emissiveMap=mt.map;mt.emissive=new THREE.Color(0x9098b8);mt.emissiveIntensity=0.35;}
           mt.opacity=luna.op;o.material=mt;mats.push(mt);
         });
         luna.g.children.slice().forEach(function(c){if(c!==luna.spr)luna.g.remove(c);});
@@ -1362,7 +1362,7 @@ function lunaFinalPose(on){
   luna.mats.indexOf(LILY.material)<0&&luna.mats.push(LILY.material);LILY.material.transparent=true;
 }
 
-function lunaOp(v){luna.op=v;luna.mats.forEach(function(m,i){m.opacity=v;});if(luna.spr)luna.spr.material.opacity=0.5*v;luna.g.visible=v>0.01;}
+function lunaOp(v){luna.op=v;luna.mats.forEach(function(m,i){m.opacity=v;});if(luna.spr)luna.spr.material.opacity=0.25*v;luna.g.visible=v>0.01;}
 function lunaPlace(){
   if(!luna.g)return;luna.state='idle';
   if(k<=5){var T=WP[k];luna.g.position.set(T[0],H(T[0],T[1]),T[1]);lunaLook();lunaOp(1);}else lunaOp(0);
@@ -1410,7 +1410,7 @@ function lunaTickFig(dt,playing){
     p.y=H(p.x,p.z)+(FIN.on||lr?0:Math.sin(time*1.2)*0.04);luna.g.rotation.z=FIN.on?0:Math.sin(time*0.9)*0.03;
   }
 }
-var targetLight=new THREE.PointLight(0xbcd4ff,1.4,22);scene.add(targetLight);
+var targetLight=new THREE.PointLight(0xbcd4ff,0.7,22);scene.add(targetLight);
 
 var TN=520,tBase=new Float32Array(TN*3),tSeed=new Float32Array(TN),tPos=new Float32Array(TN*3);
 var tGeo=new THREE.BufferGeometry();tGeo.setAttribute('position',new THREE.BufferAttribute(tPos,3));
