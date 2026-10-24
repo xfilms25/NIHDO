@@ -210,8 +210,31 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 #finSkip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));pointer-events:auto;cursor:pointer;font:600 14px var(--hud);letter-spacing:.2em;text-transform:uppercase;color:var(--bone);background:rgba(0,0,0,.45);border:1px solid rgba(226,220,205,.45);padding:9px 18px;opacity:.75}
 #finSkip:hover{opacity:1}
 #finTap{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font:600 20px var(--hud);letter-spacing:.24em;text-transform:uppercase;color:var(--bone);background:rgba(0,0,0,.55);pointer-events:none}
+/* ===== loading screen ===== */
+#vLoad{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:radial-gradient(ellipse at 50% 42%,#14110d 0%,#070707 55%,#020202 100%);color:var(--bone);text-align:center;padding:24px;box-sizing:border-box;transition:opacity 1.3s ease;cursor:default;-webkit-user-select:none;user-select:none}
+#vLoad.out{opacity:0;pointer-events:none}
+#vLoad .lpre{font:500 12px var(--hud);letter-spacing:.42em;text-transform:uppercase;color:rgba(226,220,205,.55);opacity:0;animation:lfade 1.6s ease .3s forwards}
+#vLoad h2{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(26px,4.4vw,52px);letter-spacing:.06em;line-height:1.1;margin:18px 0 0;color:#e8dcc9;text-shadow:0 0 30px rgba(217,178,76,.12);opacity:0;animation:lfade 2.2s ease .8s forwards}
+#vLoad .lbar{position:relative;width:min(360px,70vw);height:1px;margin:38px 0 16px;background:rgba(226,220,205,.12);opacity:0;animation:lfade 1.4s ease 1.4s forwards}
+#vLoad .lbar i{position:absolute;left:50%;top:-0.5px;height:2px;width:0;transform:translateX(-50%);background:linear-gradient(90deg,rgba(217,178,76,0),#d9b24c 20%,#f1d98a 50%,#d9b24c 80%,rgba(217,178,76,0));box-shadow:0 0 12px rgba(217,178,76,.55);transition:width .4s ease}
+#vLoad .lstat{min-height:20px;font:500 13px var(--hud);letter-spacing:.3em;text-transform:uppercase;color:rgba(226,220,205,.62);opacity:0;animation:lfade 1.4s ease 1.6s forwards}
+#vLoad .lstat.ready{color:#f3ead8;animation:lfade 1.4s ease 0s forwards,lpulse 2.4s ease-in-out 1s infinite}
+#vLoad .ltip{position:absolute;left:24px;right:24px;bottom:max(46px,calc(env(safe-area-inset-bottom,0px) + 30px));font:italic 17px var(--display);color:rgba(226,220,205,.5);letter-spacing:.02em;transition:opacity .9s ease}
+#vLoad .llogo{position:absolute;top:max(26px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:30px;opacity:.55}
+@keyframes lfade{to{opacity:1}}
+@keyframes lpulse{0%,100%{opacity:1}50%{opacity:.45}}
+#vTitle.pre,#vTitle.pre *,#vTitle.pre *::after{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){#vLoad *{animation:none!important;opacity:1!important}}
 </style>
 
+<div id="vLoad" role="status" aria-live="polite">
+  <img class="llogo" src="xlogo.png" alt="">
+  <div class="lpre" data-i18n="lPresents">XFilms presenta</div>
+  <h2>Nothing I haven't Dreamed of</h2>
+  <div class="lbar"><i id="lBarI"></i></div>
+  <div class="lstat" id="lStat">0%</div>
+  <div class="ltip" id="lTip"></div>
+</div>
 <canvas id="gl"></canvas>
 <div id="vig"></div>
 <div id="grade"></div>
@@ -246,7 +269,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 <button id="btnJ" type="button" data-i18n="btnJ">Salto</button>
 <button id="btnS" type="button" data-i18n="btnS">Giro</button><button id="btnD" type="button" data-i18n="btnD">Esquivar</button>
 
-<div class="veil on" id="vTitle">
+<div class="veil on pre" id="vTitle">
   <div class="bg" aria-hidden="true"></div>
   <div class="shade" aria-hidden="true"></div>
   <div class="tgrain" aria-hidden="true"></div>
@@ -331,7 +354,7 @@ var touch=false;
 var I18N={
 es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Game',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
- go:'Comenzar',credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'L3 / LT: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
+ go:'Comenzar',lPresents:'XFilms presenta',lCont:'Pulsa cualquier tecla para continuar',lContT:'Toca para continuar',lContP:'Pulsa A / ✕ para continuar',lTips:['Mejor con audífonos','Sigue el rastro de luz entre los pinos','Algo te sigue a ti','Mantén el hacha para un golpe fuerte','Si las manos te atrapan, pulsa sin parar para liberarte','Las sombras caen tras seis golpes','Hollow no se esconde: se mueve entre los árboles'],lWhat:['Despertando a Damian','Levantando el bosque','Llamando a Luna','Algo se mueve entre los pinos','Las sombras despiertan'],credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'L3 / LT: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
  keysTouch:'<span><b>Arrastra izq.</b> mover</span><span><b>Arrastra der.</b> mirar</span><span><b>Ver</b> examinar</span><span><b>Hacha / Patada</b> atacar</span>',
  pause:'Pausa',pauseP:'El bosque espera.',resume:'Continuar',restart:'Volver a empezar',menu:'Menú principal',caughtP:'Vuelves al último lugar donde viste a Luna.',retry:'Reintentar',
@@ -346,7 +369,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Ajustes',sndH:'Sonido',camH:'Cámara',camSens:'Sensibilidad',camInv:'Invertir eje vertical',camDist:'Distancia de cámara',camFov:'Campo de visión',camShake:'Temblor y movimiento de cámara',camReset:'Restablecer',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
 en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Game',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
- go:'Start',credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'L3 / LT: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
+ go:'Start',lPresents:'XFilms presents',lCont:'Press any key to continue',lContT:'Tap to continue',lContP:'Press A / ✕ to continue',lTips:['Best with headphones','Follow the trail of light through the pines','Something is following you','Hold the axe for a heavy blow','If the hands grab you, mash to break free','Shadows fall after six blows','Hollow does not hide: he moves between the trees'],lWhat:['Waking Damian','Raising the forest','Calling Luna','Something moves between the pines','The shadows wake'],credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'L3 / LT: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
  keysTouch:'<span><b>Drag left</b> move</span><span><b>Drag right</b> look</span><span><b>Look</b> examine</span><span><b>Axe / Kick</b> attack</span>',
  pause:'Paused',pauseP:'The forest is waiting.',resume:'Continue',restart:'Start over',menu:'Main menu',caughtP:'You return to the last place you saw Luna.',retry:'Try again',
@@ -4022,7 +4045,7 @@ $('ctlClose').addEventListener('click',ctlClose);$('ctlX').addEventListener('cli
 $('vCtl').addEventListener('click',function(e){if(e.target===this)ctlClose();});
 document.addEventListener('keydown',function(e){if(!CTL.open)return;if(e.code==='Escape'){e.preventDefault();ctlClose();}else if(e.code==='ArrowRight'||e.code==='ArrowLeft'){e.preventDefault();ctlTab(e.code==='ArrowRight'?1:-1);var t=document.querySelector('.ctabs button[aria-selected=true]');if(t)t.focus();}},true);
 /* ---------- menu sound: music + forest wind start on the first click/key (browsers block audio before that); typewriter keys on the menu ---------- */
-function menuAudioUnlock(){if(state!=='title')return;initAudio();try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}}
+function menuAudioUnlock(){if(state!=='title')return;initAudio();try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}try{if(!lunaLoaded)loadLuna();}catch(e){}}
 ['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,menuAudioUnlock,{passive:true});});
 var _uiLast=0;
 function uiKey(heavy){
@@ -4050,6 +4073,35 @@ function uiStartHit(){
   b.addEventListener('click',function(){menuAudioUnlock();if(b.id==='goBtn')uiStartHit();else uiKey(true);});
 });
 [].forEach.call(document.querySelectorAll('.ctabs button,#ctlClose,#ctlX,#setClose'),function(b){b.addEventListener('click',function(){uiKey(false);});});
+/* ---------- loading screen: real progress of the big assets, then "press any key" (which also unlocks the menu music) ---------- */
+var LOADER={p:0,shown:0,wait:false,done:false,t0:performance.now(),tipI:0,tipT:0};
+function loaderParts(){return [dmnDone,mapDone,!!LANIM,!!(luna&&luna.bones),!!(hol&&hol.ready),!!SHADOW_RIG,!!(INTRO&&INTRO.pull)];}
+function loaderTick(){
+  if(LOADER.done)return;
+  var parts=loaderParts(),n=0;parts.forEach(function(b){if(b)n++;});
+  var el=(performance.now()-LOADER.t0)/1000,core=dmnDone&&mapDone,all=n===parts.length;
+  var target=n/parts.length;
+  /* creep toward the next step so the line never sits still */
+  LOADER.p=Math.max(LOADER.p,Math.min(target+0.9/parts.length,LOADER.p+0.0015));LOADER.p=Math.min(LOADER.p,Math.max(target,0.02)+0.12);
+  if(all||(core&&el>25))LOADER.p=1;
+  LOADER.shown+=(LOADER.p-LOADER.shown)*0.12;if(LOADER.p>=1&&LOADER.shown>0.995)LOADER.shown=1;
+  $('lBarI').style.width=(LOADER.shown*100).toFixed(1)+'%';
+  var st=$('lStat'),what=tr('lWhat');
+  if(LOADER.shown>=1){
+    if(!LOADER.wait){LOADER.wait=true;st.classList.add('ready');}
+    st.textContent=(typeof GP!=='undefined'&&GP.on)?tr('lContP'):touch?tr('lContT'):tr('lCont');
+  }else{var wi=Math.min(what.length-1,Math.floor(LOADER.shown*what.length));st.textContent=what[wi]+' · '+Math.round(LOADER.shown*100)+'%';}
+  /* rotating tips */
+  LOADER.tipT-=0.1;if(LOADER.tipT<=0){var tips=tr('lTips'),tp=$('lTip');LOADER.tipT=5;tp.style.opacity='0';setTimeout(function(){tp.textContent=tips[LOADER.tipI%tips.length];LOADER.tipI++;tp.style.opacity='1';},700);}
+}
+function loaderContinue(){
+  if(!LOADER.wait||LOADER.done)return;LOADER.done=true;
+  menuAudioUnlock();try{uiKey(true);}catch(e){}
+  $('vLoad').classList.add('out');$('vTitle').classList.remove('pre');
+  setTimeout(function(){var v=$('vLoad');if(v)v.style.display='none';try{$('goBtn').focus({preventScroll:true});}catch(e){}},1400);
+}
+var _ldI=setInterval(function(){if(LOADER.done){clearInterval(_ldI);return;}loaderTick();},100);
+['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(e){if(LOADER.wait&&!LOADER.done){if(e.preventDefault&&ev==='keydown')e.preventDefault();loaderContinue();}},true);});
 /* best time on the menu */
 function menuBest(){var b=boardLoad(),el=$('bestChip');if(!el)return;if(!b.length){el.hidden=true;return;}var m=Math.min.apply(null,b.map(function(r){return r.t;}));el.textContent=tr('bestRun')+' · '+fmtTime(m);el.hidden=false;}
 menuBest();
@@ -4333,7 +4385,7 @@ function turnYawTable(TA){
 }
 function startIntro(){
   if(!introReady())return false;
-  INTRO.on=true;INTRO.t=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
+  INTRO.on=true;INTRO.t=0;INTRO.cues={};INTRO.brT=0.4;INTRO.wT=1.2;INTRO.lsT=0;INTRO.rsT=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
   state='intro';keys={};
   /* find a good place near the start: flat, open, no bushes around, with a pine 7-13 m away in clear view */
   function segD(px,pz,x0,z0,x1,z1){var vx=x1-x0,vz=z1-z0,l2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((px-x0)*vx+(pz-z0)*vz)/l2));return Math.hypot(px-(x0+vx*u),pz-(z0+vz*u));}
@@ -4423,6 +4475,59 @@ function introLean(){
   var A={Spine:0.15,Spine1:0.12,Spine2:0.08,Neck:0.06};
   for(var n in A){var b=LEAN.b[n];if(b)b.quaternion.multiply(_lnQ.setFromAxisAngle(_lnX,A[n]*k));}
 }
+/* ---------- opening sound design ---------- */
+function cineNoise(dur,f,q,gain,attack,pan,rate){
+  if(!ac||!sfxBus)return;
+  try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0),l=0;
+    for(var i=0;i<len;i++){var w=Math.random()*2-1;l=(l+0.2*w)/1.2;d[i]=l*1.6;}
+    var s=ac.createBufferSource();s.buffer=b;s.playbackRate.value=rate||1;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;
+    var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+attack);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(bp);bp.connect(g);var out=g;if(pan&&ac.createStereoPanner){var P=ac.createStereoPanner();P.pan.value=pan;g.connect(P);out=P;}out.connect(sfxBus);s.start(t);}catch(e){}
+}
+function cineWhoosh(dur){
+  if(!ac||!sfxBus)return;
+  try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
+    var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.2;bp.frequency.setValueAtTime(260,t);bp.frequency.exponentialRampToValueAtTime(2600,t+dur);
+    var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.32,t+dur*0.92);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(bp);bp.connect(g);g.connect(sfxBus);s.start(t);}catch(e){}
+}
+function cineBoom(v){
+  if(!ac||!sfxBus)return;
+  try{var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(28,t+2.2);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.7*(v||1),t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+2.6);o.connect(g);g.connect(sfxBus);o.start(t);o.stop(t+2.7);
+    cineNoise(0.5,180,0.7,0.35*(v||1),0.005);}catch(e){}
+}
+function cineChime(v,base){
+  if(!ac||!sfxBus)return;
+  try{var t=ac.currentTime;[1,1.5,2.01,2.99,4.02].forEach(function(m,i){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=(base||392)*m*(1+(Math.random()-0.5)*0.004);
+    var a=(v||0.1)/(1+i*0.8),st=t+i*0.09;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(a,st+0.9);g.gain.exponentialRampToValueAtTime(0.0001,st+5.5);
+    o.connect(g);g.connect(sfxBus);o.start(st);o.stop(st+5.6);});}catch(e){}
+}
+function introSound(dt,t,O){
+  var T=INTRO;if(!ac||!sfxBus)return;if(!T.cues)T.cues={};
+  function cue(n,at,fn){if(!T.cues[n]&&t>=at){T.cues[n]=1;fn();}}
+  /* his breathing over the water while he washes */
+  if(t>0.6&&t<9.6){T.brT=(T.brT||0.4)-dt;if(T.brT<=0){T.brT=2.4+Math.random()*0.9;try{breathSound(0.55);}catch(e){}}}
+  /* water: cupped hands, little splashes */
+  if(t>1.8&&t<8.8){T.wT=(T.wT||1.2)-dt;if(T.wT<=0){T.wT=1.6+Math.random()*1.4;try{sfxSplash(0.22+Math.random()*0.15);}catch(e){}}}
+  /* Luna's soft barefoot steps behind him while she walks */
+  if(t>=1.6&&!T.lstop&&luna.g){T.lsT=(T.lsT||0)-dt;if(T.lsT<=0){T.lsT=0.62;var lp=luna.g.position,d=Math.hypot(lp.x-pp.x,lp.z-pp.z);try{stepSound(Math.max(0.05,0.2-d*0.012),false,0,false);}catch(e){}}}
+  /* she stops at the pine, enchanted */
+  if(T.lstop&&!T.run)cue('ench',(T.lstopT||99)+0.3,function(){cineChime(0.07,392);});
+  /* he gets up: clothes, two shifting steps */
+  cue('up',10.05,function(){cineNoise(0.7,900,0.8,0.18,0.15,0,0.8);});
+  cue('st1',10.9,function(){try{stepSound(0.35,false,-0.2,false);}catch(e){}});
+  cue('st2',11.7,function(){try{stepSound(0.32,false,0.2,false);}catch(e){}});
+  /* the cut: a rising whoosh into a hit as we land on her face-to-face */
+  cue('wh',14.2+O-0.85,function(){cineWhoosh(0.85);});
+  cue('cut',14.2+O,function(){cineBoom(0.8);});
+  /* she sees him and flees: her voice, quick running steps fading away */
+  cue('voice',14.5+O+0.15,function(){try{if(!lunaLoaded)loadLuna();playLuna(false);}catch(e){}});
+  if(T.run&&t<14.5+O+2.4){T.rsT=(T.rsT||0)-dt;if(T.rsT<=0){T.rsT=0.3;var fade=1-(t-14.5-O)/2.4;try{stepSound(0.22*fade,false,0,false);}catch(e){}}}
+  /* the title: a deep hit and a gold shimmer */
+  cue('title',17.9+O,function(){cineBoom(0.6);cineChime(0.09,261.6);});
+}
 function introLunaWalk(dt){
   var P={},wk=LANIM.walk,TS=0.75,cruise=wk.travel/wk.dur*TS,p=luna.g.position;
   if(!INTRO.lfrom)INTRO.lfrom=lunaSnapshot();
@@ -4451,6 +4556,7 @@ function introTick(dt){
   if(t>=14.2+O&&!T.cut){T.cut=true;T.tw=0;T.tct=0;var LP=luna.g.position;pp.face=Math.atan2(LP.x-pp.x,LP.z-pp.z);
     var dx=LP.x-pp.x,dz=LP.z-pp.z,dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
     ICLIP.a.value.set(pp.x-dx*3,H(pp.x,pp.z)+3.2,pp.z-dz*3);ICLIP.b.value.set(LP.x+dx*6,0,LP.z+dz*6);ICLIP.on.value=1;}
+  try{introSound(dt,t,O);}catch(e){}
   if(t>=14.4+O)T.dW=Math.max(0,1-(t-14.4-O)/0.6);
   if(T.run&&t>15.8+O){pp.face+=Math.atan2(Math.sin(T.runYaw-pp.face),Math.cos(T.runYaw-pp.face))*Math.min(1,dt*1.1);}
   if(t>=10){var gy=T.run?T.runYaw:pp.face;yaw+=Math.atan2(Math.sin(gy-yaw),Math.cos(gy-yaw))*Math.min(1,dt*1.5);}
@@ -4550,7 +4656,8 @@ function gpTick(rdt){
   if(state==='play'||state==='title'&&false){yaw-=rx*Math.abs(rx)*3.0*rdt*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+ry*Math.abs(ry)*2.0*rdt*CAM.sens*camIY()));}
   var P=function(i){return gpDown(g,i)&&!GP.prev[i];},R=function(i){return !gpDown(g,i)&&GP.prev[i];};
   /* standard layout: 0 A/Cross 1 B/Circle 2 X/Square 3 Y/Triangle 4 LB/L1 5 RB/R1 6 LT/L2 7 RT/R2 8 View/Share 9 Menu/Options 10 L3 */
-  if(state==='title'){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4))ctlTab(-1);else if(P(5))ctlTab(1);}else if(P(0)||P(9))$('goBtn').click();}
+  if(state==='title'&&!LOADER.done){if(LOADER.wait&&(P(0)||P(9)))loaderContinue();}
+  else if(state==='title'){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4))ctlTab(-1);else if(P(5))ctlTab(1);}else if(P(0)||P(9))$('goBtn').click();}
   else if(state==='caught'){if(P(0)||P(9))retryNow();}
   else if(state==='ending'){if(P(0)||P(9))$('againBtn').click();}
   else if(state==='paused'){if(P(9)||P(1)||P(0))resumeGame();}
