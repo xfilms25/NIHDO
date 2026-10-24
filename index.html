@@ -1617,6 +1617,16 @@ function buildMap(root){
     if(m.material.name==='Material'){mt.color.setRGB(0.74,0.76,0.62);mt.side=THREE.DoubleSide;mapSway(mt,'0.010');m.castShadow=true;}
     else if(m.material.name==='Material.004'){m.castShadow=true;}
   });
+  /* intro sightline: during the opening's last shot, leaves in a strip between Damian and Luna aren't drawn */
+  var _icDone=[];
+  leafM.forEach(function(m){var mt=m.material;if(_icDone.indexOf(mt)>=0)return;_icDone.push(mt);
+    var prev=mt.onBeforeCompile;
+    mt.onBeforeCompile=function(sh,r){if(prev)prev.call(this,sh,r);
+      sh.uniforms.uIcOn=ICLIP.on;sh.uniforms.uIcA=ICLIP.a;sh.uniforms.uIcB=ICLIP.b;sh.uniforms.uIcR=ICLIP.r;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vIcW;').replace('#include <project_vertex>','#include <project_vertex>\nvIcW=(modelMatrix*vec4(transformed,1.0)).xyz;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vIcW;uniform float uIcOn;uniform vec3 uIcA;uniform vec3 uIcB;uniform float uIcR;')
+        .replace('void main() {','void main() {\n if(uIcOn>0.5){vec2 ab=uIcB.xz-uIcA.xz;float hh=clamp(dot(vIcW.xz-uIcA.xz,ab)/max(1e-4,dot(ab,ab)),0.0,1.0);if(length(vIcW.xz-uIcA.xz-ab*hh)<uIcR&&vIcW.y<uIcA.y)discard;}');};
+    mt.customProgramCacheKey=function(){return 'iclip';};mt.needsUpdate=true;});
 
   /* ---------- the seams between map tiles become a river ---------- */
   var RB=0.11,RW=0.05;
@@ -4341,7 +4351,7 @@ function startIntro(){
   /* one single turn: the 90-degree clip plays once, slowed down, and the rest of the angle is blended in underneath it */
   INTRO.textra=Math.abs(dlt)-Math.PI/2;INTRO.tdlt=dlt;INTRO.tyt=null;INTRO.tk=Math.max(1,Math.abs(dlt)/(Math.PI/2)*0.85);
   INTRO.tdur=(INTRO.turnL?(INTRO.tsign>0?INTRO.turnL.dur:INTRO.turnR.dur):1.7)*INTRO.tk;
-  INTRO.off=INTRO.turnL?Math.max(0,12.55+INTRO.tdur+0.7-14.4):0;
+  INTRO.off=-1.4;INTRO.cut=false;   /* the cut lands at 12.8 s, just as he finishes standing up */
   /* Luna starts out of sight, walks in later */
   luna.state='intro';luna.poseIdx=-1;lunaSetPose(1);
   if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);
@@ -4355,6 +4365,7 @@ function startIntro(){
   return true;
 }
 /* opening: bend Damian further forward over the puddle while he kneels and washes; eases out as he stands */
+var ICLIP={on:{value:0},a:{value:new THREE.Vector3()},b:{value:new THREE.Vector3()},r:{value:1.5}};
 var _lnQ=new THREE.Quaternion(),_lnX=new THREE.Vector3(1,0,0),LEAN={b:null};
 function introLean(){
   if(!INTRO.on||!dmn.iW)return;
@@ -4386,20 +4397,11 @@ function introTick(dt){
   if(t>1.5&&t<5&&INTRO.head){T.dripT-=dt;if(T.dripT<=0){T.dripT=0.35+Math.random()*0.5;INTRO.head.getWorldPosition(_iv1);waterBurst(_iv1.x,_iv1.y-0.12,_iv1.z,2,-0.4);var P2=T.pud;setTimeout(function(){if(INTRO.on){puddleRipple(P2,P2.x+(Math.random()-0.5)*0.3,P2.z+(Math.random()-0.5)*0.3);}},300);}}
   /* he stands up from his knee and turns around toward her */
   if(t>=10){T.sw=ss(10,10.35,t);T.sct=Math.min(INTRO.stand.dur-0.02,(t-10)*1.0);}
-  /* he turns toward her with the turn-in-place animation, in 90-degree steps */
-  var TS0=12.55,TD=T.tdur||1.7,O=T.off||0;
-  if(T.turnL&&t>=TS0&&T.tn>0){
-    /* one smooth eased turn: the body follows a single curve, and his facing cancels out
-       whatever rotation the turn clip itself carries (it turns about 135 degrees, not 90) */
-    var el=t-TS0,tk=T.tk||1,TA=T.tsign>0?T.turnL:T.turnR;
-    if(!T.tyt)T.tyt=turnYawTable(TA)||{dur:TA.dur,y:[0,0]};
-    var cy=function(ct){var Y=T.tyt.y,f=Math.max(0,Math.min(1,ct/T.tyt.dur))*(Y.length-1),i=Math.min(Y.length-2,Math.floor(f));return Y[i]+(Y[i+1]-Y[i])*(f-i);};
-    if(el<TD){T.tw=ss(TS0,TS0+0.3,t);T.tct=el/tk;pp.face=T.tf0+T.tdlt*ss(0,TD,el)-cy(T.tct)*T.tw;}
-    else{/* turn done: fade the clip out while his facing takes over, then settle on her */
-      T.tct=TA.dur;T.tw=1-ss(TS0+TD,TS0+TD+0.45,t);
-      var ty=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z),base=T.tf0+T.tdlt;var rem=Math.atan2(Math.sin(ty-base),Math.cos(ty-base));
-      pp.face=base+rem*ss(TS0+TD,TS0+TD+0.7,t)-cy(TA.dur)*T.tw;}
-  }else if(!T.turnL&&t>10.4&&t<14.4){var ty2=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z);if(T.tf0===undefined)T.tf0=pp.face;var du=Math.atan2(Math.sin(ty2-T.tf0),Math.cos(ty2-T.tf0));pp.face=T.tf0+du*ss(10.4,14.2,t);}
+  /* no turn on screen: once he's up, hard cut to the over-the-shoulder shot, already facing her as she flees */
+  var O=T.off||0;
+  if(t>=14.2+O&&!T.cut){T.cut=true;T.tw=0;T.tct=0;var LP=luna.g.position;pp.face=Math.atan2(LP.x-pp.x,LP.z-pp.z);
+    var dx=LP.x-pp.x,dz=LP.z-pp.z,dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
+    ICLIP.a.value.set(pp.x-dx*3,H(pp.x,pp.z)+3.2,pp.z-dz*3);ICLIP.b.value.set(LP.x+dx*6,0,LP.z+dz*6);ICLIP.on.value=1;}
   if(t>=14.4+O)T.dW=Math.max(0,1-(t-14.4-O)/0.6);
   if(T.run&&t>15.8+O){pp.face+=Math.atan2(Math.sin(T.runYaw-pp.face),Math.cos(T.runYaw-pp.face))*Math.min(1,dt*1.1);}
   if(t>=10){var gy=T.run?T.runYaw:pp.face;yaw+=Math.atan2(Math.sin(gy-yaw),Math.cos(gy-yaw))*Math.min(1,dt*1.5);}
@@ -4471,7 +4473,7 @@ function introCam(dt){
 function ss01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
 function endIntro(){
   if(!INTRO.on)return;
-  INTRO.on=false;INTRO.done=true;INTRO.dW=0;if(INTRO.hemi0!==undefined)hemi.intensity=INTRO.hemi0;
+  INTRO.on=false;INTRO.done=true;INTRO.dW=0;ICLIP.on.value=0;if(INTRO.hemi0!==undefined)hemi.intensity=INTRO.hemi0;
   $('introFade').style.opacity='0';$('introTitle').style.opacity='0';$('introSkip').style.display='none';
   $('hud').style.opacity='';setTimeout(function(){$('hud').style.transition='';},500);
   if(axe.g)axe.g.visible=true;
