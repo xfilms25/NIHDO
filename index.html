@@ -91,13 +91,18 @@ body{position:relative}
 #sub.on{opacity:1}
 #flash{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:clamp(28px,6vw,54px);color:#e8c7bd;opacity:0;text-shadow:0 0 18px rgba(160,20,20,.8);pointer-events:none;transition:opacity .4s;letter-spacing:.04em}
 #flash.on{opacity:1}
-#btnK{position:absolute;right:max(110px,calc(env(safe-area-inset-right,0px) + 110px));bottom:max(90px,calc(env(safe-area-inset-bottom,0px) + 90px));width:64px;height:64px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 15px var(--hud);letter-spacing:.1em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none}
-#btnA,#btnJ{position:absolute;bottom:max(176px,calc(env(safe-area-inset-bottom,0px) + 176px));width:64px;height:64px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 13px var(--hud);letter-spacing:.08em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none}
-#btnA{right:max(24px,env(safe-area-inset-right,0px))}
-#btnS,#btnD{position:absolute;bottom:max(262px,calc(env(safe-area-inset-bottom,0px) + 262px));width:56px;height:56px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 11px var(--hud);letter-spacing:.06em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none}
-#btnS{right:max(28px,calc(env(safe-area-inset-right,0px) + 4px))}
-#btnD{right:max(114px,calc(env(safe-area-inset-right,0px) + 114px))}
-#btnJ{right:max(110px,calc(env(safe-area-inset-right,0px) + 110px))}
+/* touch buttons: a controller-style diamond (Y kick, X axe, B dodge, A jump) with two shoulder buttons above (examine, spin) */
+#btnK,#btnA,#btnJ,#btnD,#btnS,#btnE{position:absolute;width:62px;height:62px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 12px var(--hud);letter-spacing:.06em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none;padding:0}
+#btnK,#btnA,#btnJ,#btnD{padding-top:9px}
+#btnK::before,#btnA::before,#btnJ::before,#btnD::before{position:absolute;top:5px;left:0;right:0;text-align:center;font:700 11px var(--hud);letter-spacing:0}
+#btnK{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(187px,calc(env(safe-area-inset-bottom,0px) + 187px));border-color:#e3c35b}#btnK::before{content:'Y';color:#e3c35b}
+#btnA{right:max(155px,calc(env(safe-area-inset-right,0px) + 155px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px));border-color:#7fa7e0}#btnA::before{content:'X';color:#7fa7e0}
+#btnD{right:max(19px,calc(env(safe-area-inset-right,0px) + 19px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px));border-color:#e07f7f}#btnD::before{content:'B';color:#e07f7f}
+#btnJ{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(51px,calc(env(safe-area-inset-bottom,0px) + 51px));border-color:#8fd18a}#btnJ::before{content:'A';color:#8fd18a}
+#btnE,#btnS{width:68px;height:40px;border-radius:14px;font-size:11px}
+#btnE{right:max(143px,calc(env(safe-area-inset-right,0px) + 143px));bottom:max(262px,calc(env(safe-area-inset-bottom,0px) + 262px))}
+#btnS{right:max(23px,calc(env(safe-area-inset-right,0px) + 23px));bottom:max(262px,calc(env(safe-area-inset-bottom,0px) + 262px))}
+@media (max-height:372px){#btnK,#btnA,#btnJ,#btnD{width:56px;height:56px}#btnK{bottom:max(170px,calc(env(safe-area-inset-bottom,0px) + 170px))}#btnA,#btnD{bottom:max(108px,calc(env(safe-area-inset-bottom,0px) + 108px))}#btnJ{bottom:max(46px,calc(env(safe-area-inset-bottom,0px) + 46px))}#btnE,#btnS{bottom:max(234px,calc(env(safe-area-inset-bottom,0px) + 234px))}}
 #pauseBtn{position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));width:44px;height:44px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.55);pointer-events:auto;cursor:pointer;display:none;align-items:center;justify-content:center;gap:5px;padding:0;z-index:4}
 #pauseBtn i{display:block;width:4px;height:16px;background:var(--bone);border-radius:1px}
 #vSet .vols{display:flex;flex-direction:column;gap:12px;margin:12px auto 0;text-align:left;width:min(340px,100%)}
@@ -112,7 +117,6 @@ body{position:relative}
 #vSet .vols .ghost{pointer-events:auto;cursor:pointer;font:600 13px var(--hud);letter-spacing:.18em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid rgba(226,220,205,.35);padding:8px 16px}
 #vPause .row{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:18px}
 #vPause button.ghost{pointer-events:auto;cursor:pointer;font:600 15px var(--hud);letter-spacing:.18em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid rgba(226,220,205,.5);padding:10px 24px}
-#btnE{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:max(90px,calc(env(safe-area-inset-bottom,0px) + 90px));width:76px;height:76px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 17px var(--hud);letter-spacing:.1em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none}
 #joy{position:absolute;width:110px;height:110px;border-radius:50%;border:2px solid rgba(226,220,205,.35);display:none;pointer-events:none}
 #joy b{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(226,220,205,.35)}
 .veil{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;background:rgba(8,9,10,.62);box-sizing:border-box;padding:24px max(16px,env(safe-area-inset-left,0px));z-index:5}
