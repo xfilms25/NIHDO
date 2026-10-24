@@ -70,11 +70,16 @@ body{position:relative}
 #btnJ{right:max(110px,calc(env(safe-area-inset-right,0px) + 110px))}
 #pauseBtn{position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));width:44px;height:44px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.55);pointer-events:auto;cursor:pointer;display:none;align-items:center;justify-content:center;gap:5px;padding:0;z-index:4}
 #pauseBtn i{display:block;width:4px;height:16px;background:var(--bone);border-radius:1px}
-#vSet .vols{display:flex;flex-direction:column;gap:16px;margin-top:18px;text-align:left}
+#vSet .vols{display:flex;flex-direction:column;gap:12px;margin:12px auto 0;text-align:left;width:min(340px,100%)}
+#vSet .setH{width:min(340px,100%);margin-inline:auto}
 #vSet label{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font:600 13px var(--hud);letter-spacing:.14em;text-transform:uppercase;color:var(--bone);pointer-events:auto}
 #vSet label b{font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
 #vSet input[type=range]{grid-column:1/3;width:100%;accent-color:#e2dccd;pointer-events:auto}
 #vSet .row{display:flex;justify-content:center;margin-top:22px}
+#vSet .setH{font:600 14px var(--hud);letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin:22px 0 0;text-align:left;border-bottom:1px solid rgba(217,178,76,.3);padding-bottom:6px}
+#vSet label.tog{grid-template-columns:1fr auto;cursor:pointer}
+#vSet label.tog input{width:20px;height:20px;accent-color:#d9b24c;pointer-events:auto;cursor:pointer}
+#vSet .vols .ghost{pointer-events:auto;cursor:pointer;font:600 13px var(--hud);letter-spacing:.18em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid rgba(226,220,205,.35);padding:8px 16px}
 #vPause .row{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:18px}
 #vPause button.ghost{pointer-events:auto;cursor:pointer;font:600 15px var(--hud);letter-spacing:.18em;text-transform:uppercase;color:var(--bone);background:transparent;border:1px solid rgba(226,220,205,.5);padding:10px 24px}
 #btnE{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:max(90px,calc(env(safe-area-inset-bottom,0px) + 90px));width:76px;height:76px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 17px var(--hud);letter-spacing:.1em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none}
@@ -275,11 +280,21 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 <button id="pauseBtn" type="button" aria-label="Pausa"><i></i><i></i></button>
 <button id="fsBtn" type="button" aria-label="Pantalla completa" style="position:absolute;top:max(14px,env(safe-area-inset-top,0px));right:max(70px,calc(env(safe-area-inset-right,0px) + 56px));width:44px;height:44px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.55);pointer-events:auto;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;z-index:4;color:var(--bone);font:600 18px var(--hud);letter-spacing:.1em;">⛶</button>
 <div class="veil" id="vPause"><div class="card"><h1 data-i18n="pause">Pausa</h1><p data-i18n="pauseP">El bosque espera.</p><div class="row"><button class="go" id="resumeBtn" type="button" data-i18n="resume">Continuar</button><button class="ghost" id="restartBtn" type="button" data-i18n="restart">Volver a empezar</button><button class="ghost" id="menuBtn" type="button" data-i18n="menu">Men&uacute; principal</button><button class="ghost" id="setBtn2" type="button" data-i18n="settings">Sonido</button><button class="ghost" id="langBtn2" type="button" data-i18n="lang">Idioma: Español</button></div></div></div>
-<div class="veil dark" id="vSet" style="z-index:7"><div class="card" style="min-width:min(340px,calc(100vw - 48px))"><h1 data-i18n="settings">Sonido</h1>
+<div class="veil dark" id="vSet" style="z-index:7"><div class="card" style="min-width:min(380px,calc(100vw - 48px));max-height:calc(100vh - 40px);overflow-y:auto"><h1 data-i18n="settings">Ajustes</h1>
+<h2 class="setH" data-i18n="sndH">Sonido</h2>
 <div class="vols">
 <label><span data-i18n="volSfx">Efectos</span><b id="vvSfx">100%</b><input type="range" id="volSfx" min="0" max="100" step="1"></label>
 <label><span data-i18n="volAmb">Ambiente</span><b id="vvAmb">100%</b><input type="range" id="volAmb" min="0" max="100" step="1"></label>
 <label><span data-i18n="volMus">Música</span><b id="vvMus">100%</b><input type="range" id="volMus" min="0" max="100" step="1"></label>
+</div>
+<h2 class="setH" data-i18n="camH">Cámara</h2>
+<div class="vols">
+<label><span data-i18n="camSens">Sensibilidad</span><b id="cvSens">100%</b><input type="range" id="camSens" min="25" max="250" step="5"></label>
+<label><span data-i18n="camDist">Distancia de cámara</span><b id="cvDist">100%</b><input type="range" id="camDist" min="70" max="160" step="5"></label>
+<label><span data-i18n="camFov">Campo de visión</span><b id="cvFov">62°</b><input type="range" id="camFov" min="50" max="85" step="1"></label>
+<label class="tog"><span data-i18n="camInv">Invertir eje vertical</span><input type="checkbox" id="camInv"></label>
+<label class="tog"><span data-i18n="camShake">Temblor y movimiento de cámara</span><input type="checkbox" id="camShake"></label>
+<button class="ghost" id="camReset" type="button" data-i18n="camReset" style="justify-self:start">Restablecer</button>
 </div><div class="row"><button class="go" id="setClose" type="button" data-i18n="done">Listo</button></div></div></div>
 <div class="veil dark" id="vCaught"><div class="card"><h1 id="caughtText">Te alcanzó.</h1><p data-i18n="caughtP">Vuelves al último pedazo de tela.</p><button class="go" id="retryBtn" type="button" data-i18n="retry">Reintentar</button></div></div>
 <div class="veil dark" id="vEnd">
@@ -328,7 +343,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  hands:'¡Manos! Golpea con el hacha para soltarte',handsCaught:'Las manos te arrastraron.',soundOff:'Sonido apagado.',soundOn:'Sonido encendido.',
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
- axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Sonido',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
+ axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Ajustes',sndH:'Sonido',camH:'Cámara',camSens:'Sensibilidad',camInv:'Invertir eje vertical',camDist:'Distancia de cámara',camFov:'Campo de visión',camShake:'Temblor y movimiento de cámara',camReset:'Restablecer',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
 en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Start',credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'L3 / LT: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
@@ -343,7 +358,7 @@ en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kic
  hands:'Hands! Strike with the axe to break free',handsCaught:'The hands dragged you down.',soundOff:'Sound off.',soundOn:'Sound on.',
  lines:['A scrap of cloth. Still warm.','I know this path. I dreamed it before I walked it.','Every step takes me away from her. Every step brings me closer.',"Something is breathing behind me. I won't look.",'Luna, if you\'re still here, tell me which way.'],
  axTitle:'Adjust axe',axHelp:'Change the values and watch Damian. Drag on the screen to turn the camera. Saved in this browser.',axRot:'Axe in hand: rotation (°)',axPos:'Axe in hand: position (cm)',axGrip:'Grip',axSlide:'Slide along the handle (cm)',
- axRx:'Rotate X',axRy:'Rotate Y',axRz:'Rotate Z',axMx:'Move X',axMy:'Move Y',axMz:'Move Z',axFreeze:'Freeze attack',axMoment:'Moment of the swing',axTry:'Try attack',axKick:'Try kick',axSave:'Save',axSaved:'Axe position saved.',axCopy:'Copy values',axReset:'Reset',settings:'Sound',volSfx:'Effects',volAmb:'Ambience',volMus:'Music',done:'Done',skip:'Skip',tapPlay:'Tap to play'}
+ axRx:'Rotate X',axRy:'Rotate Y',axRz:'Rotate Z',axMx:'Move X',axMy:'Move Y',axMz:'Move Z',axFreeze:'Freeze attack',axMoment:'Moment of the swing',axTry:'Try attack',axKick:'Try kick',axSave:'Save',axSaved:'Axe position saved.',axCopy:'Copy values',axReset:'Reset',settings:'Settings',sndH:'Sound',camH:'Camera',camSens:'Sensitivity',camInv:'Invert vertical look',camDist:'Camera distance',camFov:'Field of view',camShake:'Camera shake & sway',camReset:'Reset',volSfx:'Effects',volAmb:'Ambience',volMus:'Music',done:'Done',skip:'Skip',tapPlay:'Tap to play'}
 };
 var LANG='es';
 try{var _lg=localStorage.getItem('nihd_lang');LANG=_lg||((navigator.language||'es').toLowerCase().indexOf('es')===0?'es':'en');}catch(e){LANG=(navigator.language||'es').toLowerCase().indexOf('es')===0?'es':'en';}
@@ -983,6 +998,7 @@ function dmnUpdate(dt,spd){
   a.walk.timeScale=Math.max(0.7,Math.min(2.6,spd/0.95));
   a.run.timeScale=Math.max(0.6,Math.min(1.8,spd/4.6));
   dmn.mixer.update(dt);
+  introLean();
   combatPose();
   carryTick((1-dmn.atkW)*(1-dmn.jW));
   mudFeet(dt,spd);
@@ -3209,8 +3225,24 @@ function applyVol(){
   if(sfxBus){var t=ac.currentTime;sfxBus.gain.setTargetAtTime(VOL.sfx*VOL.sfx,t,0.03);ambBus.gain.setTargetAtTime(VOL.amb*VOL.amb,t,0.03);musBus.gain.setTargetAtTime(VOL.mus*VOL.mus,t,0.03);}
   [['Sfx','sfx'],['Amb','amb'],['Mus','mus']].forEach(function(p){var r=$('vol'+p[0]),v=$('vv'+p[0]);if(r&&+r.value!==Math.round(VOL[p[1]]*100))r.value=Math.round(VOL[p[1]]*100);if(v)v.textContent=Math.round(VOL[p[1]]*100)+'%';});
 }
-function openSettings(){applyVol();$('vSet').classList.add('on');}
-function closeSettings(){$('vSet').classList.remove('on');try{localStorage.setItem('nihd_vol',JSON.stringify(VOL));}catch(e){}}
+var CAM={sens:1,inv:false,dist:1,fov:62,shake:true};
+try{var _cc=JSON.parse(localStorage.getItem('nihd_cam')||'null');if(_cc){if(typeof _cc.sens==='number')CAM.sens=Math.max(0.25,Math.min(2.5,_cc.sens));if(typeof _cc.dist==='number')CAM.dist=Math.max(0.7,Math.min(1.6,_cc.dist));if(typeof _cc.fov==='number')CAM.fov=Math.max(50,Math.min(85,_cc.fov));CAM.inv=!!_cc.inv;CAM.shake=_cc.shake!==false;}}catch(e){}
+function camIY(){return CAM.inv?-1:1;}
+function applyCam(){
+  var S=$('camSens'),D=$('camDist'),F=$('camFov');
+  if(S){S.value=Math.round(CAM.sens*100);$('cvSens').textContent=Math.round(CAM.sens*100)+'%';}
+  if(D){D.value=Math.round(CAM.dist*100);$('cvDist').textContent=Math.round(CAM.dist*100)+'%';}
+  if(F){F.value=CAM.fov;$('cvFov').textContent=CAM.fov+'°';}
+  if($('camInv'))$('camInv').checked=CAM.inv;if($('camShake'))$('camShake').checked=CAM.shake;
+  try{resize();}catch(e){}
+}
+function saveCam(){try{localStorage.setItem('nihd_cam',JSON.stringify(CAM));}catch(e){}}
+function openSettings(){applyVol();applyCam();$('vSet').classList.add('on');}
+function closeSettings(){$('vSet').classList.remove('on');try{localStorage.setItem('nihd_vol',JSON.stringify(VOL));}catch(e){}saveCam();}
+[['camSens','sens',100],['camDist','dist',100],['camFov','fov',1]].forEach(function(c){var el=$(c[0]);if(el)el.addEventListener('input',function(){CAM[c[1]]=+el.value/c[2];applyCam();saveCam();});});
+if($('camInv'))$('camInv').addEventListener('change',function(){CAM.inv=this.checked;saveCam();});
+if($('camShake'))$('camShake').addEventListener('change',function(){CAM.shake=this.checked;saveCam();});
+if($('camReset'))$('camReset').addEventListener('click',function(){CAM.sens=1;CAM.inv=false;CAM.dist=1;CAM.fov=62;CAM.shake=true;applyCam();saveCam();});
 function toggleMute(){
   if(!aMaster)return;muted=!muted;aMaster.gain.value=muted?0:0.9;
   showSub(muted?tr('soundOff'):tr('soundOn'),1500);
@@ -3787,7 +3819,7 @@ canvas.addEventListener('mousedown',function(e){
 window.addEventListener('mouseup',function(e){dragging=false;if(e.button===0)atkRelease();});
 window.addEventListener('mousemove',function(e){
   if(state!=='play'||!(locked||dragging))return;
-  yaw-=e.movementX*0.0026;pitch=Math.max(-0.25,Math.min(1.0,pitch+e.movementY*0.0022));
+  yaw-=e.movementX*0.0026*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+e.movementY*0.0022*CAM.sens*camIY()));
 });
 var joy={id:null,ox:0,oy:0,x:0,y:0},look={id:null,lx:0,ly:0};
 var joyEl=$('joy'),joyKnob=joyEl.querySelector('b');
@@ -3810,7 +3842,7 @@ canvas.addEventListener('touchmove',function(e){
       var dx=(t.clientX-joy.ox)/50,dy=(t.clientY-joy.oy)/50,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}
       joy.x=dx;joy.y=dy;joyKnob.style.transform='translate('+(dx*35)+'px,'+(dy*35)+'px)';
     }else if(t.identifier===look.id&&state==='play'){
-      yaw-=(t.clientX-look.lx)*0.0055;pitch=Math.max(-0.25,Math.min(1.0,pitch+(t.clientY-look.ly)*0.004));
+      yaw-=(t.clientX-look.lx)*0.0055*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+(t.clientY-look.ly)*0.004*CAM.sens*camIY()));
       look.lx=t.clientX;look.ly=t.clientY;
     }
   }
@@ -4065,7 +4097,7 @@ function cinPre(rdt,spd){
 function cinPost(rdt,spd){
   /* handheld: a slow breathing drift, more when running or when calm is low */
   if(state==='title'||state==='finale'&&FIN.phase==='clip')return;
-  var a=0.0035+Math.min(1,spd/3.7)*0.006+(1-calm)*0.007,t=time;
+  var a=(0.0035+Math.min(1,spd/3.7)*0.006+(1-calm)*0.007)*(CAM.shake?1:0),t=time;
   camera.rotateX((Math.sin(t*0.9)*0.6+Math.sin(t*2.3+1.1)*0.3+Math.sin(t*5.7)*0.1*Math.min(1,spd/2))*a);
   camera.rotateY((Math.sin(t*0.7+2.0)*0.6+Math.sin(t*1.9+0.3)*0.3)*a);
   camera.rotateZ(Math.sin(t*0.5+0.7)*a*0.6);
@@ -4296,7 +4328,7 @@ function startIntro(){
   PUDS.list=PUDS.list.filter(function(q){if(Math.hypot(q.x-pp.x,q.z-pp.z)<11){scene.remove(q.o);return false;}return true;});
   var tx=best?best.x:pp.x-fx*10,tz=best?best.z:pp.z-fz*10,r=best?(best.r||0.4):0.4;
   var ux=pp.x-tx,uz=pp.z-tz,ul=Math.hypot(ux,uz)||1;ux/=ul;uz/=ul;
-  INTRO.tree=[tx,tz];INTRO.spot=[tx+ux*(r+1.0),tz+uz*(r+1.0)];
+  INTRO.tree=[tx,tz];INTRO.spot=[tx+ux*(r+1.9),tz+uz*(r+1.9)];
   var px=-uz,pz=ux,dd=Math.hypot(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z),back=Math.max(3,Math.min(6,dd-2.2));
   /* she passes behind Damian and walks straight toward the pine */
   INTRO.lstart=[INTRO.spot[0]+ux*back+px*2.2,INTRO.spot[1]+uz*back+pz*2.2];
@@ -4321,6 +4353,15 @@ function startIntro(){
   $('introFade').style.opacity='1';$('introSkip').style.display='block';$('introTitle').style.opacity='0';$('introTitle').textContent=tr('endTitle');
   gpuPrewarm();
   return true;
+}
+/* opening: bend Damian further forward over the puddle while he kneels and washes; eases out as he stands */
+var _lnQ=new THREE.Quaternion(),_lnX=new THREE.Vector3(1,0,0),LEAN={b:null};
+function introLean(){
+  if(!INTRO.on||!dmn.iW)return;
+  var t=INTRO.t||0,u=Math.max(0,Math.min(1,(t-10)/1.1)),k=dmn.iW*(1-u*u*(3-2*u));if(k<0.01)return;
+  if(!LEAN.b){LEAN.b={};hero.traverse(function(o){if(o.isBone){var m=/(Spine2|Spine1|Spine|Neck)$/.exec(o.name);if(m&&!LEAN.b[m[1]])LEAN.b[m[1]]=o;}});}
+  var A={Spine:0.15,Spine1:0.12,Spine2:0.08,Neck:0.06};
+  for(var n in A){var b=LEAN.b[n];if(b)b.quaternion.multiply(_lnQ.setFromAxisAngle(_lnX,A[n]*k));}
 }
 function introLunaWalk(dt){
   var P={},wk=LANIM.walk,TS=0.75,cruise=wk.travel/wk.dur*TS,p=luna.g.position;
@@ -4361,7 +4402,6 @@ function introTick(dt){
   }else if(!T.turnL&&t>10.4&&t<14.4){var ty2=Math.atan2(INTRO.spot[0]-pp.x,INTRO.spot[1]-pp.z);if(T.tf0===undefined)T.tf0=pp.face;var du=Math.atan2(Math.sin(ty2-T.tf0),Math.cos(ty2-T.tf0));pp.face=T.tf0+du*ss(10.4,14.2,t);}
   if(t>=14.4+O)T.dW=Math.max(0,1-(t-14.4-O)/0.6);
   if(T.run&&t>15.8+O){pp.face+=Math.atan2(Math.sin(T.runYaw-pp.face),Math.cos(T.runYaw-pp.face))*Math.min(1,dt*1.1);}
-  if(t>=12.4&&axe.g&&!axe.g.visible)axe.g.visible=true;
   if(t>=10){var gy=T.run?T.runYaw:pp.face;yaw+=Math.atan2(Math.sin(gy-yaw),Math.cos(gy-yaw))*Math.min(1,dt*1.5);}
   /* Luna walks behind him to the pine, stops, enchanted */
   if(t>=1.5&&!T.lstop){if(luna.op<1)lunaOp(Math.min(1,luna.op+dt*0.8));if(introLunaWalk(dt)){T.lstop=true;T.lstopT=t;T.lfrom=lunaSnapshot();}}
@@ -4456,7 +4496,7 @@ function gpTick(rdt){
   var dz=function(v){v=v||0;return Math.abs(v)<0.16?0:(v-(v>0?0.16:-0.16))/0.84;};
   GP.mx=dz(g.axes[0]);GP.my=dz(g.axes[1]);
   var rx=dz(g.axes[2]),ry=dz(g.axes[3]);
-  if(state==='play'||state==='title'&&false){yaw-=rx*Math.abs(rx)*3.0*rdt;pitch=Math.max(-0.25,Math.min(1.0,pitch+ry*Math.abs(ry)*2.0*rdt));}
+  if(state==='play'||state==='title'&&false){yaw-=rx*Math.abs(rx)*3.0*rdt*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+ry*Math.abs(ry)*2.0*rdt*CAM.sens*camIY()));}
   var P=function(i){return gpDown(g,i)&&!GP.prev[i];},R=function(i){return !gpDown(g,i)&&GP.prev[i];};
   /* standard layout: 0 A/Cross 1 B/Circle 2 X/Square 3 Y/Triangle 4 LB/L1 5 RB/R1 6 LT/L2 7 RT/R2 8 View/Share 9 Menu/Options 10 L3 */
   if(state==='title'){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4))ctlTab(-1);else if(P(5))ctlTab(1);}else if(P(0)||P(9))$('goBtn').click();}
@@ -4485,7 +4525,7 @@ window.addEventListener('gamepadconnected',function(){GP.told=false;});
 /* ---------- loop ---------- */
 function resize(){
   var w=window.innerWidth,h=window.innerHeight;
-  renderer.setSize(w,h,false);if(comp){comp.setPixelRatio(renderer.getPixelRatio());comp.setSize(w,h);}camera.aspect=w/h;camera.userData.baseFov=w/h<1?78:62;camera.fov=camera.userData.baseFov*(CIN.fovK||1);camera.updateProjectionMatrix();
+  renderer.setSize(w,h,false);if(comp){comp.setPixelRatio(renderer.getPixelRatio());comp.setSize(w,h);}camera.aspect=w/h;camera.userData.baseFov=(w/h<1?78:62)+(CAM.fov-62);camera.fov=camera.userData.baseFov*(CIN.fovK||1);camera.updateProjectionMatrix();
 }
 window.addEventListener('resize',resize);resize();
 resetGame();state='title';
@@ -4549,7 +4589,7 @@ function frame(){
 
   /* camera */
   cinPre(rdt,spd);
-  var D=CIN.dist,cp=Math.cos(pitch),sn=Math.sin(pitch);
+  var D=CIN.dist*(state==='play'||state==='paused'?CAM.dist:1),cp=Math.cos(pitch),sn=Math.sin(pitch);
   var ay=py+1.45+CIN.hgt;
   camPos.set(pp.x-F.x*cp*D+Rt.x*0.65,ay+0.3+sn*D,pp.z-F.z*cp*D+Rt.z*0.65);
   var gh=H(camPos.x,camPos.z)+0.6;if(camPos.y<gh)camPos.y=gh;
@@ -4574,7 +4614,7 @@ function frame(){
     if(dmn.hurtT>=0&&SHK.hp<0)SHK.imp=Math.max(SHK.imp,0.1);
   }
   SHK.hp=dmn.hurtT;SHK.imp*=Math.exp(-dt*5);
-  var shk=shAmp+SHK.imp;if(hol.grab){shk=0;SHK.imp=0;}
+  var shk=shAmp+SHK.imp;if(hol.grab||!CAM.shake){shk=0;SHK.imp=0;}
   if(shk>0.002&&state!=='title'){camera.position.x+=Math.sin(time*47.0)*shk*0.7;camera.position.y+=Math.sin(time*53.0+1.3)*shk;camera.position.z+=Math.cos(time*41.0+0.4)*shk*0.7;camera.rotateZ(Math.sin(time*37.0)*shk*0.12);}
   cinPost(rdt,spd);raysTick(dt);
   if(state==='play')puddleSteps(dt,spd);if(((time*4)|0)!==(PUDS.ct||0)){PUDS.ct=(time*4)|0;puddleCull();}
