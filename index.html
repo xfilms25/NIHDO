@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IM+Fell+English:ital@0;1&display=swap">
 <style>
+@font-face{font-family:'Special Elite';src:url(SpecialElite.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Cinzel';src:url(Cinzel.ttf) format('truetype');font-weight:400 900;font-display:swap}
 /* Layout: full-bleed 3D view, HUD laid over it. Compass top centre, title top left, calm bar bottom left, subtitles bottom centre. */
 :root{
@@ -124,7 +125,7 @@ button.go:hover{background:#fff}
 .menuWrap h1{font-family:'Cinzel',var(--display);font-weight:500;font-size:clamp(26px,min(5.6vw,10vh),76px);line-height:1.04;letter-spacing:.03em;margin:0;color:#e8dcc9;text-shadow:0 4px 28px #000;text-wrap:balance;max-width:10em}
 .menuWrap .tag{margin:0;max-width:30em;font-size:clamp(16px,1.7vw,20px);line-height:1.4;color:#b4b1a8;letter-spacing:.02em}
 .menu{display:flex;flex-direction:column;gap:2px;margin-top:8px}
-.mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:600 clamp(20px,2.3vw,26px) var(--hud);letter-spacing:.2em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
+.mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:400 clamp(20px,2.3vw,26px) 'Special Elite','Courier New',monospace;letter-spacing:.16em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
 .mi i{width:10px;height:10px;background:var(--gold);transform:rotate(45deg);opacity:0;transition:opacity .2s;flex:none}
 .mi.primary{color:var(--bone)}
 .mi:hover,.mi:focus-visible{color:#fff;transform:translateX(6px)}
@@ -139,8 +140,8 @@ button.go:hover{background:#fff}
 
 /* ===== fancy main menu ===== */
 #tfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
-#vTitle .bg{filter:saturate(.85) brightness(.55)}
-#vTitle .bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 74% 48%,rgba(255,250,235,.10),rgba(0,0,0,0) 46%);animation:flick 7s ease-in-out infinite}
+#vTitle .bg{filter:saturate(.85) brightness(.55) contrast(1.25)}
+#vTitle .bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 74% 48%,rgba(255,250,235,.04),rgba(0,0,0,0) 46%);animation:flick 7s ease-in-out infinite}
 @keyframes flick{0%,100%{opacity:.55}43%{opacity:.85}46%{opacity:.5}49%{opacity:.9}70%{opacity:.7}}
 .fcorner{position:absolute;width:42px;height:42px;border:1px solid rgba(165,29,36,.42);z-index:2;pointer-events:none;animation:rise 1.4s ease 2.4s both}
 .fcorner.tl{top:18px;left:18px;border-right:0;border-bottom:0}.fcorner.tr{top:18px;right:18px;border-left:0;border-bottom:0}
@@ -152,11 +153,10 @@ button.go:hover{background:#fff}
 .orn::after{background:linear-gradient(90deg,rgba(165,29,36,.75),rgba(165,29,36,0))}
 .orn b{width:9px;height:9px;border:1px solid var(--gold);transform:rotate(45deg);box-shadow:0 0 10px rgba(165,29,36,.6)}
 .mi.start{position:relative;overflow:hidden;padding:8px 0;margin:2px 0 8px;color:#f3ead8;font-size:clamp(26px,3vw,36px);letter-spacing:.34em;transition:color .2s,transform .2s,text-shadow .3s}
-.mi.start::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,244,214,.22),rgba(255,255,255,0));transform:skewX(-20deg);animation:sheen 4.5s ease-in-out 3s infinite}
+.mi.start::after{content:none}
 @keyframes sheen{0%{left:-60%}35%,100%{left:130%}}
 .mi.start:hover,.mi.start:focus-visible{text-shadow:0 0 18px rgba(205,62,52,.55)}
 .mi.start:disabled{opacity:.6}
-.mi.start:disabled::after{animation-duration:1.6s;animation-delay:0s}
 .mfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
 .mfoot .chip{font-weight:600;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(165,29,36,.4);padding:4px 10px}
 .mfoot .chip[hidden]{display:none}
@@ -252,7 +252,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
   <canvas id="tfx" aria-hidden="true"></canvas>
   <div class="mcredit"><img src="xlogo.png" alt="XFilms" width="36" height="34"></div>
   <div class="menuWrap">
-    <div class="eyebrow" data-i18n="eyebrow">The Official Videogame</div>
+    <div class="eyebrow" data-i18n="eyebrow">The Official Game</div>
     <h1>Nothing I haven't Dreamed of</h1>
     <div class="orn" aria-hidden="true"></div>
     <div class="rule" data-i18n="rule">No mires atrás.</div>
@@ -329,7 +329,7 @@ var $=function(id){return document.getElementById(id);};
 var touch=false;
 /* ---------- languages: Español / English ---------- */
 var I18N={
-es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Videogame',rule:'No mires atrás.',
+es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Game',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
  go:'Comenzar',credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'L3 / LT: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
@@ -344,7 +344,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Ajustes',sndH:'Sonido',camH:'Cámara',camSens:'Sensibilidad',camInv:'Invertir eje vertical',camDist:'Distancia de cámara',camFov:'Campo de visión',camShake:'Temblor y movimiento de cámara',camReset:'Restablecer',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
-en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Videogame',rule:"Don't look back.",
+en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Game',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Start',credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'L3 / LT: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
@@ -4001,6 +4001,35 @@ $('ctlClose').addEventListener('click',ctlClose);$('ctlX').addEventListener('cli
 [].forEach.call(document.querySelectorAll('.ctabs button'),function(t){t.addEventListener('click',function(){CTL.tab=t.getAttribute('data-tab');ctlRender();});});
 $('vCtl').addEventListener('click',function(e){if(e.target===this)ctlClose();});
 document.addEventListener('keydown',function(e){if(!CTL.open)return;if(e.code==='Escape'){e.preventDefault();ctlClose();}else if(e.code==='ArrowRight'||e.code==='ArrowLeft'){e.preventDefault();ctlTab(e.code==='ArrowRight'?1:-1);var t=document.querySelector('.ctabs button[aria-selected=true]');if(t)t.focus();}},true);
+/* ---------- menu sound: music + forest wind start on the first click/key (browsers block audio before that); typewriter keys on the menu ---------- */
+function menuAudioUnlock(){if(state!=='title')return;initAudio();try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}}
+['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,menuAudioUnlock,{passive:true});});
+var _uiLast=0;
+function uiKey(heavy){
+  if(!ac||!sfxBus||ac.state!=='running')return;
+  var now=ac.currentTime;if(!heavy&&now-_uiLast<0.05)return;_uiLast=now;
+  try{
+    var len=Math.floor(ac.sampleRate*(heavy?0.09:0.045)),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
+    for(var i=0;i<len;i++){var e=Math.pow(1-i/len,heavy?5:7);d[i]=(Math.random()*2-1)*e;}
+    var src=ac.createBufferSource();src.buffer=b;src.playbackRate.value=heavy?0.75:0.95+Math.random()*0.2;
+    var bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=heavy?1500:2600+Math.random()*700;bp.Q.value=1.4;
+    var g=ac.createGain();g.gain.value=heavy?0.5:0.22;src.connect(bp);bp.connect(g);g.connect(sfxBus);src.start(now);
+    /* the key's body: a short low knock */
+    var o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(heavy?180:320,now);o.frequency.exponentialRampToValueAtTime(heavy?70:140,now+0.06);
+    og.gain.setValueAtTime(heavy?0.25:0.08,now);og.gain.exponentialRampToValueAtTime(0.0001,now+(heavy?0.12:0.05));o.connect(og);og.connect(sfxBus);o.start(now);o.stop(now+0.15);
+  }catch(e){}
+}
+function uiStartHit(){
+  uiKey(true);if(!ac||!sfxBus)return;
+  try{var now=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(62,now);o.frequency.exponentialRampToValueAtTime(30,now+1.4);
+    g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(0.55,now+0.03);g.gain.exponentialRampToValueAtTime(0.0001,now+1.6);o.connect(g);g.connect(sfxBus);o.start(now);o.stop(now+1.7);}catch(e){}
+}
+[].forEach.call(document.querySelectorAll('#vTitle .mi'),function(b){
+  b.addEventListener('pointerenter',function(){if(!b.disabled)uiKey(false);});
+  b.addEventListener('focus',function(){uiKey(false);});
+  b.addEventListener('click',function(){menuAudioUnlock();if(b.id==='goBtn')uiStartHit();else uiKey(true);});
+});
+[].forEach.call(document.querySelectorAll('.ctabs button,#ctlClose,#ctlX,#setClose'),function(b){b.addEventListener('click',function(){uiKey(false);});});
 /* best time on the menu */
 function menuBest(){var b=boardLoad(),el=$('bestChip');if(!el)return;if(!b.length){el.hidden=true;return;}var m=Math.min.apply(null,b.map(function(r){return r.t;}));el.textContent=tr('bestRun')+' · '+fmtTime(m);el.hidden=false;}
 menuBest();
@@ -4013,7 +4042,7 @@ menuBest();
   function ember(init){return {x:Math.random()*W,y:init?Math.random()*H:H+10,r:0.6+Math.random()*1.8,vy:8+Math.random()*22,vx:-4+Math.random()*8,ph:Math.random()*6.28,w:0.6+Math.random()*1.6,warm:Math.random()<0.55};}
   rs();window.addEventListener('resize',rs);
   for(var i=0;i<70;i++)E.push(ember(true));
-  for(var j=0;j<7;j++)F.push({x:Math.random()*W,y:H*(0.45+Math.random()*0.55),r:160+Math.random()*260,vx:(Math.random()<0.5?-1:1)*(4+Math.random()*8),a:0.05+Math.random()*0.06});
+  for(var j=0;j<7;j++)F.push({x:Math.random()*W,y:H*(0.45+Math.random()*0.55),r:160+Math.random()*260,vx:(Math.random()<0.5?-1:1)*(4+Math.random()*8),a:0.015+Math.random()*0.02});
   for(var k2=0;k2<9;k2++)L.push({x:W*(0.45+Math.random()*0.5),y:H*(0.3+Math.random()*0.6),ph:Math.random()*6.28,sp:0.5+Math.random()*0.8,dx:Math.random()*6.28});
   function tick(now){
     requestAnimationFrame(tick);
@@ -4021,12 +4050,12 @@ menuBest();
     var dt=Math.min(0.05,(now-last)/1000);last=now;if(red)dt=0;var t=now/1000;
     cx.clearRect(0,0,W,H);
     /* far light */
-    var lx=W*0.74,ly=H*0.5,lr=Math.max(W,H)*0.28,la=0.07+0.04*Math.sin(t*0.8)+0.02*Math.sin(t*2.3);
+    var lx=W*0.74,ly=H*0.5,lr=Math.max(W,H)*0.28,la=0.025+0.012*Math.sin(t*0.8)+0.006*Math.sin(t*2.3);
     var g=cx.createRadialGradient(lx,ly,0,lx,ly,lr);g.addColorStop(0,'rgba(255,248,230,'+la+')');g.addColorStop(1,'rgba(255,248,230,0)');cx.fillStyle=g;cx.fillRect(0,0,W,H);
     /* fog */
-    F.forEach(function(f){f.x+=f.vx*dt;if(f.x<-f.r)f.x=W+f.r;if(f.x>W+f.r)f.x=-f.r;var gg=cx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);gg.addColorStop(0,'rgba(170,176,180,'+f.a+')');gg.addColorStop(1,'rgba(170,176,180,0)');cx.fillStyle=gg;cx.fillRect(f.x-f.r,f.y-f.r,f.r*2,f.r*2);});
+    F.forEach(function(f){f.x+=f.vx*dt;if(f.x<-f.r)f.x=W+f.r;if(f.x>W+f.r)f.x=-f.r;var gg=cx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);gg.addColorStop(0,'rgba(120,126,130,'+f.a+')');gg.addColorStop(1,'rgba(120,126,130,0)');cx.fillStyle=gg;cx.fillRect(f.x-f.r,f.y-f.r,f.r*2,f.r*2);});
     /* fireflies */
-    L.forEach(function(p){p.dx+=dt*0.4;var x=p.x+Math.sin(p.dx)*30,y=p.y+Math.cos(p.dx*1.3)*18,a=Math.max(0,Math.sin(t*p.sp+p.ph))*0.75;if(a<0.02)return;var gg=cx.createRadialGradient(x,y,0,x,y,14);gg.addColorStop(0,'rgba(236,240,200,'+a+')');gg.addColorStop(1,'rgba(236,240,200,0)');cx.fillStyle=gg;cx.fillRect(x-14,y-14,28,28);});
+    L.forEach(function(p){p.dx+=dt*0.4;var x=p.x+Math.sin(p.dx)*30,y=p.y+Math.cos(p.dx*1.3)*18,a=Math.max(0,Math.sin(t*p.sp+p.ph))*0.4;if(a<0.02)return;var gg=cx.createRadialGradient(x,y,0,x,y,8);gg.addColorStop(0,'rgba(236,240,200,'+a+')');gg.addColorStop(1,'rgba(236,240,200,0)');cx.fillStyle=gg;cx.fillRect(x-8,y-8,16,16);});
     /* embers */
     for(var i=0;i<E.length;i++){var e=E[i];e.y-=e.vy*dt;e.x+=(e.vx+Math.sin(t*e.w+e.ph)*6)*dt;if(e.y<-10)E[i]=e=ember(false);
       var a=(0.35+0.45*Math.sin(t*3*e.w+e.ph))*Math.min(1,e.y/(H*0.25));if(a<=0)continue;
