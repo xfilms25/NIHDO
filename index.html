@@ -1393,7 +1393,9 @@ function lunaTickFig(dt,playing){
     if(luna.runT>2.0)lunaOp(Math.max(0,luna.op-dt*1.4));
     if(luna.op<=0){luna.act.timeScale=0;luna.act.time=LUNA_POSE;luna.mixer.update(0);if(luna.bind&&luna.bind.mixamorigHips)luna.bones.mixamorigHips.position.copy(luna.bind.mixamorigHips.p);luna.poseIdx=-1;luna.state='out';}
   }
-  if(playing&&k===5&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
+  /* the ending starts by itself at the clearing, but only once Hollow's chase is over (and a breath after it) */
+  var chaseOver=(SCH.done&&!CHASE.on&&time-(SCH.doneAt||0)>2.5)||!hol.ready;
+  if(playing&&k===5&&chaseOver&&luna.state==='idle'&&luna.op>0.95&&!TRAP.hold&&Math.hypot(pp.x-WP[5][0],pp.z-WP[5][1])<5)startFinale();
   if(luna.state==='out'){
     lunaOp(Math.max(0,luna.op-dt*1.6));
     if(luna.op<=0){
@@ -2952,7 +2954,7 @@ function chaseWin(){
   chaseEnd();CHASE.cool=12;
   /* he loses Damian between the pines: black ash and gone */
   holTeleFX(false);holSetOp(0);hol.g.visible=false;hol.state='hide';hol.t=14+Math.random()*8;hol.hunt=false;holGrabEnd();
-  calm=Math.max(calm,0.5);if(k===5){SCH.done=true;hol.t=1e9;CLEAR.t=0;}
+  calm=Math.max(calm,0.5);if(k===5){SCH.done=true;SCH.doneAt=time;hol.t=1e9;CLEAR.t=0;}
   showSub(tr('chaseEscaped'),3200);
   try{cineBoom(0.45);cineChime(0.05,392);}catch(e){}
 }
@@ -3991,7 +3993,8 @@ function finaleTick(dt){
     FIN.walk+=sp*dt*4.5;lunaWalkLegs(FIN.walk,amt);
   }
   p.x+=FIN.dx*sp*dt;p.z+=FIN.dz*sp*dt;
-  lunaOp(t<4.4?1:Math.max(0,1-(t-4.4)/2.2));
+  /* she walks off but never fades away: the film takes over with her still there */
+  lunaOp(1);
   if(t>=FIN_WALK)playFinale();
 }
 function playFinale(){
