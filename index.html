@@ -4704,7 +4704,7 @@ function turnYawTable(TA){
   }catch(e){return null;}
 }
 /* fixed location for the opening (null = search near the start); F8 in play saves one for testing */
-var INTRO_SPOT=null;
+var INTRO_SPOT={x:-2.2,z:-15.2};   /* chosen in game with F8 */
 function startIntro(){
   if(!introReady())return false;
   INTRO.on=true;INTRO.t=0;INTRO.shotId=0;INTRO.cues={};INTRO.grass=null;INTRO.grassDone=false;INTRO.brT=0.4;INTRO.wT=1.2;INTRO.lsT=0;INTRO.rsT=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
