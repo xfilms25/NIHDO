@@ -1074,7 +1074,7 @@ var MUD={prints:[],pi:0,N:48,parts:null,pn:140,pi2:0,vel:[],life:[]};
   var tex=new THREE.CanvasTexture(c);
   var geo=new THREE.PlaneGeometry(0.17,0.36);geo.rotateX(-Math.PI/2);
   for(var i=0;i<MUD.N;i++){
-    var m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,roughness:0.35,metalness:0,polygonOffset:true,polygonOffsetFactor:-2,opacity:0}));
+    var m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,color:0x9a8f84,transparent:true,depthWrite:false,roughness:0.95,metalness:0,polygonOffset:true,polygonOffsetFactor:-2,opacity:0}));
     m.visible=false;m.renderOrder=1;scene.add(m);MUD.prints.push({m:m,age:99});
   }
   /* splash particles */
@@ -1117,9 +1117,19 @@ function mudTick(dt){
   if(any){pa.position.needsUpdate=true;pa.a.needsUpdate=true;}
 }
 var _mv=new THREE.Vector3();
+function footLift(dt){
+  if(!dmn.footB){dmn.footB=[];hero.traverse(function(o){if(o.isBone&&/(Left|Right)(ToeBase|Foot)$/.test(o.name))dmn.footB.push({b:o,off:/ToeBase$/.test(o.name)?0.025:0.075});});dmn.lift=0;}
+  var need=0,on=!INTRO.on&&(dmn.dW||0)<0.4&&state!=='title';
+  if(on){hero.updateMatrixWorld(true);
+    for(var i=0;i<dmn.footB.length;i++){var F=dmn.footB[i];F.b.getWorldPosition(_mv);var pen=H(_mv.x,_mv.z)+F.off-_mv.y;if(pen>need)need=pen;}}
+  need=Math.min(0.4,need);
+  dmn.lift+=(need-dmn.lift)*Math.min(1,dt*(need>dmn.lift?18:5));
+  if(dmn.lift>0.002){hero.position.y+=dmn.lift;}
+}
 function mudFeet(dt,spd){
   mudTick(dt);
   if(!dmn.feet||!dmn.feet.length)return;
+  footLift(dt);
   hero.updateMatrixWorld(true);
   var landing=pp.jy<=0.001&&(dmn.wasAir||false);
   for(var i=0;i<dmn.feet.length;i++){
@@ -2942,7 +2952,7 @@ function chaseWin(){
   chaseEnd();CHASE.cool=12;
   /* he loses Damian between the pines: black ash and gone */
   holTeleFX(false);holSetOp(0);hol.g.visible=false;hol.state='hide';hol.t=14+Math.random()*8;hol.hunt=false;holGrabEnd();
-  calm=Math.max(calm,0.5);if(k===5){SCH.done=true;hol.t=1e9;CLEAR.t=0.28;}
+  calm=Math.max(calm,0.5);if(k===5){SCH.done=true;hol.t=1e9;CLEAR.t=0;}
   showSub(tr('chaseEscaped'),3200);
   try{cineBoom(0.45);cineChime(0.05,392);}catch(e){}
 }
