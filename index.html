@@ -2882,7 +2882,7 @@ function chaseStart(){
   var ax=pp.x-hol.x,az=pp.z-hol.z,al=Math.hypot(ax,az)||1;ax/=al;az/=al;
   var T=WP[Math.min(k,5)],tx=T[0]-pp.x,tz=T[1]-pp.z,tl=Math.hypot(tx,tz)||1;tx/=tl;tz/=tl;
   if(ax*tx+az*tz>0.15){ax=ax*0.45+tx*0.55;az=az*0.45+tz*0.55;var l2=Math.hypot(ax,az)||1;ax/=l2;az/=l2;}
-  CHASE.dx=ax;CHASE.dz=az;CHASE.side=Math.random()<0.5?-1:1;
+  CHASE.dx=ax;CHASE.dz=az;CHASE.side=Math.random()<0.5?-1:1;CHASE.cs=null;CHASE.want=null;CHASE.stT=0;
   hol.state='watch';hol.hunt=true;hol.watch=99;holSetOp(1);hol.g.visible=true;
   keys={};axe.t=-1;jumpReq=false;
   var hd=$('hud');hd.style.transition='opacity .4s';hd.style.opacity='0';
@@ -2967,16 +2967,19 @@ function chaseTick(dt){
   /* steer around trunks, keep running away from him */
   var bx=CHASE.dx,bz=CHASE.dz,best=null,bs=1e9;
   CHASE.stT=(CHASE.stT||0)-dt;
-  if(CHASE.stT<=0){CHASE.stT=0.25;
-    /* clear of trunks, and through open ground rather than bushes */
-    [0,0.3,-0.3,0.6,-0.6,0.95,-0.95,1.3,-1.3].forEach(function(a){var c=Math.cos(a),s2=Math.sin(a),nx=bx*c+bz*s2,nz=-bx*s2+bz*c;
-      if(!chaseClearAt(pp.x,pp.z,nx,nz,5.5))return;
-      var sc=Math.abs(a)*2.2+chaseBrushOnSeg(pp.x+nx*1.5,pp.z+nz*1.5,pp.x+nx*7,pp.z+nz*7,0.7);
+  if(CHASE.stT<=0){CHASE.stT=0.45;
+    /* the way he wants to go: toward Luna's clearing on the scripted run, otherwise straight away from Hollow */
+    var pa=Math.atan2(bx,bz);if(k===5){var T5=WP[5];pa=Math.atan2(T5[0]-pp.x,T5[1]-pp.z);}
+    var prev=CHASE.want?Math.atan2(CHASE.want[0],CHASE.want[1]):Math.atan2(bx,bz);
+    /* clear of trunks, through open ground rather than bushes, and no sudden swerves */
+    [0,0.2,-0.2,0.4,-0.4,0.65,-0.65,0.95,-0.95,1.3,-1.3].forEach(function(a){var ang=pa+a,nx=Math.sin(ang),nz=Math.cos(ang);
+      if(!chaseClearAt(pp.x,pp.z,nx,nz,6.5))return;
+      var sc=Math.abs(a)*1.6+chaseBrushOnSeg(pp.x+nx*1.5,pp.z+nz*1.5,pp.x+nx*7,pp.z+nz*7,0.7)*0.8+Math.abs(Math.atan2(Math.sin(ang-prev),Math.cos(ang-prev)))*1.4;
       if(sc<bs){bs=sc;best=[nx,nz];}});
-    CHASE.want=best;
+    if(best)CHASE.want=best;
   }
   best=CHASE.want;
-  if(best){var tgt=Math.atan2(best[0],best[1]),cur=Math.atan2(CHASE.dx,CHASE.dz),dA=Math.atan2(Math.sin(tgt-cur),Math.cos(tgt-cur)),na=cur+dA*Math.min(1,dt*3.2);CHASE.dx=Math.sin(na);CHASE.dz=Math.cos(na);}
+  if(best){var tgt=Math.atan2(best[0],best[1]),cur=Math.atan2(CHASE.dx,CHASE.dz),dA=Math.atan2(Math.sin(tgt-cur),Math.cos(tgt-cur)),na=cur+dA*Math.min(1,dt*1.7);CHASE.dx=Math.sin(na);CHASE.dz=Math.cos(na);}
   /* he gains a little every second; each hit buys distance, each miss gives it back */
   CHASE.gap-=dt*(0.14+0.03*CHASE.n);
   if(CHASE.gap<=1.7){chaseLose();return;}
@@ -4988,8 +4991,9 @@ function frame(){
   var sp=(run?3.15:2.21)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev||dmn.upT>=0?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
+  if(CHASE.on&&playing&&TRAP.hold<=0&&!DEATH.on){tvx=CHASE.dx*3.4;tvz=CHASE.dz*3.4;kk=Math.min(1,dt*7);}
   pp.vx+=(tvx-pp.vx)*kk;pp.vz+=(tvz-pp.vz)*kk;
-  if(CHASE.on&&playing&&TRAP.hold<=0&&!DEATH.on){var csp=3.5;pp.vx+=(CHASE.dx*csp-pp.vx)*kk;pp.vz+=(CHASE.dz*csp-pp.vz)*kk;var cty=Math.atan2(CHASE.dx,CHASE.dz);yaw+=Math.atan2(Math.sin(cty-yaw),Math.cos(cty-yaw))*Math.min(1,dt*3);}
+  if(CHASE.on&&playing&&TRAP.hold<=0&&!DEATH.on){var cty=Math.atan2(CHASE.dx,CHASE.dz);yaw+=Math.atan2(Math.sin(cty-yaw),Math.cos(cty-yaw))*Math.min(1,dt*3);}
   if(state==='play'||state==='title'){
     pp.x+=pp.vx*dt;pp.z+=pp.vz*dt;
     if(CB.dodgeT>0&&state==='play'){
@@ -5039,13 +5043,18 @@ function frame(){
     var cw=CHASE.cw*CHASE.cw*(3-2*CHASE.cw),cdx=CHASE.dx,cdz=CHASE.dz;
     /* every so often, move the camera to whichever side has less brush in front of the lens */
     CHASE.sideT=(CHASE.sideT||0)-rdt;
-    if(CHASE.on&&CHASE.sideT<=0){CHASE.sideT=0.7;var opts=[-1,0,1],sc=opts.map(function(sd){var x=pp.x+cdx*3.5-cdz*sd*1.15,z=pp.z+cdz*3.5+cdx*sd*1.15,n=chaseBrushOnSeg(x,z,pp.x+cdx*0.6,pp.z+cdz*0.6,0.5)*2+(sd===CHASE.side?-0.5:0);
+    if(CHASE.on&&CHASE.sideT<=0){CHASE.sideT=1.8;var opts=[-1,0,1],sc=opts.map(function(sd){var x=pp.x+cdx*3.5-cdz*sd*1.15,z=pp.z+cdz*3.5+cdx*sd*1.15,n=chaseBrushOnSeg(x,z,pp.x+cdx*0.6,pp.z+cdz*0.6,0.5)*2+(sd===CHASE.side?-0.5:0);
       for(var j=0;j<trees.length;j++){var q=trees[j];if(Math.abs(q.x-x)<3&&Math.abs(q.z-z)<3&&Math.hypot(q.x-x,q.z-z)<(q.r||0.4)+1.2)n+=8;}return n;});
-      var bi=0;for(var oi=1;oi<3;oi++)if(sc[oi]<sc[bi])bi=oi;CHASE.side=opts[bi];}
-    CHASE.sw=(CHASE.sw===undefined?CHASE.side:CHASE.sw)+(CHASE.side-(CHASE.sw===undefined?CHASE.side:CHASE.sw))*Math.min(1,rdt*1.8);
+      var bi=0;for(var oi=1;oi<3;oi++)if(sc[oi]<sc[bi])bi=oi;var ci=opts.indexOf(CHASE.side);if(ci<0||sc[bi]<sc[ci]-2)CHASE.side=opts[bi];}
+    CHASE.sw=(CHASE.sw===undefined?CHASE.side:CHASE.sw)+(CHASE.side-(CHASE.sw===undefined?CHASE.side:CHASE.sw))*Math.min(1,rdt*0.9);
     var csx=-cdz*CHASE.sw,csz=cdx*CHASE.sw;
     var ccx=pp.x+cdx*3.5+csx*1.15,ccz=pp.z+cdz*3.5+csz*1.15,ccy=Math.max(H(ccx,ccz)+1.7,py+2.0);
-    var clx=pp.x*0.8+hol.x*0.2,clz=pp.z*0.8+hol.z*0.2,cly=py+2.15;
+    var clx=pp.x*0.86+hol.x*0.14,clz=pp.z*0.86+hol.z*0.14,cly=py+2.15;
+    /* glide, don't snap: the dolly and the aim are both smoothed */
+    var S=CHASE.cs;if(!S||!CHASE.on&&cw<0.05){S=CHASE.cs={x:ccx,y:ccy,z:ccz,lx:clx,ly:cly,lz:clz};}
+    var kp=Math.min(1,rdt*5),kl=Math.min(1,rdt*4);
+    S.x+=(ccx-S.x)*kp;S.y+=(ccy-S.y)*kp;S.z+=(ccz-S.z)*kp;S.lx+=(clx-S.lx)*kl;S.ly+=(cly-S.ly)*kl;S.lz+=(clz-S.lz)*kl;
+    ccx=S.x;ccy=S.y;ccz=S.z;clx=S.lx;cly=S.ly;clz=S.lz;
     var nlx=pp.x+Rt.x*0.65+F.x*6,nly=ay-1.2,nlz=pp.z+Rt.z*0.65+F.z*6;
     camPos.x+=(ccx-camPos.x)*cw;camPos.y+=(ccy-camPos.y)*cw;camPos.z+=(ccz-camPos.z)*cw;
     camera.position.copy(camPos);camera.lookAt(nlx+(clx-nlx)*cw,nly+(cly-nly)*cw,nlz+(clz-nlz)*cw);
