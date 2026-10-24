@@ -91,14 +91,12 @@ body{position:relative}
 #sub.on{opacity:1}
 #flash{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:clamp(28px,6vw,54px);color:#e8c7bd;opacity:0;text-shadow:0 0 18px rgba(160,20,20,.8);pointer-events:none;transition:opacity .4s;letter-spacing:.04em}
 #flash.on{opacity:1}
-/* touch buttons: a controller-style diamond (Y kick, X axe, B dodge, A jump) with two shoulder buttons above (examine, spin) */
+/* touch buttons: a controller-style diamond (kick top, axe left, dodge right, jump bottom) with two shoulder buttons above (examine, spin) */
 #btnK,#btnA,#btnJ,#btnD,#btnS,#btnE{position:absolute;width:62px;height:62px;border-radius:50%;border:2px solid var(--bone);background:rgba(12,14,15,.6);color:var(--bone);font:600 12px var(--hud);letter-spacing:.06em;text-transform:uppercase;display:none;pointer-events:auto;touch-action:none;padding:0}
-#btnK,#btnA,#btnJ,#btnD{padding-top:9px}
-#btnK::before,#btnA::before,#btnJ::before,#btnD::before{position:absolute;top:5px;left:0;right:0;text-align:center;font:700 11px var(--hud);letter-spacing:0}
-#btnK{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(187px,calc(env(safe-area-inset-bottom,0px) + 187px));border-color:#e3c35b}#btnK::before{content:'Y';color:#e3c35b}
-#btnA{right:max(155px,calc(env(safe-area-inset-right,0px) + 155px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px));border-color:#7fa7e0}#btnA::before{content:'X';color:#7fa7e0}
-#btnD{right:max(19px,calc(env(safe-area-inset-right,0px) + 19px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px));border-color:#e07f7f}#btnD::before{content:'B';color:#e07f7f}
-#btnJ{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(51px,calc(env(safe-area-inset-bottom,0px) + 51px));border-color:#8fd18a}#btnJ::before{content:'A';color:#8fd18a}
+#btnK{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(187px,calc(env(safe-area-inset-bottom,0px) + 187px))}
+#btnA{right:max(155px,calc(env(safe-area-inset-right,0px) + 155px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px))}
+#btnD{right:max(19px,calc(env(safe-area-inset-right,0px) + 19px));bottom:max(119px,calc(env(safe-area-inset-bottom,0px) + 119px))}
+#btnJ{right:max(87px,calc(env(safe-area-inset-right,0px) + 87px));bottom:max(51px,calc(env(safe-area-inset-bottom,0px) + 51px))}
 #btnE,#btnS{width:68px;height:40px;border-radius:14px;font-size:11px}
 #btnE{right:max(143px,calc(env(safe-area-inset-right,0px) + 143px));bottom:max(262px,calc(env(safe-area-inset-bottom,0px) + 262px))}
 #btnS{right:max(23px,calc(env(safe-area-inset-right,0px) + 23px));bottom:max(262px,calc(env(safe-area-inset-bottom,0px) + 262px))}
