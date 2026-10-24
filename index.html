@@ -949,7 +949,7 @@ function dmnUpdate(dt,spd){
   axtTick();
   var a=dmn.acts,k2=Math.min(1,dt*9);
   if(!dmn.w)dmn.w={idle:1,walk:0,run:0};
-  var air=pp.jy>0.05&&!JMP,tI=spd<0.5?1:0,tW=(spd>=0.5&&spd<3.1)?1:0,tR=spd>=3.1?1:0;
+  var air=pp.jy>0.05&&!JMP,tI=spd<0.5?1:0,tW=(spd>=0.5&&spd<2.6)?1:0,tR=spd>=2.6?1:0;
   if(air){tI=0;tW=0;tR=1;}
   dmn.w.idle+=(tI-dmn.w.idle)*k2;dmn.w.walk+=(tW-dmn.w.walk)*k2;dmn.w.run+=(tR-dmn.w.run)*k2;
   var atkT=(axe.t>=0&&axe.clip)?1:0;dmn.atkW=(dmn.atkW||0)+(atkT-(dmn.atkW||0))*Math.min(1,dt*(atkT?16:8));
@@ -1075,7 +1075,7 @@ function mudFeet(dt,spd){
     else if(!f.down&&h<0.05){
       f.down=true;
       if(spd>0.6||landing){
-        var run=spd>3.1;
+        var run=spd>2.6;
         var wet=MAPH.inRiver&&MAPH.inRiver(_mv.x,_mv.z);
         if(!wet)mudPrint(_mv.x,_mv.z,hero.rotation.y,f.side,run);
         mudSplash(_mv.x,_mv.z,landing?18:(run?12:7),landing?1.2:(run?1.0:0.7));
@@ -4240,7 +4240,7 @@ function placePuddles(){
 function puddleSteps(dt,spd){
   PUDS.stepT-=dt;if(spd<0.8||PUDS.stepT>0||pp.jy>0.05)return;
   for(var i=0;i<PUDS.list.length;i++){var q=PUDS.list[i];if(Math.abs(q.x-pp.x)>3||Math.abs(q.z-pp.z)>3)continue;
-    if(Math.hypot(q.x-pp.x,q.z-pp.z)<q.r){PUDS.stepT=spd>3?0.28:0.42;waterBurst(pp.x,H(pp.x,pp.z)+0.04,pp.z,spd>3?9:5,1.2);sfxSplash(spd>3?0.35:0.22);return;}}
+    if(Math.hypot(q.x-pp.x,q.z-pp.z)<q.r){PUDS.stepT=spd>2.6?0.28:0.42;waterBurst(pp.x,H(pp.x,pp.z)+0.04,pp.z,spd>2.6?9:5,1.2);sfxSplash(spd>2.6?0.35:0.22);return;}}
 }
 function puddleCull(){var cx=camera.position.x,cz=camera.position.z;for(var i=0;i<PUDS.list.length;i++){var q=PUDS.list[i];q.o.visible=Math.abs(q.x-cx)<85&&Math.abs(q.z-cz)<85;}}
 function makePuddle(x,z){
@@ -4559,7 +4559,7 @@ function frame(){
   }
   var len=Math.hypot(fwd,str);if(len>1){fwd/=len;str/=len;len=1;}
   var run=(keys.ShiftLeft||keys.ShiftRight||len>0.92&&joy.id!==null||GP.run||GP.on&&len>0.95)&&len>0;
-  var sp=(run?3.7:2.6)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev||dmn.upT>=0?0:1);
+  var sp=(run?3.15:2.21)*len*(axe.t>=0?0.3:1)*(dmn.hurtT>=0?0.3:1)*(MAPH.inRiver&&MAPH.inRiver(pp.x,pp.z)?0.55:1)*(TRAP.hold>0?0:1)*(hol.grab||DEATH.on||CIN.rev||dmn.upT>=0?0:1);
   var mx=F.x*fwd+Rt.x*str,mz=F.z*fwd+Rt.z*str,ml=Math.hypot(mx,mz)||1;
   var tvx=mx/ml*sp,tvz=mz/ml*sp,kk=Math.min(1,dt*9);
   pp.vx+=(tvx-pp.vx)*kk;pp.vz+=(tvz-pp.vz)*kk;
