@@ -157,7 +157,8 @@ button.go:hover{background:#fff}
 .mi{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px 0;color:#a9a59b;font:500 clamp(20px,2.3vw,26px) 'Cinzel',var(--display);letter-spacing:.2em;text-transform:uppercase;text-align:left;transition:color .2s,transform .2s}
 .mi i{width:10px;height:10px;background:var(--gold);transform:rotate(45deg);opacity:0;transition:opacity .2s;flex:none}
 .mi.primary{color:var(--bone)}
-.mi:hover,.mi:focus-visible{color:#fff;transform:translateX(6px)}
+.mi:hover,.mi:focus-visible,.mi:focus{color:#fff;transform:translateX(6px)}
+#vPause button:focus,#vSet input:focus,#vSet button:focus,#vCtl button:focus{outline:2px solid var(--gold);outline-offset:3px}
 .mi:hover i,.mi:focus-visible i,.mi.primary i{opacity:1}
 .mi:focus-visible{outline:none}
 .mi:focus-visible span{text-decoration:underline;text-underline-offset:8px;text-decoration-color:var(--gold)}
@@ -3537,7 +3538,7 @@ function applyCam(){
 }
 function saveCam(){try{localStorage.setItem('nihd_cam',JSON.stringify(CAM));}catch(e){}}
 function openSettings(){applyVol();applyCam();$('vSet').classList.add('on');}
-function closeSettings(){$('vSet').classList.remove('on');try{localStorage.setItem('nihd_vol',JSON.stringify(VOL));}catch(e){}saveCam();}
+function closeSettings(){$('vSet').classList.remove('on');try{var fb=state==='paused'?$('setBtn2'):$('setBtn');if(fb&&(state==='title'||state==='paused'))fb.focus();}catch(e){}try{localStorage.setItem('nihd_vol',JSON.stringify(VOL));}catch(e){}saveCam();}
 [['camSens','sens',100],['camDist','dist',100],['camFov','fov',1]].forEach(function(c){var el=$(c[0]);if(el)el.addEventListener('input',function(){CAM[c[1]]=+el.value/c[2];applyCam();saveCam();});});
 if($('camInv'))$('camInv').addEventListener('change',function(){CAM.inv=this.checked;saveCam();});
 if($('camShake'))$('camShake').addEventListener('change',function(){CAM.shake=this.checked;saveCam();});
@@ -4393,11 +4394,48 @@ menuBest();
   }
   requestAnimationFrame(tick);
 })();
-$('vTitle').addEventListener('keydown',function(e){
-  if(e.code!=='ArrowDown'&&e.code!=='ArrowUp')return;
-  var items=[].slice.call(this.querySelectorAll('.mi:not(:disabled)')),i=items.indexOf(document.activeElement);
-  if(!items.length)return;e.preventDefault();
-  i=e.code==='ArrowDown'?(i+1)%items.length:(i<=0?items.length-1:i-1);items[i].focus();
+/* ---------- menu navigation (keyboard arrows / W S, D-pad, left stick) for the main menu, pause, settings, controls ---------- */
+function navOn(id){var e=$(id);return !!(e&&e.classList.contains('on'));}
+function navItems(){
+  var sel=null;
+  if(navOn('vSet'))sel='#vSet input,#vSet button';
+  else if(typeof CTL!=='undefined'&&CTL.open)sel='#vCtl .ctabs button,#ctlClose';
+  else if(state==='title'&&typeof LOADER!=='undefined'&&LOADER.done)sel='#vTitle .mi:not(:disabled)';
+  else if(state==='paused'&&navOn('vPause'))sel='#vPause button';
+  if(!sel)return null;
+  return [].slice.call(document.querySelectorAll(sel)).filter(function(el){return el.offsetParent!==null;});
+}
+function navMove(d){
+  var it=navItems();if(!it||!it.length)return false;
+  var i=it.indexOf(document.activeElement);i=i<0?(d>0?0:it.length-1):(i+d+it.length)%it.length;
+  it[i].focus({preventScroll:false});try{if(it[i].scrollIntoView)it[i].scrollIntoView({block:'nearest'});}catch(e){}
+  if(state==='title'||navOn('vSet'))try{uiKey(false);}catch(e){}
+  return true;
+}
+function navAdj(d){
+  var el=document.activeElement;if(!el||el.type!=='range')return false;
+  var st=+el.step||1,mn=+el.min,mx=+el.max;el.value=Math.max(mn,Math.min(mx,+el.value+d*st*(mx-mn>50?2:1)));
+  el.dispatchEvent(new Event('input',{bubbles:true}));return true;
+}
+function navAct(){
+  var it=navItems();if(!it||!it.length)return false;
+  var el=document.activeElement;if(it.indexOf(el)<0){it[0].focus();return true;}
+  if(el.type==='range')return true;el.click();return true;
+}
+function navBack(){
+  if(navOn('vSet')){closeSettings();return true;}
+  if(typeof CTL!=='undefined'&&CTL.open){ctlClose();return true;}
+  if(state==='paused'){resumeGame();return true;}
+  return false;
+}
+document.addEventListener('keydown',function(e){
+  var it=navItems();if(!it)return;
+  var c=e.code,ae=document.activeElement,isRange=ae&&ae.type==='range';
+  if(c==='ArrowDown'||c==='KeyS'||c==='ArrowUp'||c==='KeyW'){e.preventDefault();navMove(c==='ArrowDown'||c==='KeyS'?1:-1);}
+  else if((c==='ArrowLeft'||c==='ArrowRight'||c==='KeyA'||c==='KeyD')&&isRange){e.preventDefault();navAdj(c==='ArrowRight'||c==='KeyD'?1:-1);}
+  else if((c==='Enter'||c==='Space')&&it.indexOf(ae)<0){e.preventDefault();navAct();}
+  else if(c==='Space'&&ae&&ae.tagName==='BUTTON'&&!e.repeat){e.preventDefault();ae.click();}
+  else if(c==='Escape'&&navOn('vSet')){e.preventDefault();closeSettings();}
 });
 $('goBtn').addEventListener('click',function(){
   initAudio();if(ac&&ac.state==='suspended'){try{ac.resume();}catch(e){}}
@@ -4916,6 +4954,18 @@ function endIntro(){
 /* ---------- controllers (Xbox / PlayStation / any standard gamepad) ---------- */
 var GP={on:false,prev:[],mx:0,my:0,run:false,told:false};
 function gpDown(g,i){var b=g.buttons[i];return !!b&&(b.pressed||b.value>0.5);}
+/* D-pad / left stick as menu arrows, with auto-repeat */
+function gpNav(g,P){
+  var r={x:0,y:0},now=performance.now(),ax=g.axes[0]||0,ay=g.axes[1]||0;
+  if(P(12))r.y=-1;else if(P(13))r.y=1;else if(P(14))r.x=-1;else if(P(15))r.x=1;
+  if(r.x||r.y){GP.navHold=now+380;return r;}
+  var sy=Math.abs(ay)>0.6?(ay>0?1:-1):0,sx=Math.abs(ax)>0.6?(ax>0?1:-1):0,held=gpDown(g,12)||gpDown(g,13)||gpDown(g,14)||gpDown(g,15);
+  var dir=sy?'y'+sy:sx?'x'+sx:held?'dp':'';
+  if(!dir){GP.navDir='';return r;}
+  if(dir!==GP.navDir){GP.navDir=dir;GP.navHold=now+380;if(sy)r.y=sy;else if(sx)r.x=sx;return r;}
+  if(now>=(GP.navHold||0)){GP.navHold=now+150;if(sy)r.y=sy;else if(sx)r.x=sx;else{if(gpDown(g,12))r.y=-1;else if(gpDown(g,13))r.y=1;else if(gpDown(g,14))r.x=-1;else if(gpDown(g,15))r.x=1;}}
+  return r;
+}
 function gpTick(rdt){
   var gps=navigator.getGamepads?navigator.getGamepads():[],g=null;
   for(var i=0;i<gps.length;i++)if(gps[i]&&gps[i].connected&&gps[i].buttons&&gps[i].buttons.length>9){g=gps[i];break;}
@@ -4929,10 +4979,14 @@ function gpTick(rdt){
   var P=function(i){return gpDown(g,i)&&!GP.prev[i];},R=function(i){return !gpDown(g,i)&&GP.prev[i];};
   /* standard layout: 0 A/Cross 1 B/Circle 2 X/Square 3 Y/Triangle 4 LB/L1 5 RB/R1 6 LT/L2 7 RT/R2 8 View/Share 9 Menu/Options 10 L3 */
   if(state==='title'&&!LOADER.done){if(LOADER.wait&&(P(0)||P(9)))loaderContinue();}
-  else if(state==='title'){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4))ctlTab(-1);else if(P(5))ctlTab(1);}else if(P(0)||P(9))$('goBtn').click();}
+  else if(state==='title'||(state==='paused'&&navOn('vSet'))){var ph=$('padHint');if(ph&&ph.hidden)ph.hidden=false;
+    var nv=gpNav(g,P);
+    if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4)||nv.x<0)ctlTab(-1);else if(P(5)||nv.x>0)ctlTab(1);}
+    else if(navOn('vSet')){if(nv.y)navMove(nv.y);else if(nv.x)navAdj(nv.x);else if(P(0))navAct();else if(P(1)||P(9))closeSettings();}
+    else{if(nv.y)navMove(nv.y);else if(P(0))navAct();else if(P(9))$('goBtn').click();}}
   else if(state==='caught'){if(P(0)||P(9))retryNow();}
   else if(state==='ending'){if(P(0)||P(9))$('againBtn').click();}
-  else if(state==='paused'){if(P(9)||P(1)||P(0))resumeGame();}
+  else if(state==='paused'){var nv2=gpNav(g,P);if(nv2.y)navMove(nv2.y);else if(P(0)){var it2=navItems();if(it2&&it2.indexOf(document.activeElement)>=0)navAct();else resumeGame();}else if(P(9)||P(1))resumeGame();}
   else if(state==='finale'){if(FIN.phase==='clip'&&(P(0)||P(9)))endFinale();}
   else if(state==='intro'){if(P(0)||P(9)||P(1))endIntro();}
   else if(state==='play'&&CHASE.on){if(CHASE.mode!=='pad'){CHASE.mode='pad';$('chaseUI').classList.remove('touch');}for(var cb=0;cb<4;cb++)if(P(cb))chaseInput('b'+cb);if(P(9))pauseGame();}
