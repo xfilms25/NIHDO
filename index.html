@@ -3295,8 +3295,12 @@ function riverSound(){
 }
 function audioTick(playing,dist,seen){
   if(!ac||!windG)return;
+  /* the menu only has music: forest ambience fades in when the game starts */
+  var onMenu=state==='title';
+  ambBus.gain.setTargetAtTime(onMenu?0:VOL.amb*VOL.amb,ac.currentTime,onMenu?0.05:0.6);
+  musicTick();if(onMenu)return;
   riverSound();
-  audioExtra(playing,dist,seen);musicTick();
+  audioExtra(playing,dist,seen);
   var gu=0.5+0.5*Math.sin(time*0.37)*Math.sin(time*0.11+1.3)+0.2*Math.sin(time*1.3);
   gu=Math.max(0,Math.min(1,gu));
   var aT=ac.currentTime;
