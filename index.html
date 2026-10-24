@@ -4118,6 +4118,12 @@ function examine(){
 
 /* ---------- input ---------- */
 window.addEventListener('keydown',function(e){
+  if(e.code==='F8'&&(state==='play'||state==='paused')){e.preventDefault();
+    if(e.shiftKey){try{localStorage.removeItem('nihdo_introSpot');}catch(er){}flash(LANG==='es'?'Lugar de la cinemática borrado':'Cinematic spot cleared',2600);return;}
+    var spot={x:+pp.x.toFixed(1),z:+pp.z.toFixed(1)},txt=spot.x+', '+spot.z;
+    try{localStorage.setItem('nihdo_introSpot',JSON.stringify(spot));}catch(er){}
+    try{if(navigator.clipboard){var pw=navigator.clipboard.writeText(txt);if(pw&&pw.catch)pw.catch(function(){});}}catch(er){}
+    console.log('intro spot',txt);flash((LANG==='es'?'Lugar de la cinemática guardado: ':'Cinematic spot saved: ')+txt,6000);return;}
   if(CHASE.on&&state==='play'&&e.code!=='KeyP'&&e.code!=='Escape'&&e.code!=='KeyM'){
     e.preventDefault();if(!e.repeat&&CHASE.mode!=='touch')chaseInput(e.code);return;
   }
@@ -4511,7 +4517,7 @@ function cinPre(rdt,spd){
   var wantD=CIN.combat>0?3.3:CIN.idleT>1.5?1.95:2.2,wantH=CIN.combat>0?0.35:0;
   CIN.dist+=(wantD-CIN.dist)*Math.min(1,rdt*(CIN.combat>0?2.5:1.2));CIN.hgt+=(wantH-CIN.hgt)*Math.min(1,rdt*2);
   var wantF=state==='intro'?(INTRO.fovK||1):CHASE.on?1.16:CIN.rev?0.72:CIN.slow>0?0.84:CIN.combat>0?1.06:1;
-  CIN.fovK+=(wantF-CIN.fovK)*Math.min(1,rdt*(state==='intro'?6:CIN.rev||CIN.slow>0?3:1.5));
+  CIN.fovK+=(wantF-CIN.fovK)*Math.min(1,rdt*(state==='intro'?1.2:CIN.rev||CIN.slow>0?1.1:0.9));
   var bf=camera.userData.baseFov||62,nf=bf*CIN.fovK;if(Math.abs(camera.fov-nf)>0.01){camera.fov=nf;camera.updateProjectionMatrix();}
   var lbWant=(state==='intro'||CIN.rev||hol.grab||DEATH.on||luna.state==='run'||state==='finale'||CHASE.on)?1:0;
   CIN.lb+=(lbWant-CIN.lb)*Math.min(1,rdt*(lbWant?3.5:2.5));
@@ -4697,9 +4703,11 @@ function turnYawTable(TA){
     return {dur:dur,y:out};
   }catch(e){return null;}
 }
+/* fixed location for the opening (null = search near the start); F8 in play saves one for testing */
+var INTRO_SPOT=null;
 function startIntro(){
   if(!introReady())return false;
-  INTRO.on=true;INTRO.t=0;INTRO.cues={};INTRO.grass=null;INTRO.grassDone=false;INTRO.brT=0.4;INTRO.wT=1.2;INTRO.lsT=0;INTRO.rsT=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
+  INTRO.on=true;INTRO.t=0;INTRO.shotId=0;INTRO.cues={};INTRO.grass=null;INTRO.grassDone=false;INTRO.brT=0.4;INTRO.wT=1.2;INTRO.lsT=0;INTRO.rsT=0;INTRO.tf0=undefined;INTRO.dW=1;INTRO.pct=0.8;INTRO.run=false;INTRO.runT=0;INTRO.sct=0;INTRO.sw=0;INTRO.splash=false;INTRO.reach=null;INTRO.dripT=0;
   state='intro';keys={};
   /* find a good place near the start: flat, open, no bushes around, with a pine 7-13 m away in clear view */
   function segD(px,pz,x0,z0,x1,z1){var vx=x1-x0,vz=z1-z0,l2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((px-x0)*vx+(pz-z0)*vz)/l2));return Math.hypot(px-(x0+vx*u),pz-(z0+vz*u));}
@@ -4712,9 +4720,12 @@ function startIntro(){
       var sc=blk*6+Math.abs(d-7)*0.5;if(sc<bs){bs=sc;best=t;}});
     return {t:best,s:bs};
   }
-  var site=null,cands=[];
-  for(var gx=-45;gx<=45;gx+=3)for(var gz=-45;gz<=45;gz+=3){
-    var x0=gx,z0=gz;if(Math.hypot(x0,z0)>45)continue;
+  var site=null,cands=[],SPOT=null;
+  try{SPOT=JSON.parse(localStorage.getItem('nihdo_introSpot')||'null');}catch(e){}
+  if(!SPOT&&INTRO_SPOT)SPOT=INTRO_SPOT;
+  var C0x=SPOT?SPOT.x:0,C0z=SPOT?SPOT.z:0,RAD=SPOT?7:45,STP=SPOT?1:3;
+  for(var gx=-RAD;gx<=RAD;gx+=STP)for(var gz=-RAD;gz<=RAD;gz+=STP){
+    var x0=C0x+gx,z0=C0z+gz;if(Math.hypot(gx,gz)>RAD)continue;
     if(x0<WB.x0+10||x0>WB.x1-10||z0<WB.z0+10||z0>WB.z1-10)continue;
     if(MAPH.riverDist&&MAPH.riverDist(x0,z0)<7)continue;
     var h0=H(x0,z0),fl=Math.abs(H(x0+1.2,z0)-h0)+Math.abs(H(x0-1.2,z0)-h0)+Math.abs(H(x0,z0+1.2)-h0)+Math.abs(H(x0,z0-1.2)-h0);if(fl>0.9)continue;
@@ -4724,7 +4735,7 @@ function startIntro(){
     for(var i3=0;i3<brush.length;i3++){var b3=brush[i3],bd=Math.hypot(b3.x-x0,b3.z-z0);if(bd<2.6){bad=true;break;}if(bd<7)nb++;}if(bad)continue;
     var pf=pineFor(x0,z0);if(!pf.t)continue;
     /* deep in the pines: the more trunks around, the better */
-    var sc0=pf.s+nb*0.3+fl*4-dens*1.6+Math.hypot(x0,z0)*0.03;cands.push({x:x0,z:z0,t:pf.t,s:sc0});
+    var sc0=pf.s+nb*0.3+fl*4-dens*1.6+Math.hypot(x0-C0x,z0-C0z)*(SPOT?0.8:0.03);cands.push({x:x0,z:z0,t:pf.t,s:sc0});
   }
   /* test the actual camera lines against the forest (grass, bushes, trunks): Luna must be seen in the shots */
   cands.sort(function(a,b){return a.s-b.s;});
@@ -4740,6 +4751,7 @@ function startIntro(){
     }catch(e){ok=4;}
     c.ok=ok;if(ok>=4)site=c;
   }
+  if(!site&&!cands.length&&SPOT){var pf2=pineFor(SPOT.x,SPOT.z);if(pf2.t)site={x:SPOT.x,z:SPOT.z,t:pf2.t,s:0};}
   if(!site&&cands.length){var top=cands.slice(0,8).sort(function(a,b){return (b.ok||0)-(a.ok||0)||a.s-b.s;});site=top[0];}
   var best=site?site.t:null;
   pp.x=site?site.x:0;pp.z=site?site.z:0;pp.vx=pp.vz=0;
@@ -4933,6 +4945,7 @@ function introCam(dt){
   var T=INTRO,t=T.t,D=_iv1.set(pp.x,H(pp.x,pp.z),pp.z),F={x:Math.sin(T.face0),z:Math.cos(T.face0)},R={x:-Math.cos(T.face0),z:Math.sin(T.face0)},S=T.spot,L=luna.g.position,cp=_iv2,lk=_iv3,fp=T.fp||(T.fp=new THREE.Vector3());
   var hd=T.head?T.head.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(D.x,D.y+0.9,D.z);
   var dl=Math.hypot(S[0]-D.x,S[1]-D.z)||1,lx=(S[0]-D.x)/dl,lz=(S[1]-D.z)/dl,px=-lz,pz=lx;
+  var shot=t<4?1:t<14.2+(T.off||0)?2:3;
   if(t<4){
     /* 1. POV from the puddle */
     T.fovK=1;var P=T.pud;cp.set(P.x-F.x*0.12,P.y+0.06,P.z-F.z*0.12);lk.copy(hd);lk.y+=0.05;fp.copy(hd);}
@@ -4943,13 +4956,15 @@ function introCam(dt){
     var rk=Math.max(0,Math.min(1,(t-5)/1.2));fp.set(D.x+(L.x-D.x)*rk,D.y+0.9+(L.y+1.2-D.y-0.9)*rk,D.z+(L.z-D.z)*rk);}
   else{
     /* 3. one move: over his shoulder as she runs, then the camera drifts back and up behind him as he turns to where she went */
-    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u=ss01((t-16-(T.off||0))/3.6);
+    var ry=T.runYaw||Math.atan2(lx,lz),hx=Math.sin(ry),hz=Math.cos(ry),u=ss01((t-15.6-(T.off||0))/5.2);
     var ax=D.x-lx*0.8+px*0.45,ay=D.y+1.6,az=D.z-lz*0.8+pz*0.45,bx=D.x-hx*2.3,by=D.y+1.7,bz=D.z-hz*2.3;
     T.fovK=0.62+0.38*u;cp.set(ax+(bx-ax)*u,ay+(by-ay)*u,az+(bz-az)*u);
     var tx1=L.x,ty1=L.y+1.0,tz1=L.z,tx2=D.x+hx*6,ty2=D.y+1.2,tz2=D.z+hz*6;
     lk.set(tx1+(tx2-tx1)*u,ty1+(ty2-ty1)*u,tz1+(tz2-tz1)*u);
     fp.set(L.x+(D.x-L.x)*u,L.y+1.2,L.z+(D.z-L.z)*u);
     if(t>19.2+(T.off||0)){var w=ss01((t-19.2-(T.off||0))/3.6);cp.lerp(camPos,w);lk.lerp(_iv1.set(pp.x+Math.sin(yaw)*6,hero.position.y+1.45-1.2,pp.z+Math.cos(yaw)*6),w);}}
+  /* a cut is a cut: the lens changes instantly with the shot instead of zooming */
+  if(shot!==T.shotId){T.shotId=shot;CIN.fovK=T.fovK;}
   camera.position.copy(cp);camera.lookAt(lk);
 }
 function ss01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
