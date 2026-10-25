@@ -385,7 +385,7 @@ var $=function(id){return document.getElementById(id);};
 var touch=false;
 /* ---------- languages: Español / English ---------- */
 var I18N={
-es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Game',rule:'No mires atrás.',
+es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',chaseMash:'¡Pulsa sin parar para escapar!',chaseMashT:'¡Toca sin parar para escapar!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Game',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
  go:'Comenzar',lPresents:'XFilms presenta',lCont:'Pulsa cualquier tecla para continuar',lContT:'Toca para continuar',lContP:'Pulsa A / ✕ para continuar',lAdvice:'Consejo',lTips:['Juega con audífonos: Hollow respira antes de aparecer.','Sigue el rastro de luz entre los pinos. Luna siempre espera más adelante.','Mantén pulsado el hacha para un golpe fuerte que derriba.','Si las manos te atrapan, pulsa cualquier acción sin parar para liberarte.','Las sombras caen tras seis golpes. Una patada las tumba al suelo.','Esquiva en el último instante: deslizarte te salva de un mordisco.','Encadena hachazos: pulsa al ritmo del golpe para un combo.','Si escuchas un susurro detrás de ti, no te quedes quieto.','La calma baja cuando las sombras te rodean. Respira, busca la luz.','Corre con Shift, o presionando el joystick izquierdo (L3), para alcanzar a Luna.','Pulsa G para ajustar cómo Damian sujeta el hacha.','En Ajustes puedes cambiar la sensibilidad y la distancia de la cámara.','Si Hollow te persigue, pulsa la tecla que aparece en pantalla a tiempo para escapar.'],lWhat:['Despertando a Damian','Levantando el bosque','Llamando a Luna','Algo se mueve entre los pinos','Las sombras despiertan'],credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'Presiona L3: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
@@ -400,7 +400,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',btnE:'Ver',btnA:'Hacha',btnK:'
  lines:['Un trozo de tela. Todavía está tibio.','Conozco este camino. Lo soñé antes de recorrerlo.','Cada paso me aleja de ella. Cada paso me acerca.','Algo respira detrás de mí. No voy a mirar.','Luna, si sigues aquí, dime hacia dónde.'],
  axTitle:'Ajustar hacha',axHelp:'Cambia los valores y mira a Damian. Arrastra en la pantalla para girar la cámara. Se guarda en este navegador.',axRot:'Hacha en la mano: giro (°)',axPos:'Hacha en la mano: posición (cm)',axGrip:'Agarre',axSlide:'Deslizar por el mango (cm)',
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Ajustes',sndH:'Sonido',camH:'Cámara',camSens:'Sensibilidad',camInv:'Invertir eje vertical',camDist:'Distancia de cámara',camFov:'Campo de visión',camShake:'Temblor y movimiento de cámara',camReset:'Restablecer',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
-en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Game',rule:"Don't look back.",
+en:{prompt:'E · Examine',promptTouch:'Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',chaseMash:'Mash any button to get away!',chaseMashT:'Tap repeatedly to get away!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Game',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
  go:'Start',lPresents:'XFilms presents',lCont:'Press any key to continue',lContT:'Tap to continue',lContP:'Press A / ✕ to continue',lAdvice:'Advice',lTips:['Play with headphones: Hollow breathes before he appears.','Follow the trail of light through the pines. Luna always waits further ahead.','Hold the axe button for a heavy blow that knocks enemies down.','If the hands grab you, mash any action button to break free.','Shadows fall after six blows. A kick knocks them to the ground.','Dodge at the last moment: a slide saves you from a bite.','Chain your axe swings: press in rhythm with each hit for a combo.','If you hear a whisper behind you, don\'t stand still.','Calm drops when shadows surround you. Breathe, find the light.','Run with Shift, or by clicking the left stick (L3), to keep up with Luna.','Press G to adjust how Damian holds the axe.','In Settings you can change camera sensitivity and distance.','If Hollow chases you, press the key on screen in time to get away.'],lWhat:['Waking Damian','Raising the forest','Calling Luna','Something moves between the pines','The shadows wake'],credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'Click L3: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
@@ -2906,8 +2906,9 @@ function chaseStart(){
   hol.state='watch';hol.hunt=true;hol.watch=99;holSetOp(1);hol.g.visible=true;
   keys={};axe.t=-1;jumpReq=false;
   var hd=$('hud');hd.style.transition='opacity .4s';hd.style.opacity='0';
-  var ui=$('chaseUI');ui.classList.add('on');ui.classList.toggle('touch',CHASE.mode==='touch');
-  $('chaseHint').textContent=tr('chaseRun');chaseDots();$('chaseKey').className='';$('chaseKey').style.visibility='hidden';
+  CHASE.prog=0;CHASE.winning=false;CHASE.pause=0.6;
+  $('trapTxt').textContent=tr(CHASE.mode==='touch'?'chaseMashT':'chaseMash');$('trapFill').style.width='0%';$('trapUI').style.display='block';
+  flash(tr('chaseRun'),1800);
   SHK.imp=Math.max(SHK.imp||0,0.3);sfxDread(1.2);buzz([60,40,60,40,160],0.8);
   if(SMP.breath){CHASE.pant=makeLoop(SMP.breath,BR_PANT[0],BR_PANT[0]+BR_PANT[1]);}
 }
@@ -2927,10 +2928,15 @@ function chaseNext(){
   else{K.style.left='';K.style.top='';}
   void K.offsetWidth;K.classList.add('pop');
 }
+/* the chase works like the hands: mash any action button to pull away from him */
+var CH_NEED=24;
 function chaseInput(id){
-  if(!CHASE.on||!CHASE.cur||state!=='play')return;
-  var c=CHASE.cur;
-  if(id===c.id||(c.alt&&id===c.alt))chaseHit();else chaseMiss();
+  if(!CHASE.on||state!=='play'||CHASE.pause>0)return;
+  CHASE.prog=Math.min(CH_NEED,(CHASE.prog||0)+1);CHASE.gap=Math.min(8.5,CHASE.gap+0.35);
+  $('trapFill').style.width=(100*CHASE.prog/CH_NEED).toFixed(1)+'%';
+  try{if(Math.random()<0.5)stepSound(0.4,false,0,false);}catch(e){}
+  buzz([18],0.3);
+  if(CHASE.prog>=CH_NEED&&!CHASE.winning){CHASE.winning=true;setTimeout(function(){if(CHASE.on)chaseWin();},200);}
 }
 function chaseHit(){
   CHASE.step++;CHASE.gap=Math.min(9,CHASE.gap+0.9);CHASE.cur=null;CHASE.pause=0.3;
@@ -2948,7 +2954,7 @@ function chaseMiss(){
 }
 function chaseEnd(){
   CHASE.on=false;CHASE.cur=null;
-  $('chaseUI').classList.remove('on');$('chaseKey').style.visibility='hidden';
+  $('chaseUI').classList.remove('on');$('chaseKey').style.visibility='hidden';$('trapUI').style.display='none';
   var hd=$('hud');hd.style.opacity='';setTimeout(function(){if(!CHASE.on)hd.style.transition='';},500);
   if(CHASE.pant){loopStop(CHASE.pant,0.6);CHASE.pant=null;}
 }
@@ -3001,31 +3007,24 @@ function chaseTick(dt){
   best=CHASE.want;
   if(best){var tgt=Math.atan2(best[0],best[1]),cur=Math.atan2(CHASE.dx,CHASE.dz),dA=Math.atan2(Math.sin(tgt-cur),Math.cos(tgt-cur)),na=cur+dA*Math.min(1,dt*1.7);CHASE.dx=Math.sin(na);CHASE.dz=Math.cos(na);}
   /* he gains a little every second; each hit buys distance, each miss gives it back */
-  CHASE.gap-=dt*(0.14+0.03*CHASE.n);
+  CHASE.pause=Math.max(0,(CHASE.pause||0)-dt);
+  if(CHASE.pause<=0){CHASE.gap-=dt*1.3;CHASE.prog=Math.max(0,(CHASE.prog||0)-dt*1.2);$('trapFill').style.width=(100*CHASE.prog/CH_NEED).toFixed(1)+'%';}
   if(CHASE.gap<=1.7){chaseLose();return;}
   var tx=pp.x-CHASE.dx*CHASE.gap+(-CHASE.dz)*Math.sin(CHASE.t*1.7)*0.5,tz=pp.z-CHASE.dz*CHASE.gap+CHASE.dx*Math.sin(CHASE.t*1.7)*0.5;
-  hol.x+=(tx-hol.x)*Math.min(1,dt*4);hol.z+=(tz-hol.z)*Math.min(1,dt*4);
+  hol.x+=(tx-hol.x)*Math.min(1,dt*7);hol.z+=(tz-hol.z)*Math.min(1,dt*7);
   var gy=H(hol.x,hol.z),hx=pp.x-hol.x,hz=pp.z-hol.z;
   hol.g.position.set(hol.x,gy,hol.z);hol.g.rotation.order='YXZ';hol.g.rotation.y=Math.atan2(hx,hz);hol.g.rotation.x=0;
   hol.dist=Math.hypot(hx,hz);hol.drain=true;holSetOp(1);
-  hol.curSp=3.6;var rw=hol.runAct?1:0;hol.rW=(hol.rW||0)+(rw-(hol.rW||0))*Math.min(1,dt*6);
+  hol.curSp=5.6;var rw=hol.runAct?1:0;hol.rW=(hol.rW||0)+(rw-(hol.rW||0))*Math.min(1,dt*6);
   if(hol.act)hol.act.timeScale=1.6;
-  if(hol.runAct)hol.runAct.timeScale=Math.max(0.5,Math.min(1.25,hol.curSp/((hol.runSpd||2.3)*(hol.sc||4))));
+  if(hol.runAct)hol.runAct.timeScale=Math.max(0.8,Math.min(1.75,hol.curSp/((hol.runSpd||2.3)*(hol.sc||4))*1.35));
   holWeights(hol.rW);
   /* his panting at Damian's back, closer and brighter as the gap closes */
   var close=Math.max(0,Math.min(1,1-(CHASE.gap-1.7)/7));
   if(CHASE.pant)loopSet(CHASE.pant,0.55+0.6*close,camPan(hol.x,gy+3,hol.z)*0.6,1.05+0.15*close,1400+6500*close);
   CHASE.crackT-=dt;if(CHASE.crackT<=0){CHASE.crackT=0.28+Math.random()*0.4;woodCrack(0.35+0.4*close,0,Math.random()<0.4);}
   calm=Math.max(0,calm-dt*0.02);
-  /* the prompts */
-  if(CHASE.cur){
-    CHASE.left-=dt;var f=Math.max(0,CHASE.left/CHASE.win);
-    $('chaseRing').style.strokeDashoffset=String((1-f)*339.3);
-    $('chaseKey').classList.toggle('late',f<0.35);
-    if(CHASE.left<=0)chaseMiss();
-  }else if(CHASE.step<CHASE.need){
-    CHASE.pause-=dt;if(CHASE.pause<=0)chaseNext();
-  }
+
 }
 
 /* fill light on Damian and the flashlight */
@@ -4127,7 +4126,7 @@ window.addEventListener('keydown',function(e){
     try{if(navigator.clipboard){var pw=navigator.clipboard.writeText(txt);if(pw&&pw.catch)pw.catch(function(){});}}catch(er){}
     console.log('intro spot',txt);flash((LANG==='es'?'Lugar de la cinemática guardado: ':'Cinematic spot saved: ')+txt,6000);return;}
   if(CHASE.on&&state==='play'&&e.code!=='KeyP'&&e.code!=='Escape'&&e.code!=='KeyM'){
-    e.preventDefault();if(!e.repeat&&CHASE.mode!=='touch')chaseInput(e.code);return;
+    e.preventDefault();if(!e.repeat)chaseInput(e.code);return;
   }
   keys[e.code]=true;
   if(e.code==='KeyE')examine();
@@ -4162,6 +4161,7 @@ var joy={id:null,ox:0,oy:0,x:0,y:0},look={id:null,lx:0,ly:0};
 var joyEl=$('joy'),joyKnob=joyEl.querySelector('b');
 canvas.addEventListener('touchstart',function(e){
   if(TRAP.hold>0&&state==='play')trapStruggle();
+  if(CHASE.on&&state==='play'){e.preventDefault();for(var ci=0;ci<e.changedTouches.length;ci++)chaseInput('tap');return;}
   e.preventDefault();
   for(var i=0;i<e.changedTouches.length;i++){
     var t=e.changedTouches[i];
@@ -5024,7 +5024,7 @@ function gpTick(rdt){
   else if(state==='paused'){var nv2=gpNav(g,P);if(nv2.y)navMove(nv2.y);else if(P(0)){var it2=navItems();if(it2&&it2.indexOf(document.activeElement)>=0)navAct();else resumeGame();}else if(P(9)||P(1))resumeGame();}
   else if(state==='finale'){if(FIN.phase==='clip'&&(P(0)||P(9)))endFinale();}
   else if(state==='intro'){if(P(0)||P(9)||P(1))endIntro();}
-  else if(state==='play'&&CHASE.on){if(CHASE.mode!=='pad'){CHASE.mode='pad';$('chaseUI').classList.remove('touch');}for(var cb=0;cb<4;cb++)if(P(cb))chaseInput('b'+cb);if(P(9))pauseGame();}
+  else if(state==='play'&&CHASE.on){if(CHASE.mode!=='pad'){CHASE.mode='pad';$('chaseUI').classList.remove('touch');}[0,1,2,3,4,5,7].forEach(function(cb){if(P(cb))chaseInput('b'+cb);});if(P(9))pauseGame();}
   else if(state==='play'&&TRAP.hold>0){if(P(0)||P(1)||P(2)||P(3)||P(4)||P(5)||P(7))trapStruggle();}
   else if(state==='play'){
     if(P(2)||P(7))atkPress();if(R(2)||R(7))atkRelease();
