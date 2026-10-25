@@ -2204,7 +2204,7 @@ function attack(force){
   var kind=force||((time-lastAtk.end<0.55&&CHAIN[lastAtk.kind])?CHAIN[lastAtk.kind]:'down');
   /* soft lock-on: the nearest shadow roughly in front (camera or stick direction) */
   var F={x:Math.sin(yaw),z:Math.cos(yaw)},best=null,bs=1e9;
-  enemies.forEach(function(e){if(!e.alive||e.spawn<0.5)return;var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz)||1,dot=(dx*F.x+dz*F.z)/d;if(d<7.5&&dot>0.15){var sc=d-dot*2.5;if(sc<bs){bs=sc;best=e;}}});
+  enemies.forEach(function(e){if(!e.alive||e.spawn<0.5)return;var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz)||1,dot=(dx*F.x+dz*F.z)/d;if(d<3.4&&dot>0.25){var sc=d-dot*1.5;if(sc<bs){bs=sc;best=e;}}});
   axe.target=best;
   if(kind!=='spin')pp.face=best?Math.atan2(best.x-pp.x,best.z-pp.z):Math.atan2(F.x,F.z);
   var src=kind==='heavy'?'down':kind==='spin'?(ATK.spin?'spin':'combo'):kind;
@@ -2230,8 +2230,9 @@ function doHit(){
   enemies.forEach(function(e){
     if(!e.alive||e.spawn<0.5)return;
     var dx=e.x-pp.x,dz=e.z-pp.z,d=Math.hypot(dx,dz);
-    if(isSpin?d<3.3:(d<2.9&&(dx*fx+dz*fz)/(d||1)>0.2)){
-      var ux=dx/(d||1),uz=dz/(d||1),push=isSpin?1.2:fin?1.6:0.55;
+    var reach=isSpin?2.3:isKick?1.75:isHeavy?2.15:1.95;
+    if(isSpin?d<reach:(d<reach&&(dx*fx+dz*fz)/(d||1)>0.5)){
+      var ux=dx/(d||1),uz=dz/(d||1),push=isSpin?0.45:fin?0.6:0.18;
       any=true;e.hp-=isHeavy?2:1;e.flash=0.18;e.x+=ux*push;e.z+=uz*push;e.stun=fin?1.0:0.45;e.fl=0.24;
       hitBurst(e.x-ux*0.3,H(e.x,e.z)+1.25,e.z-uz*0.3,fin||isSpin);
       if(e.rig&&e.hp>0&&(fin||isSpin)&&!isKick&&e.acts.death){e.atkA=0;e.hitAt=0;e.kdMode='stag';e.kdT=1.0;e.kd=1.0;e.stun=1.0;var sa=e.acts.death;sa.reset();sa.play();sa.setEffectiveWeight(1);sa.setEffectiveTimeScale(0);if(e.cur&&e.cur!=='death')sa.crossFadeFrom(e.acts[e.cur],0.08,false);e.cur='death';}if(e.rig){e.atkA=0;e.hitAt=0;if(axe.kind==='kick'&&e.hp>0&&e.acts.death){e.kdMode='down';e.kdT=KD_T;e.kd=KD_T;e.stun=KD_T;e.x-=ux*push;e.z-=uz*push;var da=e.acts.death;da.reset();da.play();da.setEffectiveWeight(1);da.setEffectiveTimeScale(0);if(e.cur&&e.cur!=='death')da.crossFadeFrom(e.acts[e.cur],0.08,false);e.cur='death';}}
@@ -2240,7 +2241,7 @@ function doHit(){
   });
   if(hol.ready&&hol.g&&hol.g.visible&&hol.op>0.4&&hol.state!=='hide'&&hol.state!=='in'){
     var hdx=hol.x-pp.x,hdz=hol.z-pp.z,hd=Math.hypot(hdx,hdz)||1;
-    if(hd<4.8&&(hdx*fx+hdz*fz)/hd>0.1){any=true;holHit(hdx/hd,hdz/hd);}
+    if(hd<3.4&&(hdx*fx+hdz*fz)/hd>0.35){any=true;holHit(hdx/hd,hdz/hd);}
   }
   if(any){SHK.imp=Math.max(SHK.imp,fin||isSpin?0.12:0.05);CB.hitstop=Math.max(CB.hitstop,fin?0.12:isSpin?0.08:0.055);if(fin||isSpin||isKick)sfxThump();buzz([fin?60:30],fin?0.8:0.4);}
   if(!any){sfxHit(false);}
@@ -2417,7 +2418,7 @@ function combatTick(dt,playing){
     if(axe.t>=0&&tg&&tg.alive&&axe.kind!=='spin'&&axe.t<(axe.hits[0]||0.3)){
       var tdx=tg.x-pp.x,tdz=tg.z-pp.z,td=Math.hypot(tdx,tdz)||1,tf=Math.atan2(tdx,tdz);
       pp.face+=Math.atan2(Math.sin(tf-pp.face),Math.cos(tf-pp.face))*Math.min(1,dt*14);
-      if(td>1.7){var lv=Math.min(7,(td-1.6)/Math.max(0.08,(axe.hits[0]||0.3)-axe.t))*dt;pp.x+=tdx/td*Math.min(lv,td-1.6);pp.z+=tdz/td*Math.min(lv,td-1.6);}
+      if(td>1.45&&td<3.4){var lv=Math.min(3.2,(td-1.35)/Math.max(0.08,(axe.hits[0]||0.3)-axe.t))*dt;pp.x+=tdx/td*Math.min(lv,td-1.35);pp.z+=tdz/td*Math.min(lv,td-1.35);}
     }
     if(axe.t>=0&&axe.kind==='spin'&&axe.clip!==ATK.spin){var u=Math.max(0,Math.min(1,(axe.t-(axe.hits[0]-0.2))/0.5));pp.face=axe.spin0+u*Math.PI*2;}
     if(axe.t>=axe.dur){lastAtk.kind=axe.kind;lastAtk.end=time;axe.t=-1;axe.cd=0.12;
