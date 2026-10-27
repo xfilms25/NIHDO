@@ -66,11 +66,84 @@ function texNight(){return canvasTex(256,256,function(g,w,h){var gr=g.createLine
   br(w,h*0.15,Math.PI*0.88,60,7);br(0,h*0.95,-Math.PI*0.32,70,8);
 });}
 function texShaft(){return canvasTex(8,128,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});}
+/* Damian's hands, first person: black sleeves, bare hands, reaching for her */
+function makeFPHands(){
+  var skin=std({color:0xa98670,roughness:0.6}),cloth=std({color:0x0b0b0d,roughness:0.9,side:T.DoubleSide});
+  function hand(side){var g=new T.Group(),w=new T.Group();g.add(w);
+    var sl=new T.Mesh(new T.CylinderGeometry(0.036,0.05,0.85,14,1,true).rotateX(Math.PI/2).translate(0,0,0.44),cloth);w.add(sl);
+    var cf=new T.Mesh(new T.CylinderGeometry(0.046,0.046,0.03,12).rotateX(Math.PI/2).translate(0,0,0.025),cloth);w.add(cf);
+    var wr=new T.Mesh(new T.CylinderGeometry(0.026,0.03,0.05,10).rotateX(Math.PI/2),skin);w.add(wr);
+    var palm=new T.Mesh(new T.SphereGeometry(1,14,10),skin);palm.scale.set(0.04,0.015,0.048);palm.position.set(0,0,-0.055);w.add(palm);
+    var fing=[];
+    [-0.027,-0.009,0.009,0.027].forEach(function(x,i){var len=[0.042,0.05,0.048,0.038][i],f=new T.Group();f.position.set(x,0,-0.098);
+      var a=new T.Mesh(new T.CylinderGeometry(0.0078,0.0085,len,7).rotateX(Math.PI/2).translate(0,0,-len/2),skin);f.add(a);
+      var jn=new T.Group();jn.position.z=-len;f.add(jn);var b=new T.Mesh(new T.CylinderGeometry(0.0065,0.0076,len*0.8,7).rotateX(Math.PI/2).translate(0,0,-len*0.4),skin);jn.add(b);
+      var tip=new T.Mesh(new T.SphereGeometry(0.0066,7,5),skin);tip.position.z=-len*0.8;jn.add(tip);w.add(f);fing.push({f:f,j:jn});});
+    var th=new T.Group();th.position.set(-side*0.036,-0.004,-0.03);th.rotation.y=side*0.7;var tm=new T.Mesh(new T.CylinderGeometry(0.0085,0.0095,0.05,7).rotateX(Math.PI/2).translate(0,0,-0.025),skin);th.add(tm);w.add(th);
+    g.userData={w:w,fing:fing,th:th,side:side};g.scale.setScalar(1.3);g.visible=false;return g;}
+  GL.fpL=hand(-1);GL.fpR=hand(1);cam.add(GL.fpL);cam.add(GL.fpR);
+  GL.fpLight=new T.PointLight(0xffd9b8,0,1.4,1.5);GL.fpLight.position.set(0,0.25,-0.25);cam.add(GL.fpLight);
+  if(!cam.parent)scene.add(cam);
+}
+/* his real arms: Damian's own model, head hidden, arms posed by aiming each bone at a target (two-bone IK) */
+var _q1=new T.Quaternion(),_q2=new T.Quaternion(),_q3=new T.Quaternion(),_v1=new T.Vector3(),_v2=new T.Vector3(),_v3=new T.Vector3(),_ht=new T.Vector3(),_et=new T.Vector3();
+function fbInit(){if(GL.fb!==undefined)return GL.fb;var h=GL.hero,f={};if(!h)return (GL.fb=null);
+  ['LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','Head'].forEach(function(n){f[n]=h.getObjectByName('mixamorig'+n);});
+  if(!f.LeftArm||!f.RightArm||!f.LeftForeArm||!f.RightForeArm||!f.LeftHand||!f.RightHand)return (GL.fb=null);
+  f.q={};['LeftArm','LeftForeArm','RightArm','RightForeArm'].forEach(function(n){f.q[n]=f[n].quaternion.clone();});return (GL.fb=f);}
+function aimBone(b,c,target){
+  b.updateMatrixWorld(true);b.getWorldPosition(_v1);c.getWorldPosition(_v2);
+  _v2.sub(_v1).normalize();_v3.copy(target).sub(_v1).normalize();
+  _q1.setFromUnitVectors(_v2,_v3);b.getWorldQuaternion(_q2);b.parent.getWorldQuaternion(_q3);
+  b.quaternion.copy(_q3.invert().multiply(_q1.multiply(_q2)));b.updateMatrixWorld(true);
+}
+function fpHands(rise,reach,shake,panic){
+  var f=fbInit();
+  if(!f){fpHandsSimple(rise,reach,shake,panic);return;}
+  var h=GL.hero;
+  if(rise<0.01){if(GL.fpOn){GL.fpOn=false;h.visible=false;if(f.Head)f.Head.scale.setScalar(1);for(var n in f.q)f[n].quaternion.copy(f.q[n]);}return;}
+  GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
+  var fx=Math.sin(P.yaw),fz=Math.cos(P.yaw),rx=-Math.cos(P.yaw),rz=Math.sin(P.yaw),dy=S.camDY||0;
+  h.position.set(P.x-fx*0.1,dy-0.17,P.z-fz*0.1);h.rotation.y=P.yaw;h.updateMatrixWorld(true);
+  var ey=EYE+dy;
+  [['Left',-1],['Right',1]].forEach(function(sd,i){var A=f[sd[0]+'Arm'],FA=f[sd[0]+'ForeArm'],HD=f[sd[0]+'Hand'],s1=sd[1];
+    var tn=time*(i?23:19),fw=0.32+0.46*reach+0.12*panic,side=s1*(0.22-0.1*reach+0.05*panic),up=-0.95+0.74*rise+0.42*reach+0.06*panic;
+    _ht.set(P.x+fx*fw+rx*side+Math.sin(tn)*shake,ey+up+Math.sin(tn*1.3+1)*shake,P.z+fz*fw+rz*side+Math.sin(tn*0.7)*shake);
+    A.getWorldPosition(_v1);_et.copy(_v1).add(_ht).multiplyScalar(0.5);_et.x+=rx*s1*0.1;_et.z+=rz*s1*0.1;_et.y-=0.14;
+    aimBone(A,FA,_et);aimBone(FA,HD,_ht);});
+}
+/* rise: 0..1 up into view; reach: 0..1 arms out toward her; shake: tremble; panic: fingers splayed, arms thrown forward */
+function fpHandsSimple(rise,reach,shake,panic){
+  if(!GL.fpL)return;
+  if(GL.fpLight)GL.fpLight.intensity=rise>0.01?0.45*rise:0;
+  [GL.fpL,GL.fpR].forEach(function(h,i){var u=h.userData,sd=u.side;h.visible=rise>0.01;if(!h.visible)return;
+    /* wrist position in front of the eyes; the sleeve trails back and out to the bottom corner */
+    var x=sd*(0.26-0.11*reach+0.03*panic),y=-0.56+0.3*rise+0.06*reach+0.05*panic,z=-0.5-0.16*reach-0.1*panic;
+    var tn=time*(i?23:19);h.position.set(x+Math.sin(tn)*shake,y+Math.sin(tn*1.3+1)*shake,z+Math.sin(tn*0.7)*shake*0.5);
+    h.rotation.set(0.42-0.2*reach+0.1*panic,sd*(0.5-0.15*reach),sd*(-0.35+0.2*reach));
+    var curl=0.55*(1-reach)+0.12-0.3*panic;u.fing.forEach(function(F,j){F.f.rotation.x=-curl*0.6;F.j.rotation.x=-curl;F.f.rotation.y=(j-1.5)*0.08*(1+panic*2);});
+    u.th.rotation.x=-curl*0.4;});
+}
+/* the shroud over her, and the pendant: models swapped into the meshes the game already moves around */
+function loadVeilModels(){
+  if(!T.GLTFLoader)return;
+  function geoOf(gl){var g=null;gl.scene.updateMatrixWorld(true);gl.scene.traverse(function(o){if(o.isMesh&&!g){g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);}});return g;}
+  new T.GLTFLoader().load('shroud.glb?v=1',function(gl){var g=geoOf(gl);if(!g)return;
+    g.computeBoundingBox();var b=g.boundingBox,h=b.max.y-b.min.y,sc=1.86/h;g.translate(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);g.scale(sc,sc,sc);
+    if(!g.attributes.normal)g.computeVertexNormals();
+    var old=GL.veil.geometry;GL.veil.geometry=g;old.dispose();
+    var m=GL.veil.material;m.color.setHex(0xdcdfdc);m.roughness=0.88;m.emissive.setHex(0x101112);m.opacity=1;m.needsUpdate=true;
+  },undefined,function(){});
+  new T.GLTFLoader().load('pendant.glb?v=1',function(gl){var g=geoOf(gl);if(!g||!GL.pend)return;
+    g.computeBoundingBox();var b=g.boundingBox,h=b.max.y-b.min.y,sc=0.09/h;g.translate(-(b.min.x+b.max.x)/2,-(b.min.y+b.max.y)/2,-(b.min.z+b.max.z)/2);g.scale(sc,sc,sc);g.computeVertexNormals();
+    var old=GL.pend.geometry;GL.pend.geometry=g;old.dispose();GL.pend.rotation.set(-Math.PI/2,0,0.5);GL.pend.position.set(0.0,0.004,0.085);
+  },undefined,function(){});
+}
 /* the obsidian arm that comes up out of the water for him */
 function loadHandModel(){
   if(!T.GLTFLoader)return;
   new T.GLTFLoader().load('hand.glb?v=1',function(gl){
-    var proto=gl.scene;proto.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=false;if(o.material){o.material.color.setHex(0x8a8f99);o.material.roughness=0.32;o.material.metalness=0.35;if(o.material.map)o.material.map.anisotropy=4;}}});
+    var proto=gl.scene;proto.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=false;if(o.material){o.material.color.setHex(0xb4bac6);o.material.roughness=0.26;o.material.metalness=0.35;if(o.material.map)o.material.map.anisotropy=4;}}});
     GL.arms=[];
     for(var i=0;i<6;i++){var piv=new T.Group(),a=proto.clone(true);a.position.x=0.47;piv.add(a);piv.visible=false;scene.add(piv);GL.arms.push({p:piv,a:a});}
     GL.armLight=new T.PointLight(0x8fa8ff,0,4,1.6);scene.add(GL.armLight);
@@ -80,32 +153,20 @@ function loadHandModel(){
 var _ax=new T.Vector3(1,0,0),_ad=new T.Vector3(),_aq=new T.Quaternion(),_ar=new T.Quaternion();
 function armsStart(){
   var r=S.rv;if(!GL.arms)return false;
-  var fwd=Math.atan2(Math.sin(P.yaw),Math.cos(P.yaw));
-  /* around him, most of them in front and to the sides, two behind */
-  var ang=[-0.22,0.24,-0.55,0.58,-0.9,0.92];
-  r.arms=GL.arms.map(function(A,i){var a=P.yaw+ang[i]+(Math.random()-0.5)*0.12,rad=(i<2?1.55:1.85)+Math.random()*0.3;
-    return {A:A,bx:P.x+Math.sin(a)*rad,bz:P.z+Math.cos(a)*rad,t0:8.2+i*0.18+Math.random()*0.1,roll:(Math.random()-0.5)*1.4,sc:1.6+Math.random()*0.35,sp:false};});
-  GL.armLight.position.set(P.x,0.6,P.z);return true;
+  /* [forward, right] of the base, [forward, right, height] of what it grabs, scale */
+  var L=[[1.2,-0.66,0.62,-0.15,1.56,1.9],[1.16,0.7,0.62,0.15,1.56,1.9],[-0.15,-0.9,0.28,-0.2,1.15,1.7],[-0.1,0.92,0.3,0.2,1.2,1.7],[-0.95,-0.42,0,-0.22,1.5,1.75],[-0.9,0.45,0,0.22,1.5,1.75]];
+  r.arms=GL.arms.map(function(A,i){var c=L[i];return {A:A,b:[c[0],c[1]],g:[c[2],c[3],c[4]],sc:c[5],roll:(Math.random()-0.5)*1.2,d:i*0.05};});
+  return true;
 }
 function armsTick(dt){
-  var r=S.rv;if(!r||!r.arms)return;var t=r.t;
-  GL.armLight.intensity=ss(8.2,9.5,t)*3.2;GL.armLight.position.set(P.x+Math.sin(P.yaw)*0.7,0.25,P.z+Math.cos(P.yaw)*0.7);
-  r.arms.forEach(function(o,i){var A=o.A,u=ss(o.t0,o.t0+0.9,t);if(t<o.t0){A.p.visible=false;return;}
-    A.p.visible=true;
-    if(!o.sp){o.sp=true;ripple(o.bx,o.bz,true);if(i<3)sStep();}
-    /* rising out of the water, then lunging at him */
-    var lunge=ss(10.0+i*0.06,11.0,t),k=i<2?0.55:0.3,bx=o.bx+(P.x-o.bx)*k*lunge,bz=o.bz+(P.z-o.bz)*k*lunge,by=-1.75+u*1.6+lunge*(i<2?0.4:0.25);
-    A.p.position.set(bx,by,bz);A.p.scale.setScalar(o.sc*(1+lunge*0.15));
-    /* up out of the water, leaning toward him; at the end they fold in, and the two in front go for his face */
-    var dx=P.x-bx,dz=P.z-bz,dl=Math.hypot(dx,dz)||1;
-    _ad.set(dx/dl*0.42,1,dz/dl*0.42).normalize();
-    if(lunge>0){_v.set(cam.position.x-bx,cam.position.y-(i<2?0.05:0.45)-by,cam.position.z-bz).normalize();_ad.lerp(_v,lunge).normalize();}
-    _aq.setFromUnitVectors(_ax,_ad);_ar.setFromAxisAngle(_ax,o.roll+Math.sin(t*3+i)*0.06*(1-lunge));A.p.quaternion.copy(_aq).multiply(_ar);
-  });
-  if(t>9.2&&!r.sh){r.sh=1;sBoom(0.5);}
-  /* he flinches as they close */
-  var g=G.grade&&G.grade();if(g&&g.uniforms&&g.uniforms.danger)g.uniforms.danger.value=Math.max(g.uniforms.danger.value,ss(9.6,11.2,t)*0.8);
-  P.pitch+=(-0.34*ss(8.9,9.9,t)+0.12*ss(10.2,11,t)-P.pitch)*Math.min(1,dt*1.5);
+  var r=S.rv;if(!r||!r.arms||!r.snap||r.cut)return;var k=r.t-r.st;
+  var fx=Math.sin(P.yaw),fz=Math.cos(P.yaw),rx=-Math.cos(P.yaw),rz=Math.sin(P.yaw),cy=cam.position.y-EYE;
+  GL.armLight.intensity=(1-ss(1.5,2.5,k))*4;GL.armLight.position.set(P.x+fx*0.55,1.0+cy,P.z+fz*0.55);
+  r.arms.forEach(function(o,i){var A=o.A,u=ss(o.d,o.d+0.32,k);A.p.visible=true;
+    var bx=P.x+fx*o.b[0]+rx*o.b[1],bz=P.z+fz*o.b[0]+rz*o.b[1],by=-1.5+u*(i<2?1.45:1.25)+cy*0.9;
+    var gx=P.x+fx*o.g[0]+rx*o.g[1],gz=P.z+fz*o.g[0]+rz*o.g[1],gy=o.g[2]+cy;
+    A.p.position.set(bx,by,bz);A.p.scale.setScalar(o.sc*(0.85+0.15*u));
+    _ad.set(gx-bx,gy-by,gz-bz).normalize();_aq.setFromUnitVectors(_ax,_ad);_ar.setFromAxisAngle(_ax,o.roll+Math.sin(k*9+i)*0.05);A.p.quaternion.copy(_aq).multiply(_ar);});
 }
 function armsHide(){if(GL.arms)GL.arms.forEach(function(A){A.p.visible=false;});if(GL.armLight)GL.armLight.intensity=0;}
 /* the bedroom set (bed + desk + chair), placed with the headboard on the west wall and the desk in the north-west corner */
@@ -266,6 +327,7 @@ function uiInit(){
   var css=document.createElement('style');css.textContent=
   '#lbFade{position:fixed;inset:0;background:#000;z-index:20;pointer-events:none;opacity:1}'+
   '#lbWhite{position:fixed;inset:0;background:#fff;z-index:21;pointer-events:none;opacity:0}'+
+  '#lbDeep{position:fixed;inset:0;z-index:15;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 35%,rgba(26,48,80,.5),rgba(2,6,14,.97) 78%)}'+
   '#lbRing{position:fixed;inset:0;z-index:12;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0) 30%,rgba(255,255,255,.95) 100%)}'+
   '.lbLid{position:fixed;left:-5%;right:-5%;height:0;background:#000;z-index:13;pointer-events:none}#lbLidT{top:0;border-radius:0 0 50% 50%/0 0 40% 40%}#lbLidB{bottom:0;border-radius:50% 50% 0 0/40% 40% 0 0}'+
   '#lbSub{position:fixed;left:8%;right:8%;bottom:12vh;z-index:15;text-align:center;font:italic clamp(18px,2.4vw,26px)/1.35 "IM Fell English",Georgia,serif;color:#efe7da;text-shadow:0 2px 14px #000,0 0 3px #000;opacity:0;transition:opacity .8s;pointer-events:none}'+
@@ -280,7 +342,7 @@ function uiInit(){
   '#lbAct{right:max(28px,env(safe-area-inset-right,0px));bottom:max(110px,calc(env(safe-area-inset-bottom,0px) + 110px))}#lbEyes{right:max(110px,calc(env(safe-area-inset-right,0px) + 110px));bottom:max(46px,calc(env(safe-area-inset-bottom,0px) + 46px))}';
   document.head.appendChild(css);UI.css=css;
   function el(id,tag,par){var e=document.createElement(tag||'div');e.id=id;(par||document.body).appendChild(e);UI[id]=e;return e;}
-  el('lbFade');el('lbWhite');el('lbRing');var lt=el('lbLidT');lt.className='lbLid';var lb=el('lbLidB');lb.className='lbLid';
+  el('lbFade');el('lbWhite');el('lbDeep');el('lbRing');var lt=el('lbLidT');lt.className='lbLid';var lb=el('lbLidB');lb.className='lbLid';
   el('lbSub');el('lbHint');el('lbPrompt');el('lbDot');
   var hd=el('lbHands');hd.innerHTML=handsSVG();
   var end=el('lbEnd');end.innerHTML='<div class="eb"></div><h2></h2><p></p><div><button class="pri" type="button" id="lbAgain"></button> <button type="button" id="lbMenu"></button></div>';
@@ -317,7 +379,7 @@ function build(){
   /* the player carries no light; a faint presence keeps the nearest few metres readable */
   GL.near=new T.PointLight(0x8090a0,0.35,4.5,2);scene.add(GL.near);
   GL.rip=[];GL.ripI=0;for(var ri=0;ri<10;ri++){var rm=new T.Mesh(new T.RingGeometry(0.9,1.0,48).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0xc8d4e0,transparent:true,opacity:0,depthWrite:false,fog:false}));rm.visible=false;scene.add(rm);GL.rip.push({m:rm,t:9,big:1});}
-  loadHandModel();
+  loadHandModel();loadVeilModels();makeFPHands();
 
   /* === HUB: endless dark, one light from above === */
   var H=GL.hub=new T.Group();scene.add(H);
@@ -460,7 +522,7 @@ function build(){
   /* the necklace on the edge of the tub */
   var nk=GL.neck=new T.Group();var nkM=std({color:0xe8d9a8,metalness:0.9,roughness:0.25,emissive:0x3a3018});
   var ch=new T.Mesh(new T.TorusGeometry(0.07,0.004,6,40),nkM);ch.rotation.x=Math.PI/2;nk.add(ch);
-  var pend=new T.Mesh(new T.TorusGeometry(0.018,0.006,8,20,Math.PI*1.4),nkM);pend.position.set(0,0,0.075);pend.rotation.x=Math.PI/2;nk.add(pend);
+  var pend=GL.pend=new T.Mesh(new T.TorusGeometry(0.018,0.006,8,20,Math.PI*1.4),nkM);pend.position.set(0,0,0.075);pend.rotation.x=Math.PI/2;nk.add(pend);
   var ng=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffe9b0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending}));ng.scale.set(0.25,0.25,1);nk.add(ng);
   nk.position.set(TUBC[0]+0.3,TUBY+0.008,TUB[3]-0.035);BA.add(nk);GL.neckPos=new T.Vector3(RO.x+TUBC[0]+0.3,TUBY+0.05,RO.z+TUB[3]-0.035);BA.visible=false;
 
@@ -544,34 +606,43 @@ function fail(){
 /* ---------- the reveal (end of the slice) ---------- */
 function reveal(){
   if(S.revealing)return;S.revealing=true;S.busy=true;S.lockInput=true;
-  var r={t:0};S.rv=r;noiseBurst(1.4,600,0.6,0.25,true,0.6);
-  if(GL.luna){GL.luna.visible=true;G.lunaOp(1);try{G.lunaSetPose(1);}catch(e){}GL.luna.position.set(0,0,-5);GL.luna.rotation.y=Math.PI*0.98;}
+  var dx=P.x,dz=P.z+5,dl=Math.hypot(dx,dz)||1;
+  var r={t:0,sx:P.x,sz:P.z,ax:dx/dl,az:dz/dl};r.tx=r.ax*0.9;r.tz=-5+r.az*0.9;S.rv=r;
+  noiseBurst(1.0,500,0.6,0.12,true,0.6);
 }
 function revealTick(dt){
   var r=S.rv;if(!r)return;r.t+=dt;var t=r.t;
-  /* the veil slips off */
-  var v=ss(0,1.6,t);GL.veil.position.y=-v*1.9;GL.veil.material.opacity=1-ss(0.8,1.8,t);GL.veil.scale.set(1+v*0.25,1-v*0.3,1+v*0.25);
-  /* his eyes go to her */
-  var ty=Math.atan2(0-P.x,-5-P.z);P.yaw+=Math.atan2(Math.sin(ty-P.yaw),Math.cos(ty-P.yaw))*Math.min(1,dt*2.2);if(t<8.9)P.pitch+=(0.0-P.pitch)*Math.min(1,dt*2);
-  if(GL.luna){try{G.lunaIdle(time);}catch(e){}
-    if(t>3.2){var face=Math.atan2(P.x-0,P.z+5);GL.luna.rotation.y+=Math.atan2(Math.sin(face-GL.luna.rotation.y),Math.cos(face-GL.luna.rotation.y))*Math.min(1,dt*1.2);}}
-  if(t>2.2&&!r.a){r.a=1;vo('help',4500,0);}
-  /* a blue light wraps them both */
-  if(t>4.2){GL.spot.color.lerp(new T.Color(0x7d9cff),Math.min(1,dt*0.8));GL.cone.material.uniforms.c.value.lerp(new T.Color(0x7d9cff),Math.min(1,dt*0.8));}
-  /* footsteps, closer every time */
-  if(t>5&&t<9){r.st=(r.st||0)-dt;if(r.st<=0){r.st=0.75-(t-5)*0.07;noiseBurst(0.12,420,0.8,0.25+(t-5)*0.08,true,0.7);}}
-  if(t>6.5&&GL.hol&&!r.h){r.h=1;GL.hol.visible=true;GL.hol.position.set(0.6,0,-9.5);GL.holLight.intensity=0.6;}
-  if(r.h&&GL.hol){var hz=-9.5+ss(6.5,10,t)*3.6;GL.hol.position.z=hz;GL.hol.rotation.y=Math.atan2(0-GL.hol.position.x,P.z-hz);GL.holLight.position.set(GL.hol.position.x,2.2,hz+0.8);
-    if(G.hol.act)G.hol.act.timeScale=0.55;}
-  /* the hands */
-  if(t>8.15&&!r.armsTried){r.armsTried=1;r.use3d=armsStart();if(r.use3d)UI.lbHands.innerHTML='';}
-  if(t>8.2){var hv=ss(8.2,10.2,t);UI.lbHands.style.opacity=String(r.use3d?hv*0.85:hv);
-    if(!r.use3d)[].forEach.call(UI.lbHands.querySelectorAll('.lbh'),function(g,i){var top=i>=5,off=(top?-1:1)*(1-hv)*45,x=+g.getAttribute('data-x'),y=+g.getAttribute('data-y');
-      g.setAttribute('transform','translate('+x+' '+(y+off)+') rotate('+g.getAttribute('data-r')+') scale('+g.getAttribute('data-s')+')');});
-    if(!r.m){r.m=1;sBoom(0.7);if(G.buzz)G.buzz([200,80,300],1);}
-    if(ac&&AU.sfx)AU.sfx.gain.setTargetAtTime(Math.max(0.15,1-hv*0.85),ac.currentTime,0.2);}
-  if(t>11.2&&!r.b){r.b=1;fadeTo(1,1.6);}
-  if(t>13.4&&!r.e){r.e=1;showEnd();}
+  /* 1. he walks up to her and reaches for the veil */
+  if(t<2.7){var u=ss(0,1.9,t);P.x=r.sx+(r.tx-r.sx)*u;P.z=r.sz+(r.tz-r.sz)*u;P.spd=u<1?0.9:0;
+    var ty=Math.atan2(0-P.x,-5-P.z);P.yaw+=Math.atan2(Math.sin(ty-P.yaw),Math.cos(ty-P.yaw))*Math.min(1,dt*3);r.yaw=P.yaw;
+    P.pitch+=(-0.12-P.pitch)*Math.min(1,dt*2.5);
+    if(t>0.35&&!r.s1){r.s1=1;sStep();}if(t>0.95&&!r.s2){r.s2=1;sStep();}if(t>1.55&&!r.s3){r.s3=1;sStep();}
+    if(t>1.0&&!r.a){r.a=1;vo('help',4200,0);}
+    fpHands(ss(0.4,1.9,t),ss(1.5,2.65,t),0.004+0.006*ss(1.5,2.6,t),0);
+    GL.veil.scale.set(1,1+Math.sin(t*2.1)*0.006,1);
+    GL.veil.rotation.y=Math.sin(t*7)*0.012*ss(2.0,2.6,t);
+  }
+  /* 2. the water takes him */
+  if(t>=2.7&&!r.snap){r.snap=1;r.st=t;sBoom(1.0);noiseBurst(0.6,260,0.7,0.7,true,0.5);noiseBurst(0.35,1400,0.8,0.35,true,0.9);if(G.buzz)G.buzz([300,60,400],1);
+    S.ring=0.5;armsStart();ripple(P.x,P.z,true);ripple(P.x+0.4,P.z+0.3,true);UI.lbHands.innerHTML='';}
+  if(r.snap){var k=t-r.st,dd=Math.pow(ss(0.15,2.6,k),1.5)*7.5;
+    P.x=r.tx+r.ax*dd;P.z=r.tz+r.az*dd;P.yaw=r.yaw;P.spd=0;
+    /* yanked back and down: the head snaps, the room tilts, the surface closes over him */
+    P.pitch+=((k<0.35?0.16:-0.08-0.12*ss(1.5,2.6,k))-P.pitch)*Math.min(1,dt*(k<0.35?9:3));
+    S.camRoll=Math.sin(k*5.3)*0.09*(1-ss(2,3,k))+0.12*ss(0.1,0.6,k);
+    S.camDY=-ss(1.1,2.5,k)*1.95;
+    fpHands(1,1,0.012+0.01*Math.sin(k*30),ss(0,0.5,k));
+    UI.lbHands.style.opacity=String(ss(0.2,2.2,k)*0.9);
+    var under=ss(1.6,2.3,k);UI.lbDeep.style.opacity=under.toFixed(3);
+    if(ac&&AU.sfx)AU.sfx.gain.setTargetAtTime(1-under*0.7,ac.currentTime,0.08);
+    r.sp=(r.sp||0)-dt;if(r.sp<=0&&k<2.4){r.sp=0.22+Math.random()*0.12;ripple(P.x,P.z,true);if(under<0.5)sStep();else sDrip();}
+    GL.spot.intensity=5*(1-0.5*ss(1,2.6,k));
+    /* 3. nothing */
+    if(k>2.75&&!r.cut){r.cut=1;S.fade=1;S.fadeDur=0;S.fadeTo=1;UI.lbFade.style.opacity='1';fpHands(0,0,0,0);armsHide();
+      if(ac){var n=ac.currentTime;if(AU.sfx){AU.sfx.gain.cancelScheduledValues(n);AU.sfx.gain.setValueAtTime(0,n);}if(AU.drone){AU.drone.gain.cancelScheduledValues(n);AU.drone.gain.setValueAtTime(0,n);}if(AU.ring)AU.ring.gain.setValueAtTime(0,n);}
+      S.ringLock=true;S.ring=0;}
+    if(k>6.0&&!r.e){r.e=1;UI.lbDeep.style.opacity='0';showEnd();}
+  }
 }
 function showEnd(){
   var e=UI.lbEnd;e.querySelector('.eb').textContent=tx('endB');e.querySelector('h2').textContent=tx('endA');e.querySelector('p').textContent=tx('endC');
@@ -622,18 +693,18 @@ L.frame=function(dt){
   if(P.spd>0.2){P.phase+=dt*P.spd*5.2;P.stepAcc+=P.spd*dt;if(P.stepAcc>0.72){P.stepAcc=0;sStep();}}
   /* camera */
   var bob=Math.sin(P.phase)*0.028*Math.min(1,P.spd/1.3);
-  cam.position.set(P.x,EYE+bob,P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3));
+  cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
   var baseF=57+((G.CAM.fov||62)-62)*0.6;if(Math.abs(cam.fov-baseF)>0.05){cam.fov=baseF;cam.updateProjectionMatrix();}
   GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:0.25;
   /* Damian's body (only the mirror sees it) */
-  GL.hero.position.set(P.x,0,P.z);GL.hero.rotation.y=P.yaw;
+  if(!GL.fpOn){GL.hero.position.set(P.x,0,P.z);GL.hero.rotation.y=P.yaw;}
   if(G.dmn&&G.dmn.mixer&&G.dmn.acts){var A=G.dmn.acts,wk=Math.min(1,P.spd/1.2);if(A.idle)A.idle.setEffectiveWeight(1-wk);if(A.walk){A.walk.setEffectiveWeight(wk);A.walk.timeScale=Math.max(0.6,P.spd/0.95);}if(A.run)A.run.setEffectiveWeight(0);G.dmn.mixer.update(dt);}
   if(GL.hol&&G.hol.mixer&&(GL.hol.visible||S.holMirror)){G.hol.mixer.update(dt);}
   /* doors swing */
   [GL.dBed,GL.dExit,GL.dBath].forEach(function(d){d.open+=(d.want-d.open)*Math.min(1,dt*2.5);d.piv.rotation.y=-d.open;});
   var fl=0.5+0.5*Math.sin(time*31)*Math.sin(time*7.3);
   if(GL.dParty.light)GL.dParty.light.intensity=0.3+0.5*fl;
-  GL.veil.rotation.y=Math.sin(time*0.3)*0.04;
+  if(!S.revealing)GL.veil.rotation.y=Math.sin(time*0.3)*0.04;
   /* the area's own logic */
   if(P.area==='hub')hubTick(dt);else roomTick(dt);
   if(S.revealing)revealTick(dt);
@@ -764,7 +835,8 @@ function resetState(){
   GL.dBed.light.intensity=0.5;GL.dBed.strip.material.opacity=0.55;
   if(GL.luna){GL.luna.visible=false;G.lunaOp(0);}
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
-  UI.lbHands.style.opacity='0';UI.lbHands.innerHTML=handsSVG();armsHide();UI.lbEnd.style.display='none';UI.lbWhite.style.opacity='0';
+  UI.lbHands.style.opacity='0';UI.lbHands.innerHTML=handsSVG();armsHide();UI.lbDeep.style.opacity='0';fpHands(0,0,0,0);GL.veil.rotation.y=0;
+  if(ac&&AU.drone){AU.drone.gain.cancelScheduledValues(ac.currentTime);AU.drone.gain.setTargetAtTime(1,ac.currentTime,0.5);}UI.lbEnd.style.display='none';UI.lbWhite.style.opacity='0';
   if(ac&&AU.sfx)AU.sfx.gain.setTargetAtTime(1,ac.currentTime,0.1);
   toHub(false);
   /* waking in the dark: only footsteps, then the light */
