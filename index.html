@@ -4415,7 +4415,7 @@ function enterLimbo(){
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
   var need=THREE.Reflector?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js');
-  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=1');}).then(function(){
+  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=2');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();
@@ -4432,6 +4432,7 @@ var GAME={THREE:THREE,$:$,renderer:renderer,camera:camera,scene:scene,hero:hero,
   keys:function(){return keys;},touch:function(){return touch;},lang:function(){return LANG;},tr:tr,showSub:showSub,flash:flash,buzz:buzz,
   lunaSetPose:lunaSetPose,lunaIdle:lunaIdle,lunaOp:lunaOp,holSetOp:holSetOp,
   audio:function(){return {ac:ac,sfxBus:sfxBus,ambBus:ambBus,musBus:musBus,musicG:musicG,droneGain:droneGain,windG:windG,whisG:whisG};},
+  breath:function(){return {buf:SMP.breath,soft:BR_SOFT,heavy:BR_HEAVY};},
   lunaBufs:function(){if(!lunaLoaded)try{loadLuna();}catch(e){}return lunaB;},menuMusicOff:function(){try{if(MENU_MUS.g)MENU_MUS.g.gain.value=0;MENU_MUS.on=false;if(MENU_MUS.src)MENU_MUS.src.stop();}catch(e){}},
   pause:pauseGame,uiKey:uiKey};
 window.GAME=GAME;

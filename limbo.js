@@ -53,6 +53,42 @@ function texWood(){return canvasTex(256,256,function(g,w,h){var r=rnd(3);
     g.strokeStyle='rgba(0,0,0,.25)';for(var k=0;k<6;k++){g.beginPath();var yy=y+4+r()*24;g.moveTo(0,yy);g.bezierCurveTo(w*0.3,yy+(r()-0.5)*6,w*0.7,yy+(r()-0.5)*6,w,yy);g.stroke();}
     g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,y,w,2);g.fillRect((r()*w)|0,y,2,32);}
 },[3,4]);}
+function texBlackTile(floor){return canvasTex(256,256,function(g,w,h){g.fillStyle='#262626';g.fillRect(0,0,w,h);var r=rnd(floor?11:7),n=floor?3:4,cs=w/n;
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){var v=6+Math.floor(r()*7);g.fillStyle='rgb('+v+','+v+','+(v+1)+')';g.fillRect(x*cs+2,y*cs+2,cs-4,cs-4);
+    var gr=g.createLinearGradient(x*cs,y*cs,x*cs+cs,y*cs+cs);gr.addColorStop(0,'rgba(255,255,255,0.05)');gr.addColorStop(0.5,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(x*cs+2,y*cs+2,cs-4,cs-4);}
+},[1,1]);}
+function texNight(){return canvasTex(256,256,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0b1430');gr.addColorStop(0.7,'#16244a');gr.addColorStop(1,'#0a0f1e');g.fillStyle=gr;g.fillRect(0,0,w,h);
+  var r=rnd(3);for(var i=0;i<70;i++){g.fillStyle='rgba(220,230,255,'+(0.2+r()*0.6)+')';g.fillRect(r()*w,r()*h*0.7,1,1);}
+  var mg=g.createRadialGradient(w*0.42,h*0.3,0,w*0.42,h*0.3,70);mg.addColorStop(0,'rgba(220,232,255,0.9)');mg.addColorStop(0.16,'rgba(200,218,255,0.55)');mg.addColorStop(1,'rgba(120,150,230,0)');g.fillStyle=mg;g.fillRect(0,0,w,h);
+  g.fillStyle='#eef3ff';g.beginPath();g.arc(w*0.42,h*0.3,11,0,Math.PI*2);g.fill();
+  g.strokeStyle='#04060c';g.lineCap='round';function br(x,y,a,l,t){if(t<0.6||l<4)return;var x2=x+Math.cos(a)*l,y2=y+Math.sin(a)*l;g.lineWidth=t;g.beginPath();g.moveTo(x,y);g.lineTo(x2,y2);g.stroke();br(x2,y2,a-0.4-r()*0.3,l*0.72,t*0.66);br(x2,y2,a+0.35+r()*0.3,l*0.66,t*0.62);}
+  br(w,h*0.15,Math.PI*0.88,60,7);br(0,h*0.95,-Math.PI*0.32,70,8);
+});}
+function texShaft(){return canvasTex(8,128,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});}
+/* the bathroom model: restyled on load (black, white tub, red sink, brass) */
+function loadBathModel(BA){
+  if(!T.GLTFLoader)return;
+  new T.GLTFLoader().load('bathroom.glb?v=1',function(gl){
+    var oldW=GL.water;
+    var m=gl.scene,s=0.31;m.scale.setScalar(s);m.rotation.y=-Math.PI/2;m.position.set(-1.48,0.245,-4.679);
+    var white=std({color:0xf4f2ec,roughness:0.16,metalness:0}),red=std({color:0x8e0c0c,roughness:0.2,metalness:0.05}),black=std({color:0x0d0d0e,roughness:0.35}),
+      brass=std({color:0xb08a4e,roughness:0.32,metalness:0.55}),dark=std({color:0x15161a,roughness:0.06,metalness:0.9}),
+      glass=std({color:0x8a9aa8,roughness:0.05,metalness:0.3,transparent:true,opacity:0.16,depthWrite:false}),
+      water=std({color:0x05080a,roughness:0.03,metalness:0.75}),bar=std({color:0xfff1d8,emissive:0xffc88a,emissiveIntensity:1.3});
+    var MAP={Object_4:white,Object_17:white,Object_38:red,Object_40:black,Object_41:black,Object_19:(T.Reflector?null:dark),Object_24:GL.bulbM,Object_56:water,Object_44:glass,Object_8:white,Object_12:black,Object_13:brass};
+    m.traverse(function(o){if(!o.isMesh)return;var nm=o.name,mt=MAP[nm];if(nm==='Object_19'&&T.Reflector){o.visible=false;return;}
+      if(!mt){var on=(o.material&&o.material.name)||'';mt=(on.indexOf('mirror_frame')===0||on==='shilang'||nm==='partition_frame'||on.indexOf('edge_wear')===0)?(on.indexOf('edge_wear')===0?black:brass):o.material;}
+      if(o.material&&o.material!==mt&&o.material.dispose)o.material.dispose();o.material=mt;
+      o.castShadow=mt!==glass&&mt!==water;o.receiveShadow=true;
+      if(nm==='Object_56'){GL.water=o;GL.waterY=o.position.y;}});
+    /* the fixed glass panel of the partition (the sliding half stays open) */
+    var pane=new T.Mesh(new T.PlaneGeometry(0.985,2.45),glass);pane.position.set(-0.153,1.25,-4.24);pane.rotation.y=Math.PI/2;BA.add(pane);
+    if(GL.tubBox)BA.remove(GL.tubBox);if(oldW&&oldW!==GL.water)BA.remove(oldW);
+    BA.add(m);GL.bathModel=m;
+    /* compile now so opening the door doesn't hitch */
+    try{var v=BA.visible;BA.visible=true;R.compile(scene,cam);BA.visible=v;}catch(e){}
+  },undefined,function(){});
+}
 function texTile(){return canvasTex(128,128,function(g,w,h){g.fillStyle='#7d8580';g.fillRect(0,0,w,h);var r=rnd(5);
   for(var y=0;y<h;y+=32)for(var x=0;x<w;x+=32){var c=110+r()*30|0;g.fillStyle='rgb('+(c-6)+','+c+','+(c-3)+')';g.fillRect(x+2,y+2,28,28);}
   for(var i=0;i<10;i++){var gx=r()*w,gy=r()*h,rr=8+r()*20,gr=g.createRadialGradient(gx,gy,0,gx,gy,rr);gr.addColorStop(0,'rgba(40,46,30,.35)');gr.addColorStop(1,'rgba(40,46,30,0)');g.fillStyle=gr;g.fillRect(gx-rr,gy-rr,rr*2,rr*2);}
@@ -276,26 +312,7 @@ function build(){
   GL.lamp=new T.PointLight(0xffa860,2.0,8,1.5);GL.lamp.position.set(-1.7,0.95,-2.15);GL.lamp.castShadow=true;GL.lamp.shadow.mapSize.set(512,512);GL.lamp.shadow.bias=-0.003;B.add(GL.lamp);
   GL.roomFill=new T.PointLight(0x9fb4ff,0,6,2);GL.roomFill.position.set(0,2.4,0.6);B.add(GL.roomFill);
   GL.roomAmb=new T.HemisphereLight(0x4a423b,0x0e0b09,0.4);B.add(GL.roomAmb);
-  /* a bare bulb over the mirror: it lights his face when he looks at himself */
-  GL.vanL=new T.PointLight(0xffc690,1.3,3.6,2);GL.vanL.position.set(1.45,2.15,0.3);B.add(GL.vanL);
-  GL.bulbM=std({color:0xfff2d8,emissive:0xffd9a0,emissiveIntensity:1.4});var bulb=new T.Mesh(new T.SphereGeometry(0.035,10,8),GL.bulbM);bulb.position.set(1.9,2.12,0.3);B.add(bulb);
-  /* the vanity, the paint and the brush, the mirror */
-  box(0.5,0.05,1.1,bedW,1.72,0.76,0.3,B);box(0.05,0.74,0.05,bedW,1.5,0.37,-0.2,B);box(0.05,0.74,0.05,bedW,1.5,0.37,0.8,B);box(0.05,0.74,0.05,bedW,1.94,0.37,-0.2,B);box(0.05,0.74,0.05,bedW,1.94,0.37,0.8,B);
-  var potW=new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.06,16),std({color:0xf0ede6,roughness:0.4}));potW.position.set(1.7,0.815,0.05);B.add(potW);
-  var potB=new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.06,16),std({color:0x0a0a0b,roughness:0.3}));potB.position.set(1.7,0.815,0.18);B.add(potB);
-  var brush=GL.brush=new T.Group();var hdl=new T.Mesh(new T.CylinderGeometry(0.008,0.006,0.2,8),std({color:0x5a3a22,roughness:0.6}));hdl.rotation.z=Math.PI/2;brush.add(hdl);
-  GL.bristleM=std({color:0xf4f1ea,emissive:0x000000,roughness:0.9});var br=new T.Mesh(new T.ConeGeometry(0.012,0.05,8),GL.bristleM);br.rotation.z=Math.PI/2;br.position.x=-0.12;brush.add(br);
-  brush.position.set(1.68,0.795,0.45);brush.rotation.y=0.4;B.add(brush);
-  var mf=std({color:0x3a2a1c,roughness:0.5,metalness:0.3});box(0.04,1.22,0.86,mf,1.985,1.47,0.3,B);
-  GL.mirrorPos=new T.Vector3(RO.x+1.96,1.47,RO.z+0.3);
-  if(T.Reflector){
-    var pr=Math.min(1.5,R.getPixelRatio());
-    var mir=GL.mirror=new T.Reflector(new T.PlaneGeometry(0.76,1.12),{clipBias:0.003,textureWidth:Math.round(420*pr),textureHeight:Math.round(620*pr),color:0xc4c4c4});
-    mir.position.set(1.96,1.47,0.3);mir.rotation.y=-Math.PI/2;B.add(mir);
-    var ob=mir.onBeforeRender;
-    mir.onBeforeRender=function(){var hv=GL.hero.visible,hl=GL.hol?GL.hol.visible:false;GL.hero.visible=P.area==='room';if(GL.hol)GL.hol.visible=hl||S.holMirror;try{ob.apply(this,arguments);}finally{GL.hero.visible=hv;if(GL.hol)GL.hol.visible=hl;}};
-  }else{var mm=new T.Mesh(new T.PlaneGeometry(0.76,1.12),std({color:0x222428,metalness:0.9,roughness:0.15}));mm.position.set(1.96,1.47,0.3);mm.rotation.y=-Math.PI/2;B.add(mm);}
-  GL.drips=new T.Mesh(new T.PlaneGeometry(0.76,1.12),new T.MeshBasicMaterial({map:texDrips(),transparent:true,depthWrite:false}));GL.drips.position.set(1.955,1.47,0.3);GL.drips.rotation.y=-Math.PI/2;GL.drips.visible=false;B.add(GL.drips);
+  var mf=std({color:0x3a2a1c,roughness:0.5,metalness:0.3});
   /* the photo on the wall */
   GL.photoTex=texPhoto(false);GL.photoTex2=texPhoto(true);
   GL.photo=new T.Mesh(new T.PlaneGeometry(0.34,0.43),new T.MeshStandardMaterial({map:GL.photoTex,roughness:0.6}));GL.photo.position.set(0.3,1.6,-D+0.02);B.add(GL.photo);
@@ -304,23 +321,83 @@ function build(){
   GL.dExit=makeDoor(null,B);GL.dExit.g.position.set(0,0,D-0.02);GL.dExit.g.rotation.y=Math.PI;
   GL.dBath=makeDoor(0x7fa8ff,B);GL.dBath.g.position.set(1.0,0,-D+0.02);GL.dBath.strip.position.z=0.27;GL.dBath.light.position.set(0,0.12,0.35);
   GL.dBath.strip.material.opacity=0;GL.dBath.light.intensity=0;
-  /* the bathroom behind it */
+  /* the bathroom behind it: a long black-tiled room, warm bulb over the red sink, moonlight through the window over the tub */
   var BA=GL.bath=new T.Group();B.add(BA);
-  var tileM=std({map:texTile(),roughness:0.35});
-  function bw(w,h,x,y,z,ry){var m=new T.Mesh(new T.PlaneGeometry(w,h),tileM);m.position.set(x,y,z);m.rotation.y=ry;BA.add(m);}
-  bw(2,HH,1,HH/2,-4.6,0);bw(2.1,HH,0,HH/2,-3.55,Math.PI/2);bw(2.1,HH,2,HH/2,-3.55,-Math.PI/2);
-  var bfl=new T.Mesh(new T.PlaneGeometry(2,2.1).rotateX(-Math.PI/2),tileM);bfl.position.set(1,0.002,-3.55);BA.add(bfl);
-  var bce=new T.Mesh(new T.PlaneGeometry(2,2.1).rotateX(Math.PI/2),std({color:0x22262a,roughness:1}));bce.position.set(1,HH,-3.55);BA.add(bce);
-  var tubM=std({color:0xd6d6d0,roughness:0.25});box(1.6,0.55,0.75,tubM,1.0,0.275,-4.2,BA);
-  GL.water=new T.Mesh(new T.PlaneGeometry(1.42,0.58).rotateX(-Math.PI/2),std({color:0x060a0c,roughness:0.05,metalness:0.7}));GL.water.position.set(1.0,0.556,-4.2);BA.add(GL.water);
-  box(0.06,0.18,0.06,std({color:0x9aa0a6,metalness:0.8,roughness:0.3}),1.72,0.66,-4.48,BA);
-  GL.bathL=new T.PointLight(0x9ab8ff,0,7,1.1);GL.bathL.position.set(1,2.4,-3.6);BA.add(GL.bathL);
+  var BX0=-3.154,BX1=3.164,BZ0=-4.735,BZ1=-2.5,BH=2.54,NZ=-4.9;     /* room box (local) + the shower niche behind the tub */
+  var tWall=texBlackTile(false),tFloor=texBlackTile(true);
+  var tileM=std({map:tWall,roughness:0.22,metalness:0.1,color:0xffffff}),floorM=std({map:tFloor,roughness:0.3,metalness:0.1,color:0xffffff});
+  function bp(w,h,x,y,z,ry,mat,ts){var g=new T.PlaneGeometry(w,h),uv=g.attributes.uv;for(var i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/ts,uv.getY(i)*h/ts);
+    var m=new T.Mesh(g,mat);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;m.castShadow=true;BA.add(m);return m;}
+  var WT=0.6;
+  /* south wall (bathroom side), around the doorway x 0.5..1.5 */
+  bp(0.5-BX0,BH,(BX0+0.5)/2,BH/2,BZ1-0.003,Math.PI,tileM,WT);bp(BX1-1.5,BH,(1.5+BX1)/2,BH/2,BZ1-0.003,Math.PI,tileM,WT);bp(1.0,BH-2.2,1.0,2.2+(BH-2.2)/2,BZ1-0.003,Math.PI,tileM,WT);
+  /* north wall, with the niche behind the tub (x -2.43..-0.55) */
+  var NX0=-2.43,NX1=-0.55;
+  bp(NX0-BX0,BH,(BX0+NX0)/2,BH/2,BZ0,0,tileM,WT);bp(BX1-NX1,BH,(NX1+BX1)/2,BH/2,BZ0,0,tileM,WT);
+  bp(NX1-NX0,BH,(NX0+NX1)/2,BH/2,NZ,0,tileM,WT);bp(BZ0-NZ,BH,NX0,BH/2,(NZ+BZ0)/2,Math.PI/2,tileM,WT);bp(BZ0-NZ,BH,NX1,BH/2,(NZ+BZ0)/2,-Math.PI/2,tileM,WT);
+  /* east wall (behind the sink) */
+  bp(BZ1-BZ0,BH,BX1,BH/2,(BZ0+BZ1)/2,-Math.PI/2,tileM,WT);
+  /* west wall, cut around the window (z -4.335..-3.058, y 0.893..2.33) */
+  var WZ0=-4.335,WZ1=-3.058,WY0=0.893,WY1=2.33;
+  bp(WZ0-BZ0,BH,BX0,BH/2,(BZ0+WZ0)/2,Math.PI/2,tileM,WT);bp(BZ1-WZ1,BH,BX0,BH/2,(WZ1+BZ1)/2,Math.PI/2,tileM,WT);
+  bp(WZ1-WZ0,WY0,BX0,WY0/2,(WZ0+WZ1)/2,Math.PI/2,tileM,WT);bp(WZ1-WZ0,BH-WY1,BX0,(WY1+BH)/2,(WZ0+WZ1)/2,Math.PI/2,tileM,WT);
+  /* window reveal (the wall's thickness), so the opening reads as a real hole */
+  var rv=std({color:0x0b0b0c,roughness:0.5});box(0.22,0.02,WZ1-WZ0,rv,BX0-0.11,WY0,(WZ0+WZ1)/2,BA);box(0.22,0.02,WZ1-WZ0,rv,BX0-0.11,WY1,(WZ0+WZ1)/2,BA);
+  box(0.22,WY1-WY0,0.02,rv,BX0-0.11,(WY0+WY1)/2,WZ0,BA);box(0.22,WY1-WY0,0.02,rv,BX0-0.11,(WY0+WY1)/2,WZ1,BA);
+  /* floor + ceiling */
+  var bfl=new T.Mesh(new T.PlaneGeometry(BX1-BX0,NZ<BZ0?BZ1-NZ:BZ1-BZ0).rotateX(-Math.PI/2),floorM);
+  (function(g,w,h){var uv=g.attributes.uv;for(var i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/0.9,uv.getY(i)*h/0.9);})(bfl.geometry,BX1-BX0,BZ1-NZ);
+  bfl.position.set((BX0+BX1)/2,0.002,(NZ+BZ1)/2);bfl.receiveShadow=true;BA.add(bfl);
+  var bce=new T.Mesh(new T.PlaneGeometry(BX1-BX0,BZ1-NZ).rotateX(Math.PI/2),std({color:0x101010,roughness:0.9}));bce.position.set((BX0+BX1)/2,BH,(NZ+BZ1)/2);BA.add(bce);
+  /* the night outside: sky, moon, a few branches */
+  var sky=new T.Mesh(new T.PlaneGeometry(4,3.2),new T.MeshBasicMaterial({map:texNight(),fog:false}));sky.position.set(BX0-1.4,1.7,-3.7);sky.rotation.y=Math.PI/2;BA.add(sky);
+  /* moonlight: a cold spot outside the window, the frame casts its cross on the floor and the tub */
+  GL.moon=new T.SpotLight(0xa9c2ff,0,9,0.5,0.35,1);GL.moon.position.set(BX0-1.5,3.05,-3.62);GL.moon.target.position.set(-1.35,0.15,-4.05);BA.add(GL.moon);BA.add(GL.moon.target);
+  GL.moon.castShadow=true;GL.moon.shadow.mapSize.set(1024,1024);GL.moon.shadow.bias=-0.0015;GL.moon.shadow.camera.near=0.4;GL.moon.shadow.camera.far=8;
+  /* a soft shaft of light in the air */
+  var shM=new T.MeshBasicMaterial({map:texShaft(),color:0x9fb8ff,transparent:true,opacity:0.16,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,fog:false});
+  var shG=new T.CylinderGeometry(0.62,1.05,2.7,4,1,true);shG.rotateY(Math.PI/4);shG.translate(0,-1.35,0);
+  GL.shaft=new T.Mesh(shG,shM);GL.shaft.position.set(BX0-0.05,1.63,-3.7);GL.shaft.lookAt(-1.35,0.15,-4.05);GL.shaft.rotateX(-Math.PI/2);GL.shaft.scale.set(1,1,0.75);BA.add(GL.shaft);
+  /* warm light: a bulb over the sink mirror */
+  GL.bathL=new T.PointLight(0xffa660,0,5.5,1.6);GL.bathL.position.set(2.55,2.05,-3.05);BA.add(GL.bathL);
+  GL.bathFill=new T.HemisphereLight(0x3a3430,0x050505,0);BA.add(GL.bathFill);
+  /* the fixtures (loaded in the background; a plain tub stands in until then) */
+  var tubM=std({color:0xf2f0ea,roughness:0.18});GL.tubBox=box(1.6,0.45,0.78,tubM,-1.48,0.225,-4.29,BA);
+  GL.water=new T.Mesh(new T.PlaneGeometry(1.42,0.6).rotateX(-Math.PI/2),std({color:0x05080a,roughness:0.04,metalness:0.7}));GL.water.position.set(-1.48,0.39,-4.29);BA.add(GL.water);GL.waterY=0.39;
+  /* === the makeup corner: the mirror over the red sink, the paint, the brush === */
+  GL.vanL=GL.bathL;GL.vanL.intensity=1.3;
+  GL.bulbM=std({color:0xfff2d8,emissive:0xffd9a0,emissiveIntensity:1.4});var bulb=new T.Mesh(new T.SphereGeometry(0.035,10,8),GL.bulbM);bulb.position.set(3.06,2.38,-3.025);BA.add(bulb);
+  box(0.02,0.08,0.02,std({color:0x111111}),3.13,2.44,-3.025,BA);
+  var shelfM=std({color:0x0d0d0e,roughness:0.3});box(0.13,0.02,0.56,shelfM,3.09,1.3,-3.03,BA);
+  var potW=new T.Mesh(new T.CylinderGeometry(0.035,0.035,0.05,16),std({color:0xf0ede6,roughness:0.4}));potW.position.set(3.08,1.335,-3.24);BA.add(potW);
+  var potB=new T.Mesh(new T.CylinderGeometry(0.035,0.035,0.05,16),std({color:0x0a0a0b,roughness:0.3}));potB.position.set(3.08,1.335,-3.14);BA.add(potB);
+  var brush=GL.brush=new T.Group();var hdl=new T.Mesh(new T.CylinderGeometry(0.008,0.006,0.2,8),std({color:0x5a3a22,roughness:0.6}));hdl.rotation.z=Math.PI/2;brush.add(hdl);
+  GL.bristleM=std({color:0xf4f1ea,emissive:0x000000,roughness:0.9});var br=new T.Mesh(new T.ConeGeometry(0.012,0.05,8),GL.bristleM);br.rotation.z=Math.PI/2;br.position.x=-0.12;brush.add(br);
+  brush.position.set(3.07,1.32,-2.88);brush.rotation.y=Math.PI/2+0.25;BA.add(brush);
+  var MX=3.128,MY=1.83,MZ=-3.025;
+  GL.mirrorPos=new T.Vector3(RO.x+MX,MY,RO.z+MZ);
+  function oval(){var g=new T.CircleGeometry(1,40);g.scale(0.262,0.425,1);return g;}
+  if(T.Reflector){
+    var pr=Math.min(1.5,R.getPixelRatio());
+    var mir=GL.mirror=new T.Reflector(oval(),{clipBias:0.003,textureWidth:Math.round(380*pr),textureHeight:Math.round(620*pr),color:0xc4c4c4});
+    mir.position.set(MX,MY,MZ);mir.rotation.y=-Math.PI/2;BA.add(mir);
+    var ob=mir.onBeforeRender;
+    mir.onBeforeRender=function(){var hv=GL.hero.visible,hl=GL.hol?GL.hol.visible:false;GL.hero.visible=P.area==='room';if(GL.hol)GL.hol.visible=hl||S.holMirror;try{ob.apply(this,arguments);}finally{GL.hero.visible=hv;if(GL.hol)GL.hol.visible=hl;}};
+  }else{var mm=new T.Mesh(oval(),std({color:0x222428,metalness:0.9,roughness:0.15}));mm.position.set(MX,MY,MZ);mm.rotation.y=-Math.PI/2;BA.add(mm);}
+  GL.drips=new T.Mesh(oval(),new T.MeshBasicMaterial({map:texDrips(),transparent:true,depthWrite:false}));GL.drips.position.set(MX-0.004,MY,MZ);GL.drips.rotation.y=-Math.PI/2;GL.drips.visible=false;BA.add(GL.drips);
+  /* the sliding half of the shower glass: shut until the last visit */
+  var slG=std({color:0x8a9aa8,roughness:0.05,metalness:0.3,transparent:true,opacity:0.2,depthWrite:false});
+  GL.slide=new T.Group();var sp=new T.Mesh(new T.PlaneGeometry(1.0,2.45),slG);sp.rotation.y=Math.PI/2;GL.slide.add(sp);
+  var sf=std({color:0xb08a4e,roughness:0.32,metalness:0.55});[[0,1.22,0.5],[0,-1.22,0.5]].forEach(function(a){box(0.025,0.025,1.0,sf,0,a[1],0,GL.slide);});box(0.025,2.45,0.025,sf,0,0,-0.5,GL.slide);box(0.025,2.45,0.025,sf,0,0,0.5,GL.slide);
+  box(0.03,0.35,0.02,sf,0.03,0,0.42,GL.slide);
+  GL.slide.position.set(-0.19,1.25,-3.0);BA.add(GL.slide);
+  loadBathModel(BA);
   /* the necklace on the edge of the tub */
   var nk=GL.neck=new T.Group();var nkM=std({color:0xe8d9a8,metalness:0.9,roughness:0.25,emissive:0x3a3018});
   var ch=new T.Mesh(new T.TorusGeometry(0.07,0.004,6,40),nkM);ch.rotation.x=Math.PI/2;nk.add(ch);
   var pend=new T.Mesh(new T.TorusGeometry(0.018,0.006,8,20,Math.PI*1.4),nkM);pend.position.set(0,0,0.075);pend.rotation.x=Math.PI/2;nk.add(pend);
   var ng=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffe9b0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending}));ng.scale.set(0.25,0.25,1);nk.add(ng);
-  nk.position.set(0.55,0.565,-3.84);BA.add(nk);BA.visible=false;
+  nk.position.set(-1.05,0.455,-3.95);BA.add(nk);BA.visible=false;
 
   /* things you can use */
   inter=[
@@ -329,9 +406,9 @@ function build(){
     {id:'partyDoor',pos:function(){return GL.dParty.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',use:function(){sClick(3);hint(tx('locked'),2200);}},
     {id:'veil',pos:function(){return new T.Vector3(0,1.3,-5);},r:3.2,area:'hub',label:'veil',use:function(){if(!S.roomDone){sClick(1);hint(tx('locked'),2200);return;}reveal();}},
     {id:'exit',pos:function(){return new T.Vector3(RO.x,1.2,RO.z+D);},r:2.0,area:'room',label:'open',use:function(){exitRoom();}},
-    {id:'brush',pos:function(){return new T.Vector3(RO.x+1.68,0.85,RO.z+0.45);},r:1.9,area:'room',label:'take',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;GL.brush.visible=false;noiseBurst(0.12,1800,1,0.3,true);vo('v2',6000,1);after(1.2,function(){GL.drips.visible=true;sBoom(0.25);});unlockExit(3.5);}},
+    {id:'brush',pos:function(){return new T.Vector3(RO.x+3.07,1.32,RO.z-2.88);},r:1.7,area:'room',label:'take',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;GL.brush.visible=false;noiseBurst(0.12,1800,1,0.3,true);vo('v2',6000,1);after(1.2,function(){GL.drips.visible=true;sBoom(0.25);});unlockExit(3.5);}},
     {id:'bath',pos:function(){return new T.Vector3(RO.x+1.0,1.2,RO.z-D);},r:1.9,area:'room',label:'open',when:function(){return S.loop===4&&!S.bathOpen;},use:function(){sClick(2);hint(tx('stuck'),2000);}},
-    {id:'neck',pos:function(){return new T.Vector3(RO.x+0.55,0.6,RO.z-3.84);},r:1.6,area:'room',label:'take',when:function(){return S.bathOpen&&!S.neckTaken;},use:function(){takeNecklace();}}
+    {id:'neck',pos:function(){return new T.Vector3(RO.x-1.05,0.5,RO.z-3.95);},r:1.7,area:'room',label:'take',when:function(){return S.loop===4&&S.bathOpen&&!S.neckTaken;},use:function(){takeNecklace();}}
   ];
 }
 
@@ -348,14 +425,15 @@ function goRoom(loop){
 function enterRoom(loop){
   setArea('room');S.loop=loop;S.trig=false;S.exitOpen=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.failArmed=false;S.eyesAcc=0;S.mockT=1.5;S.bathOpen=false;S.neckTaken=false;S.ring=Math.min(S.ring,0.2);
   P.x=RO.x;P.z=RO.z+1.95;P.yaw=Math.PI;P.pitch=-0.05;
-  GL.dExit.open=GL.dExit.want=0;GL.dBath.open=GL.dBath.want=0;GL.bath.visible=false;GL.neck.visible=true;
+  GL.dExit.open=GL.dExit.want=0;
   GL.brush.visible=true;GL.bristleM.emissive.setHex(0);GL.drips.visible=loop>=3;
   GL.wallM.map=loop>=3?GL.wallTex2:GL.wallTex;GL.wallM.needsUpdate=true;
   GL.photo.material.map=loop>=3?GL.photoTex2:GL.photoTex;GL.photo.material.needsUpdate=true;
   GL.bedForm.visible=loop===3;GL.sheetM.color.setHex(loop>=3?0xb9b6ae:0xd8d2c6);
   GL.lamp.color.setHex(loop>=3?0x9fb4ff:0xffa860);GL.shadeM.emissive.setHex(loop>=3?0x6f88c0:0xffb066);
   GL.lamp.intensity=loop===4?0:2.0;GL.shadeM.emissiveIntensity=loop===4?0:0.9;GL.roomFill.intensity=loop===4?0.18:0;
-  GL.roomAmb.intensity=loop===4?0.06:loop===3?0.28:0.4;GL.vanL.intensity=loop===4?0:1.3;GL.vanL.color.setHex(loop>=3?0xb8c8ff:0xffc690);GL.bulbM.emissiveIntensity=loop===4?0:1.4;
+  GL.roomAmb.intensity=loop===4?0.06:loop===3?0.28:0.4;GL.vanL.intensity=loop===4?0:1.3;GL.vanL.color.setHex(loop===3?0xb8c8ff:0xffa660);
+  GL.bath.visible=loop<4;GL.dBath.open=GL.dBath.want=loop<4?1.35:0;GL.moon.intensity=loop<4?2.2:0;GL.bathFill.intensity=loop<4?0.3:0;GL.slide.visible=loop<4;GL.neck.visible=loop===4;GL.bulbM.emissiveIntensity=loop===4?0:1.4;
   GL.dBath.strip.material.opacity=loop===4?0.5:0;GL.dBath.light.intensity=loop===4?0.6:0;
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   if(ac&&AU.buzz)AU.buzz.gain.setTargetAtTime(loop===4?0:0.012,ac.currentTime,0.2);
@@ -447,9 +525,10 @@ function walkable(x,z){
     var ds=[GL.dBed,GL.dCar,GL.dParty];for(var i=0;i<ds.length;i++){var g=ds[i].g.position;if(Math.hypot(x-g.x,z-g.z)<0.7)return false;}
     if(!S.revealing&&Math.hypot(x,z+5)<0.85)return false;if(Math.hypot(x+1.7,z+4.2)<0.45)return false;return true;}
   var lx=x-RO.x,lz=z-RO.z,r=0.25;
-  var inRoom=lx>-2+r&&lx<2-r&&lz>-2.5+r&&lz<2.5-r,inBath=S.bathOpen&&lx>0.1+r&&lx<1.9-r&&lz>-4.6+r&&lz<-2.5+r,inDoor=S.bathOpen&&lx>0.62&&lx<1.38&&lz>-2.9&&lz<-2.1;
+  var inRoom=lx>-2+r&&lx<2-r&&lz>-2.5+r&&lz<2.5-r,inBath=(S.loop<4||S.bathOpen)&&lx>-3.154+r&&lx<3.164-r&&lz>-4.735+r&&lz<-2.5+r,inDoor=(S.loop<4||S.bathOpen)&&lx>0.62&&lx<1.38&&lz>-2.9&&lz<-2.1;
   if(!(inRoom||inBath||inDoor))return false;
-  var blocks=[[-2,-0.6,-1.9,0.2],[-2,-1.5,-2.5,-2.0],[1.45,2,-0.25,0.85],[0.15,1.85,-4.6,-3.8]];
+  var blocks=[[-2,-0.6,-1.9,0.2],[-2,-1.5,-2.5,-2.0]];
+  if(inBath&&!inRoom){blocks=[[1.31,1.91,-4.75,-3.75],[2.54,3.2,-3.49,-2.5],[-0.25,-0.05,-4.75,-3.5],[-2.28,-0.68,-4.9,-3.9]];if(S.loop<4)blocks.push([-3.2,-0.05,-4.9,-2.5]);}
   for(var j=0;j<blocks.length;j++){var b=blocks[j];if(lx>b[0]-r&&lx<b[1]+r&&lz>b[2]-r&&lz<b[3]+r)return false;}
   return true;
 }
@@ -493,6 +572,7 @@ L.frame=function(dt){
   /* the area's own logic */
   if(P.area==='hub')hubTick(dt);else roomTick(dt);
   if(S.revealing)revealTick(dt);
+  breathTick(dt);
   /* ringing and closed eyes */
   if(S.ringRamp)S.ring=Math.min(1.2,S.ring+dt*0.28);
   if(S.eyes>0.85&&!S.ringLock)S.ring=Math.max(0,S.ring-dt*0.35);
@@ -543,7 +623,7 @@ function roomTick(dt){
   /* third visit: someone stands behind you in the mirror. Get to the door without looking back. */
   if(S.loop===3&&GL.hol){
     if(!S.holSeen&&mlook&&!S.busy){S.lookT+=dt;if(S.lookT>0.9){S.holSeen=true;S.holMirror=true;
-        var hx=clamp(P.x-1.4,RO.x-0.4,RO.x+0.55),hz=clamp(P.z,RO.z-1.6,RO.z+1.8);GL.hol.position.set(hx,0,hz);
+        var hx=clamp(P.x-1.3,RO.x+0.2,RO.x+1.05),hz=clamp(P.z-0.65,RO.z-4.3,RO.z-3.45);GL.hol.position.set(hx,0,hz);
         GL.hol.rotation.y=Math.atan2(P.x-hx,P.z-GL.hol.position.z);sBoom(0.35);hint(tx('dontLook'),3600);S.exitOpen=true;sClick(1);}}
     if(S.holSeen&&!S.busy){GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);S.ring=Math.min(1,S.ring+dt*0.05);S.ringSrc=true;
       if(lookingAt(_v.set(GL.hol.position.x,1.5,GL.hol.position.z),8,0.55)){
@@ -555,9 +635,46 @@ function roomTick(dt){
   if(L4){
     S.mockT-=dt;if(S.mockT<=0&&!S.bathOpen){S.mockT=5.5;vo('mock',3000,3);}
     if(!S.bathOpen){S.ring=Math.min(1.2,S.ring+dt*0.12);S.ringSrc=true;
-      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.bathOpen=true;GL.dBath.want=1.35;GL.bath.visible=true;GL.bathL.intensity=1.5;sCreak();vo('v4',5600,1);S.dripT=1;}}}
-    else{GL.bathL.intensity=Math.random()<0.03?0.3:1.5;S.dripT-=dt;if(S.dripT<=0){S.dripT=1.1+Math.random()*0.6;sDrip();}GL.water.position.y=0.556+Math.sin(time*1.3)*0.001;}
+      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.bathOpen=true;GL.dBath.want=1.35;GL.bath.visible=true;GL.bathL.intensity=1.6;GL.bathL.color.setHex(0xffa660);GL.moon.intensity=2.2;GL.bathFill.intensity=0.35;sCreak();vo('v4',5600,1);S.dripT=1;}}}
+    else{GL.bathL.intensity=Math.random()<0.03?0.35:1.6;S.dripT-=dt;if(S.dripT<=0){S.dripT=1.1+Math.random()*0.6;sDrip();}GL.water.position.y=GL.waterY+Math.sin(time*1.3)*0.0012;}
   }
+}
+/* Hollow's breathing: the recorded breath from the forest, placed in space (left/right, muffled with distance) */
+var _bv=new T.Vector3(),_br=new T.Vector3();
+function hBreath(pos,vol,heavy){
+  if(!ac||!AU.sfx)return 0;
+  var pan=0,lpf=6500;
+  if(pos){_bv.copy(pos).sub(cam.position);var d=_bv.length()||1;_bv.normalize();_br.set(1,0,0).applyQuaternion(cam.quaternion);pan=clamp(_bv.dot(_br),-1,1)*0.85;lpf=clamp(9000-d*900,700,9000);}
+  try{
+    var t=ac.currentTime+0.02,B=G.breath&&G.breath(),src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain(),pn=ac.createStereoPanner?ac.createStereoPanner():null,dur,a;
+    f.type='lowpass';f.frequency.value=lpf;f.Q.value=0.5;
+    if(B&&B.buf){var list=heavy?B.heavy:B.soft,seg=list[Math.floor(Math.random()*list.length)],rate=0.9+Math.random()*0.08;
+      src.buffer=B.buf;src.playbackRate.value=rate;dur=seg[1]/rate;a=Math.max(0.0001,vol*(seg[2]||1));
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(a,t+0.08);g.gain.setValueAtTime(a,t+Math.max(0.09,dur-0.25));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      src.start(t,seg[0],seg[1]+0.05);}
+    else{/* no recording: a breath out of filtered noise */
+      dur=heavy?1.6:2.2;var n=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);for(var i=0;i<n;i++)c[i]=Math.random()*2-1;
+      src.buffer=b;f.type='bandpass';f.frequency.value=heavy?520:380;f.Q.value=0.8;a=Math.max(0.0001,vol*0.9);
+      g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(a*0.7,t+dur*0.35);g.gain.linearRampToValueAtTime(0.0001,t+dur*0.45);g.gain.linearRampToValueAtTime(a,t+dur*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      src.start(t);}
+    src.connect(f);f.connect(g);if(pn){pn.pan.value=pan;g.connect(pn);pn.connect(AU.sfx);pn.connect(AU.send);}else{g.connect(AU.sfx);g.connect(AU.send);}
+    return dur;
+  }catch(e){return 0;}
+}
+var _hp=new T.Vector3();
+function breathTick(dt){
+  S.brT=(S.brT===undefined?3:S.brT)-dt;if(S.brT>0||S.fade>0.9)return;
+  var hv=GL.hol&&GL.hol.visible,src=null,vol=0,heavy=false,gap=6;
+  if(GL.hol)_hp.set(GL.hol.position.x,1.6,GL.hol.position.z);
+  if(S.revealing){if(hv){var d0=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.2-d0*0.12,0.35,1);heavy=d0<4;gap=0.25;}}
+  else if(P.area==='hub'){if(S.hol&&S.hol.on&&GL.hol){var d1=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1-(d1-2)/12,0.15,0.9);heavy=d1<4;gap=0.5;}}
+  else if(P.area==='room'){
+    if(S.loop===3&&S.holSeen&&GL.hol){var d2=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.1-d2*0.18,0.35,1);heavy=d2<2.2;gap=0.35;}
+    else if(S.loop===4&&!S.bathOpen){/* in the dark, right behind you */_hp.set(P.x-Math.sin(P.yaw)*1.2,1.6,P.z-Math.cos(P.yaw)*1.2);src=_hp;vol=0.55;heavy=Math.random()<0.4;gap=1.2+Math.random()*1.5;}
+    else if(S.loop>=2){/* far off, somewhere in the house */_hp.set(RO.x+(Math.random()-0.5)*6,1.6,RO.z+3.5);src=_hp;vol=0.16;gap=9+Math.random()*7;}
+  }
+  if(!src){S.brT=1;return;}
+  var len=hBreath(src,vol,heavy)||2;S.brT=len+gap;
 }
 function interact(){if(S.busy||S.lockInput||!curInter)return;var it=curInter;curInter=null;it.use();}
 
