@@ -315,6 +315,7 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
     <p class="tag" data-i18n="tag">Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.</p>
     <nav class="menu" aria-label="Menú principal">
       <button class="mi primary start" id="goBtn" type="button"><span data-i18n="go">Comenzar</span></button>
+      <button class="mi" id="limboMenuBtn" type="button" hidden><span data-i18n="toLimbo">Parte II · El Limbo</span></button>
       <button class="mi" id="ctlBtn" type="button" aria-haspopup="dialog"><span data-i18n="controls">Controles</span></button>
       <button class="mi" id="langBtn" type="button"><span data-i18n="lang">Idioma: Español</span></button>
       <button class="mi" id="setBtn" type="button"><span data-i18n="settings">Sonido</span></button>
@@ -361,7 +362,8 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
     <div id="endStats"></div>
     <div id="endSaveRow"><input id="endName" maxlength="16" autocomplete="off" data-i18n-ph="yourName" placeholder="Tu nombre"><button id="endSave" type="button" data-i18n="saveTime">Guardar tiempo</button></div>
     <div id="endBoard"></div>
-    <button class="go" id="againBtn" type="button" data-i18n="restart">Volver a empezar</button>
+    <button class="go" id="limboBtn" type="button" data-i18n="toLimbo">Parte II · El Limbo</button>
+    <button class="ghost" id="againBtn" type="button" data-i18n="restart" style="margin-top:10px">Volver a empezar</button>
   </div>
 </div>
 
@@ -387,7 +389,7 @@ var touch=false;
 var I18N={
 es:{prompt:'E · Examinar',promptTouch:'Examinar',promptPad:'LB · Examinar',btnE:'Ver',btnA:'Hacha',btnK:'Patada',btnJ:'Salto',trapMash:'¡Presiona repetidamente para liberarte!',chaseMash:'¡Pulsa sin parar para escapar!',chaseMashT:'¡Toca sin parar para escapar!',trapMashT:'¡Toca repetidamente para liberarte!',skipIntro:'Saltar',padOn:'Control conectado',btnS:'Giro',btnD:'Esquivar',eyebrow:'The Official Game',rule:'No mires atrás.',
  tag:'Basado en el cortometraje <em>Nada que no haya soñado</em>. Sigue el rastro de luz entre los pinos. Algo te sigue a ti.',
- go:'Comenzar',lPresents:'XFilms presenta',lCont:'Pulsa cualquier tecla para continuar',lContT:'Toca para continuar',lContP:'Pulsa A / ✕ para continuar',lAdvice:'Consejo',lTips:['Juega con audífonos: Hollow respira antes de aparecer.','Sigue el rastro de luz entre los pinos. Luna siempre espera más adelante.','Mantén pulsado el hacha para un golpe fuerte que derriba.','Si las manos te atrapan, pulsa cualquier acción sin parar para liberarte.','Las sombras caen tras seis golpes. Una patada las tumba al suelo.','Esquiva en el último instante: deslizarte te salva de un mordisco.','Encadena hachazos: pulsa al ritmo del golpe para un combo.','Si escuchas un susurro detrás de ti, no te quedes quieto.','La calma baja cuando las sombras te rodean. Respira, busca la luz.','Corre con Shift, o presionando el joystick izquierdo (L3), para alcanzar a Luna.','Pulsa G para ajustar cómo Damian sujeta el hacha.','En Ajustes puedes cambiar la sensibilidad y la distancia de la cámara.','Si Hollow te persigue, pulsa la tecla que aparece en pantalla a tiempo para escapar.'],lWhat:['Despertando a Damian','Levantando el bosque','Llamando a Luna','Algo se mueve entre los pinos','Las sombras despiertan'],credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'Presiona L3: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
+ go:'Comenzar',toLimbo:'Parte II · El Limbo',limboLoading:'Descendiendo al limbo…',lPresents:'XFilms presenta',lCont:'Pulsa cualquier tecla para continuar',lContT:'Toca para continuar',lContP:'Pulsa A / ✕ para continuar',lAdvice:'Consejo',lTips:['Juega con audífonos: Hollow respira antes de aparecer.','Sigue el rastro de luz entre los pinos. Luna siempre espera más adelante.','Mantén pulsado el hacha para un golpe fuerte que derriba.','Si las manos te atrapan, pulsa cualquier acción sin parar para liberarte.','Las sombras caen tras seis golpes. Una patada las tumba al suelo.','Esquiva en el último instante: deslizarte te salva de un mordisco.','Encadena hachazos: pulsa al ritmo del golpe para un combo.','Si escuchas un susurro detrás de ti, no te quedes quieto.','La calma baja cuando las sombras te rodean. Respira, busca la luz.','Corre con Shift, o presionando el joystick izquierdo (L3), para alcanzar a Luna.','Pulsa G para ajustar cómo Damian sujeta el hacha.','En Ajustes puedes cambiar la sensibilidad y la distancia de la cámara.','Si Hollow te persigue, pulsa la tecla que aparece en pantalla a tiempo para escapar.'],lWhat:['Despertando a Damian','Levantando el bosque','Llamando a Luna','Algo se mueve entre los pinos','Las sombras despiertan'],credit:'Un juego de XFilms',padStart:'Pulsa A / ✕ para comenzar',bestRun:'Mejor tiempo',tabKb:'Teclado y ratón',tabPad:'Control',tabTouch:'Táctil',cMove:'Mover',cRun:'Correr',cLook:'Mirar',cExam:'Examinar',cAxe:'Hacha',cHeavy:'Mantén: golpe fuerte',cKick:'Patada',cJump:'Saltar',cSpin:'Giro',cDodge:'Esquivar',cPause:'Pausa',cMute:'Silencio',cGrip:'Ajustar',cAlt:'También',cDrag:'Arrastra',cLeftHalf:'Mitad izquierda: mover',cRightHalf:'Mitad derecha: mirar',cMash:'Atrapado por las manos: pulsa cualquier acción repetidamente',cPadNote:'Funciona con Xbox, PlayStation y cualquier control estándar',cL3:'Presiona L3: correr',controls:'Controles',lang:'Idioma: Español',small:'Mejor con audífonos',
  keys:'<span><b>WASD</b> mover</span><span><b>Shift</b> correr</span><span><b>Mouse</b> mirar</span><span><b>E</b> examinar</span><span><b>Clic / Q</b> hachazo (mantén: golpe fuerte)</span><span><b>R</b> giro</span><span><b>C</b> esquivar</span><span><b>Clic der. / V</b> patada</span><span><b>Espacio</b> saltar</span><span><b>G</b> ajustar hacha</span><span><b>P / Esc</b> pausa</span><span><b>M</b> silenciar</span><span><b>Control</b> stick izq. mover · stick der. cámara · A/✕ saltar · X/□ o RT hacha (mantén: fuerte) · Y/△ patada · B/○ esquivar · RB/R1 giro · LB/L1 examinar · LT/L2 o L3 correr · Menú/Options pausa</span>',
  keysTouch:'<span><b>Arrastra izq.</b> mover</span><span><b>Arrastra der.</b> mirar</span><span><b>Ver</b> examinar</span><span><b>Hacha / Patada</b> atacar</span>',
  pause:'Pausa',pauseP:'El bosque espera.',resume:'Continuar',restart:'Volver a empezar',menu:'Menú principal',caughtP:'Vuelves al último lugar donde viste a Luna.',retry:'Reintentar',
@@ -402,7 +404,7 @@ es:{prompt:'E · Examinar',promptTouch:'Examinar',promptPad:'LB · Examinar',btn
  axRx:'Giro X',axRy:'Giro Y',axRz:'Giro Z',axMx:'Mover X',axMy:'Mover Y',axMz:'Mover Z',axFreeze:'Congelar ataque',axMoment:'Momento del golpe',axTry:'Probar ataque',axKick:'Probar patada',axSave:'Guardar',axSaved:'Posición del hacha guardada.',axCopy:'Copiar valores',axReset:'Restablecer',settings:'Ajustes',sndH:'Sonido',camH:'Cámara',camSens:'Sensibilidad',camInv:'Invertir eje vertical',camDist:'Distancia de cámara',camFov:'Campo de visión',camShake:'Temblor y movimiento de cámara',camReset:'Restablecer',volSfx:'Efectos',volAmb:'Ambiente',volMus:'Música',done:'Listo',skip:'Saltar',tapPlay:'Toca para reproducir'},
 en:{prompt:'E · Examine',promptTouch:'Examine',promptPad:'LB · Examine',btnE:'Look',btnA:'Axe',btnK:'Kick',btnJ:'Jump',trapMash:'Mash any button to break free!',chaseMash:'Mash any button to get away!',chaseMashT:'Tap repeatedly to get away!',trapMashT:'Tap repeatedly to break free!',skipIntro:'Skip',padOn:'Controller connected',btnS:'Spin',btnD:'Dodge',eyebrow:'The Official Game',rule:"Don't look back.",
  tag:'Based on the short film <em>Nada que no haya soñado</em> (Nothing I haven\'t Dreamed of). Follow the trail of light through the pines. Something is following you.',
- go:'Start',lPresents:'XFilms presents',lCont:'Press any key to continue',lContT:'Tap to continue',lContP:'Press A / ✕ to continue',lAdvice:'Advice',lTips:['Play with headphones: Hollow breathes before he appears.','Follow the trail of light through the pines. Luna always waits further ahead.','Hold the axe button for a heavy blow that knocks enemies down.','If the hands grab you, mash any action button to break free.','Shadows fall after six blows. A kick knocks them to the ground.','Dodge at the last moment: a slide saves you from a bite.','Chain your axe swings: press in rhythm with each hit for a combo.','If you hear a whisper behind you, don\'t stand still.','Calm drops when shadows surround you. Breathe, find the light.','Run with Shift, or by clicking the left stick (L3), to keep up with Luna.','Press G to adjust how Damian holds the axe.','In Settings you can change camera sensitivity and distance.','If Hollow chases you, press the key on screen in time to get away.'],lWhat:['Waking Damian','Raising the forest','Calling Luna','Something moves between the pines','The shadows wake'],credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'Click L3: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
+ go:'Start',toLimbo:'Part II · Limbo',limboLoading:'Descending into Limbo…',lPresents:'XFilms presents',lCont:'Press any key to continue',lContT:'Tap to continue',lContP:'Press A / ✕ to continue',lAdvice:'Advice',lTips:['Play with headphones: Hollow breathes before he appears.','Follow the trail of light through the pines. Luna always waits further ahead.','Hold the axe button for a heavy blow that knocks enemies down.','If the hands grab you, mash any action button to break free.','Shadows fall after six blows. A kick knocks them to the ground.','Dodge at the last moment: a slide saves you from a bite.','Chain your axe swings: press in rhythm with each hit for a combo.','If you hear a whisper behind you, don\'t stand still.','Calm drops when shadows surround you. Breathe, find the light.','Run with Shift, or by clicking the left stick (L3), to keep up with Luna.','Press G to adjust how Damian holds the axe.','In Settings you can change camera sensitivity and distance.','If Hollow chases you, press the key on screen in time to get away.'],lWhat:['Waking Damian','Raising the forest','Calling Luna','Something moves between the pines','The shadows wake'],credit:'An XFilms game',padStart:'Press A / ✕ to start',bestRun:'Best time',tabKb:'Keyboard & mouse',tabPad:'Controller',tabTouch:'Touch',cMove:'Move',cRun:'Run',cLook:'Look',cExam:'Examine',cAxe:'Axe',cHeavy:'Hold: heavy hit',cKick:'Kick',cJump:'Jump',cSpin:'Spin',cDodge:'Dodge',cPause:'Pause',cMute:'Mute',cGrip:'Adjust',cAlt:'Also',cDrag:'Drag',cLeftHalf:'Left half: move',cRightHalf:'Right half: look',cMash:'Grabbed by the hands: mash any action button',cPadNote:'Works with Xbox, PlayStation and any standard controller',cL3:'Click L3: run',controls:'Controls',lang:'Language: English',small:'Best with headphones',
  keys:'<span><b>WASD</b> move</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span><span><b>E</b> examine</span><span><b>Click / Q</b> axe (hold: heavy)</span><span><b>R</b> spin</span><span><b>C</b> dodge</span><span><b>Right click / V</b> kick</span><span><b>Space</b> jump</span><span><b>G</b> adjust axe</span><span><b>P / Esc</b> pause</span><span><b>M</b> mute</span><span><b>Controller</b> left stick move · right stick camera · A/✕ jump · X/□ or RT axe (hold: heavy) · Y/△ kick · B/○ dodge · RB/R1 spin · LB/L1 examine · LT/L2 or L3 run · Menu/Options pause</span>',
  keysTouch:'<span><b>Drag left</b> move</span><span><b>Drag right</b> look</span><span><b>Look</b> examine</span><span><b>Axe / Kick</b> attack</span>',
  pause:'Paused',pauseP:'The forest is waiting.',resume:'Continue',restart:'Start over',menu:'Main menu',caughtP:'You return to the last place you saw Luna.',retry:'Try again',
@@ -3528,15 +3530,17 @@ function cawSound(){
   }catch(e){}
 }
 var pauseByUs=false;
+var PAUSE_FROM='play';
 function pauseGame(){
-  if(state!=='play')return;
+  if(state!=='play'&&state!=='limbo')return;
+  PAUSE_FROM=state;
   state='paused';$('vPause').classList.add('on');keys={};dragging=false;
   try{if(ac&&ac.state==='running')ac.suspend();}catch(e){}
   try{if(document.pointerLockElement){pauseByUs=true;document.exitPointerLock();}}catch(e){}
 }
 function resumeGame(){
   if(state!=='paused')return;
-  $('vPause').classList.remove('on');state='play';clock.getDelta();
+  $('vPause').classList.remove('on');state=PAUSE_FROM||'play';clock.getDelta();
   try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}
   if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
 }
@@ -4013,7 +4017,7 @@ function playFinale(){
   if(pr&&pr.catch)pr.catch(function(){if(v.error)endFinale();else $('finTap').style.display='flex';});
 }
 function endFinale(){
-  if(FIN.phase!=='clip')return;FIN.phase='done';
+  if(FIN.phase!=='clip')return;FIN.phase='done';try{localStorage.setItem('nihdo_p2','1');}catch(e){}
   var v=$('finVid');try{v.pause();}catch(e){}
   $('vFin').classList.remove('on');$('finTap').style.display='none';
   try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}
@@ -4122,6 +4126,9 @@ function examine(){
 
 /* ---------- input ---------- */
 window.addEventListener('keydown',function(e){
+  if(state==='limbo'){keys[e.code]=true;if(window.LIMBO)window.LIMBO.key(e);
+    if(e.code==='KeyP'||e.code==='Escape'){e.preventDefault();pauseGame();}
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].indexOf(e.code)>-1)e.preventDefault();return;}
   if(e.code==='F8'&&(state==='play'||state==='paused')){e.preventDefault();
     if(e.shiftKey){try{localStorage.removeItem('nihdo_introSpot');}catch(er){}flash(LANG==='es'?'Lugar de la cinemática borrado':'Cinematic spot cleared',2600);return;}
     var spot={x:+pp.x.toFixed(1),z:+pp.z.toFixed(1)},txt=spot.x+', '+spot.z;
@@ -4148,15 +4155,16 @@ window.addEventListener('keydown',function(e){
 });
 window.addEventListener('keyup',function(e){keys[e.code]=false;if(e.code==='KeyQ'||e.code==='KeyJ')atkRelease();});
 document.addEventListener('pointerlockchange',function(){locked=document.pointerLockElement===canvas;
-  if(!locked&&state==='play'&&!pauseByUs&&!(axtUI&&axtUI.style.display!=='none'))pauseGame();pauseByUs=false;});
+  if(!locked&&(state==='play'||state==='limbo')&&!pauseByUs&&!(axtUI&&axtUI.style.display!=='none'))pauseGame();pauseByUs=false;});
 canvas.addEventListener('mousedown',function(e){
   dragging=true;
   if(e.button===0&&state==='play'&&locked&&!touch&&!CHASE.on)atkPress();
   if(e.button===2&&state==='play'&&!touch&&!CHASE.on)kick();
-  if(state==='play'&&!locked&&!touch&&!(axtUI&&axtUI.style.display!=='none')){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
+  if((state==='play'||state==='limbo')&&!locked&&!touch&&!(axtUI&&axtUI.style.display!=='none')){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
 });
 window.addEventListener('mouseup',function(e){dragging=false;if(e.button===0)atkRelease();});
 window.addEventListener('mousemove',function(e){
+  if(state==='limbo'&&(locked||dragging)&&window.LIMBO){window.LIMBO.look(e.movementX*CAM.sens,e.movementY*CAM.sens*camIY());return;}
   if(state!=='play'||!(locked||dragging))return;
   yaw-=e.movementX*0.0026*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+e.movementY*0.0022*CAM.sens*camIY()));
 });
@@ -4181,6 +4189,8 @@ canvas.addEventListener('touchmove',function(e){
     if(t.identifier===joy.id){
       var dx=(t.clientX-joy.ox)/50,dy=(t.clientY-joy.oy)/50,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}
       joy.x=dx;joy.y=dy;joyKnob.style.transform='translate('+(dx*35)+'px,'+(dy*35)+'px)';
+    }else if(t.identifier===look.id&&state==='limbo'&&window.LIMBO){
+      window.LIMBO.look((t.clientX-look.lx)*2.1*CAM.sens,(t.clientY-look.ly)*1.9*CAM.sens*camIY());look.lx=t.clientX;look.ly=t.clientY;
     }else if(t.identifier===look.id&&state==='play'){
       yaw-=(t.clientX-look.lx)*0.0055*CAM.sens;pitch=Math.max(-0.25,Math.min(1.0,pitch+(t.clientY-look.ly)*0.004*CAM.sens*camIY()));
       look.lx=t.clientX;look.ly=t.clientY;
@@ -4226,8 +4236,8 @@ if(document.fullscreenEnabled||document.webkitFullscreenEnabled||document.mozFul
   });
 }
 $('resumeBtn').addEventListener('click',resumeGame);
-$('restartBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='play';clock.getDelta();});
-$('menuBtn').addEventListener('click',function(){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='title';$('vTitle').classList.add('on');try{menuBest();}catch(e){}});
+$('restartBtn').addEventListener('click',function(){if(PAUSE_FROM==='limbo'&&window.LIMBO){$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}state='limbo';window.LIMBO.restart();return;}$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='play';clock.getDelta();});
+$('menuBtn').addEventListener('click',function(){if(PAUSE_FROM==='limbo'){location.hash='';location.reload();return;}$('vPause').classList.remove('on');try{if(ac)ac.resume();}catch(e){}resetGame();state='title';$('vTitle').classList.add('on');try{menuBest();}catch(e){}});
 /* ---------- controls: diagram panel (keyboard & mouse / controller / touch) ---------- */
 var CTL={tab:'kb',open:false};
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
@@ -4390,6 +4400,41 @@ function loaderContinue(){
 try{$('lTip').textContent=tr('lTips')[0];LOADER.tipI=1;LOADER.tipT=6.5;}catch(e){}
 var _ldI=setInterval(function(){if(LOADER.done){clearInterval(_ldI);return;}loaderTick();},100);
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(e){if(LOADER.wait&&!LOADER.done){if(e.preventDefault&&ev==='keydown')e.preventDefault();loaderContinue();}},true);});
+/* ---------- Part II: El Limbo — its code and assets load only when you go there ---------- */
+function limboUnlocked(){var u=false;try{u=localStorage.getItem('nihdo_p2')==='1';}catch(e){}return u||/limbo/i.test(location.hash+location.search);}
+function limboMenuSync(){var b=$('limboMenuBtn');if(b)b.hidden=!limboUnlocked();}
+limboMenuSync();
+var LIMBO_LOADING=false;
+function loadScript(src){return new Promise(function(res,rej){var sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=function(){rej(new Error('load '+src));};document.head.appendChild(sc);});}
+function enterLimbo(){
+  if(LIMBO_LOADING)return;LIMBO_LOADING=true;
+  initAudio();try{if(ac&&ac.state==='suspended')ac.resume();}catch(e){}
+  ['vTitle','vEnd','vPause','vCaught','vSet','vCtl'].forEach(function(id){var el=$(id);if(el)el.classList.remove('on');});
+  INTRO.on=false;CHASE.on=false;try{chaseReset();}catch(e){}TRAP.hold=0;
+  var L=$('vLoad');L.style.display='flex';L.classList.remove('out');$('lStat').classList.remove('ready');$('lStat').textContent=tr('limboLoading');$('lBarI').style.width='30%';
+  state='limboLoad';
+  var base=(document.currentScript&&document.currentScript.src)||'';
+  var need=THREE.Reflector?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js');
+  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=1');}).then(function(){
+    $('lBarI').style.width='100%';
+    window.LIMBO.init(GAME,function(){
+      state='limbo';clock.getDelta();
+      L.classList.add('out');setTimeout(function(){L.style.display='none';},1400);
+      if(!touch){try{var pr=canvas.requestPointerLock();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}}
+    });
+  }).catch(function(err){console.warn('limbo',err);LIMBO_LOADING=false;$('lStat').textContent='Error: '+err.message;});
+}
+$('limboBtn').addEventListener('click',enterLimbo);
+$('limboMenuBtn').addEventListener('click',enterLimbo);
+/* the small window Limbo looks through to borrow the shared parts of the game */
+var GAME={THREE:THREE,$:$,renderer:renderer,camera:camera,scene:scene,hero:hero,dmn:dmn,axe:axe,hol:hol,luna:luna,GP:GP,CAM:CAM,joy:joy,canvas:canvas,
+  st:function(v){if(v!==undefined)state=v;return state;},comp:function(){return comp;},grade:function(){return gradeP;},bloom:function(){return bloomP;},
+  keys:function(){return keys;},touch:function(){return touch;},lang:function(){return LANG;},tr:tr,showSub:showSub,flash:flash,buzz:buzz,
+  lunaSetPose:lunaSetPose,lunaIdle:lunaIdle,lunaOp:lunaOp,holSetOp:holSetOp,
+  audio:function(){return {ac:ac,sfxBus:sfxBus,ambBus:ambBus,musBus:musBus,musicG:musicG,droneGain:droneGain,windG:windG,whisG:whisG};},
+  lunaBufs:function(){if(!lunaLoaded)try{loadLuna();}catch(e){}return lunaB;},menuMusicOff:function(){try{if(MENU_MUS.g)MENU_MUS.g.gain.value=0;MENU_MUS.on=false;if(MENU_MUS.src)MENU_MUS.src.stop();}catch(e){}},
+  pause:pauseGame,uiKey:uiKey};
+window.GAME=GAME;
 /* best time on the menu */
 function menuBest(){var b=boardLoad(),el=$('bestChip');if(!el)return;if(!b.length){el.hidden=true;return;}var m=Math.min.apply(null,b.map(function(r){return r.t;}));el.textContent=tr('bestRun')+' · '+fmtTime(m);el.hidden=false;}
 menuBest();
@@ -4990,7 +5035,7 @@ function endIntro(){
   showSub(tr('followLight'),3200);
 }
 /* ---------- controllers (Xbox / PlayStation / any standard gamepad) ---------- */
-var GP={on:false,prev:[],mx:0,my:0,run:false,told:false};
+var GP={on:false,prev:[],mx:0,my:0,run:false,told:false};if(window.GAME)window.GAME.GP=GP;
 function gpDown(g,i){var b=g.buttons[i];return !!b&&(b.pressed||b.value>0.5);}
 /* D-pad / left stick as menu arrows, with auto-repeat */
 function gpNav(g,P){
@@ -5022,6 +5067,7 @@ function gpTick(rdt){
     if(CTL.open){if(P(1)||P(9)||P(0))ctlClose();else if(P(4)||nv.x<0)ctlTab(-1);else if(P(5)||nv.x>0)ctlTab(1);}
     else if(navOn('vSet')){if(nv.y)navMove(nv.y);else if(nv.x)navAdj(nv.x);else if(P(0))navAct();else if(P(1)||P(9))closeSettings();}
     else{if(nv.y)navMove(nv.y);else if(P(0))navAct();else if(P(9))$('goBtn').click();}}
+  else if(state==='limbo'){if(window.LIMBO)window.LIMBO.pad(g,P,dz,rdt);if(P(9))pauseGame();}
   else if(state==='caught'){if(P(0)||P(9))retryNow();}
   else if(state==='ending'){if(P(0)||P(9))$('againBtn').click();}
   else if(state==='paused'){var nv2=gpNav(g,P);if(nv2.y)navMove(nv2.y);else if(P(0)){var it2=navItems();if(it2&&it2.indexOf(document.activeElement)>=0)navAct();else resumeGame();}else if(P(9)||P(1))resumeGame();}
@@ -5060,6 +5106,7 @@ function frame(){
   var dt=Math.min(clock.getDelta(),0.05);if(state==='paused')dt=0;
   var rdt=dt;
   gpTick(rdt);
+  if(state==='limbo'||(state==='paused'&&PAUSE_FROM==='limbo')||state==='limboLoad'){if(window.LIMBO&&window.LIMBO.ready)window.LIMBO.frame(state==='limbo'?dt:0);return;}
   if(CB.hitstop>0){CB.hitstop-=dt;dt*=0.06;}
   if(CIN.slow>0){CIN.slow-=rdt;dt*=0.3;}
   time+=dt;
