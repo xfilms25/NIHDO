@@ -6,6 +6,7 @@
 var L={ready:false};window.LIMBO=L;
 var G,T=window.THREE,R,scene,cam,ac,AU={},UI={},GL={};
 var RO={x:0,z:-60};            /* the bedroom lives here, far from the hub */
+var CO={x:80,z:0};             /* the car, stopped at the red light */
 var P={x:0,z:7,yaw:Math.PI,pitch:-0.02,phase:0,spd:0,area:'hub',stepAcc:0};
 var S={};                      /* run state, reset by restart() */
 var timers=[],time=0;
@@ -19,16 +20,20 @@ var TX={
   v1:'Anoche soñé con nosotros.',v2:'Corríamos entre los árboles. La luz entraba entre los pinos.',v3:'Eras feliz. Yo era feliz.',
   v4:'Pero en algún momento… te solté la mano.',v5:'Y cuando quise encontrarte… ya no estabas.',
   mock:'Damián… ¿Ya no me amas?',help:'Damián… ayúdame.',
-  endA:'Continuará',endB:'Parte II · El Limbo — La habitación',endC:'Faltan dos recuerdos: el carro y la fiesta.',menu:'Menú principal',again:'Volver a jugar',
-  brush:'El labial rojo',mirror:'El espejo',neck:'El collar',door:'La puerta'},
+  endA:'Continuará',endB:'Parte II · El Limbo — La habitación y el carro',endC:'Falta un recuerdo: la fiesta.',menu:'Menú principal',again:'Volver a jugar',
+  brush:'El labial rojo',mirror:'El espejo',neck:'El collar',door:'La puerta',
+  tune:'Sintonizar',reach:'Acercarte',takeHand:'Tomar su mano',radio:'La radio',rear:'El retrovisor',nextDoor:'Otra puerta te espera.',
+  c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédatelo.'},
  en:{lily:'I believe the white lily appears when love goes rotten.',find:'Find the light.',dontLook:"Don't look back.",
   open:'Open',look:'Look',take:'Take',veil:'Lift the veil',locked:'Not yet.',stuck:"It won't open.",
   eyes:'Hold {k} to close your eyes',eyesK:'F',eyesP:'LT',eyesT:'the eye',
   v1:'Last night I dreamed about us.',v2:'We were running through the trees. The light came in between the pines.',v3:'You were happy. I was happy.',
   v4:'But at some point… I let go of your hand.',v5:'And when I tried to find you… you were gone.',
   mock:"Damian… don't you love me anymore?",help:'Damian… help me.',
-  endA:'To be continued',endB:'Part II · Limbo — The bedroom',endC:'Two memories remain: the car and the party.',menu:'Main menu',again:'Play again',
-  brush:'The red lipstick',mirror:'The mirror',neck:'The necklace',door:'The door'}};
+  endA:'To be continued',endB:'Part II · Limbo — The bedroom and the car',endC:'One memory remains: the party.',menu:'Main menu',again:'Play again',
+  brush:'The red lipstick',mirror:'The mirror',neck:'The necklace',door:'The door',
+  tune:'Tune',reach:'Reach out',takeHand:'Take her hand',radio:'The radio',rear:'The rear-view mirror',nextDoor:'Another door is waiting.',
+  c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Keep it.'}};
 function tx(k){var l=(G&&G.lang())==='es'?'es':'en';return TX[l][k]!==undefined?TX[l][k]:k;}
 
 /* ---------- small helpers ---------- */
@@ -625,24 +630,258 @@ function build(){
   var ng=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffe9b0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending}));ng.scale.set(0.25,0.25,1);nk.add(ng);
   nk.position.set(TUBC[0]+0.3,0.004,TUB[3]+0.16);BA.add(nk);GL.neckPos=new T.Vector3(RO.x+TUBC[0]+0.3,0.08,RO.z+TUB[3]+0.25);BA.visible=false;
 
+  buildCar();
   /* things you can use */
   inter=[
     {id:'bedDoor',pos:function(){return GL.dBed.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.roomDone;},use:function(){goRoom(1);}},
-    {id:'carDoor',pos:function(){return GL.dCar.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',use:function(){sClick(3);hint(tx('locked'),2200);}},
+    {id:'carDoor',pos:function(){return GL.dCar.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.carDone;},use:function(){if(!S.roomDone){sClick(3);hint(tx('locked'),2200);return;}goCar(1);}},
     {id:'partyDoor',pos:function(){return GL.dParty.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',use:function(){sClick(3);hint(tx('locked'),2200);}},
-    {id:'veil',pos:function(){return new T.Vector3(0,1.3,-5);},r:3.2,area:'hub',label:'veil',use:function(){if(!S.roomDone){sClick(1);hint(tx('locked'),2200);return;}reveal();}},
+    {id:'veil',pos:function(){return new T.Vector3(0,1.3,-5);},r:3.2,area:'hub',label:'veil',use:function(){if(!S.roomDone||!S.carDone){sClick(1);hint(tx('locked'),2200);return;}reveal();}},
     {id:'exit',pos:function(){return new T.Vector3(RO.x,1.2,RO.z+D);},r:2.0,area:'room',label:'open',use:function(){exitRoom();}},
     {id:'brush',pos:function(){return GL.brushPos;},r:1.7,area:'room',label:'take',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;GL.brush.visible=false;noiseBurst(0.12,1800,1,0.3,true);vo('v2',6000,1);after(1.2,function(){GL.drips.visible=true;sBoom(0.25);});unlockExit(3.5);}},
     {id:'bath',pos:function(){return new T.Vector3(RO.x+1.0,1.2,RO.z-D);},r:1.9,area:'room',label:'open',when:function(){return S.loop===4&&!S.bathOpen;},use:function(){sClick(2);hint(tx('stuck'),2000);}},
+    {id:'radio',pos:function(){return cw(CAR.radio[0],CAR.radio[1],-0.64);},r:1.3,area:'car',label:'tune',when:function(){return S.loop===1&&!S.trig;},use:function(){S.tune++;sClick(1);
+      if(AU.car){AU.car.stF.frequency.setTargetAtTime(900+Math.random()*3000,ac.currentTime,0.05);}
+      if(S.tune>=S.tuneGoal){S.trig=true;if(AU.car)AU.car.stG.gain.setTargetAtTime(0.008,ac.currentTime,0.4);after(0.5,function(){vo('c1',5200,2);});nextCarLoop(6.5);}}},
+    {id:'dash',pos:function(){return cw(CAR.dash[0],CAR.dash[1],CAR.dash[2]);},r:1.3,area:'car',label:'reach',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;S.walk=0;
+      after(4.4,function(){noiseBurst(0.3,800,0.8,0.08,true,0.5);});after(5.2,function(){vo('c2',4200,1);});nextCarLoop(9.5);}},
+    {id:'lunaHand',pos:function(){var p=GL.lunaHand.position;return cw(p.x,p.y,p.z);},r:1.3,area:'car',label:'takeHand',when:function(){return S.loop===4&&S.handOut&&S.give<0;},use:function(){takeHand();}},
     {id:'neck',pos:function(){return GL.neckPos;},r:1.7,area:'room',label:'take',when:function(){return S.loop===4&&S.bathOpen&&!S.neckTaken;},use:function(){takeNecklace();}}
   ];
 }
 
+/* ================= THE CAR (blocked-out Beetle; a model can replace GL.carBody later) ================= */
+var CAR={eye:[-0.31,1.12,0.06],wheel:[-0.31,0.84,-0.44],radio:[0.02,0.8,-0.66],mirror:[0.0,1.27,-0.7],dash:[0.12,0.97,-0.66]};
+function cw(a,b,c){return new T.Vector3(CO.x+a,b,CO.z+c);}  /* car-local to world (the car faces -z) */
+function texRainGlass(){return canvasTex(256,256,function(g,w,h){g.clearRect(0,0,w,h);var r=rnd(21);
+  for(var i=0;i<140;i++){var x=r()*w,y=r()*h,rr=1+r()*3.2;var gr=g.createRadialGradient(x-rr*0.3,y-rr*0.3,0,x,y,rr);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(0.6,'rgba(200,210,225,.18)');gr.addColorStop(1,'rgba(200,210,225,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,rr,0,7);g.fill();
+    if(r()<0.25){g.strokeStyle='rgba(220,228,240,.16)';g.lineWidth=rr*0.6;g.beginPath();g.moveTo(x,y);g.lineTo(x+(r()-0.5)*4,y+10+r()*40);g.stroke();}}
+},[1,1]);}
+function texFog(){return canvasTex(128,128,function(g,w,h){var gr=g.createRadialGradient(w*0.5,h*0.55,0,w*0.5,h*0.55,w*0.5);gr.addColorStop(0,'rgba(230,236,245,.75)');gr.addColorStop(0.55,'rgba(220,228,240,.35)');gr.addColorStop(1,'rgba(220,228,240,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});}
+function texWindows(){return canvasTex(128,256,function(g,w,h){g.fillStyle='#000';g.fillRect(0,0,w,h);var r=rnd(31);
+  for(var y=8;y<h-8;y+=22)for(var x=8;x<w-8;x+=26){if(r()<0.16){g.fillStyle=r()<0.5?'rgba(255,190,120,.85)':'rgba(170,190,230,.6)';g.fillRect(x,y,14,12);}}});}
+function texDial(){return canvasTex(128,128,function(g,w,h){g.fillStyle='#0d0d0c';g.beginPath();g.arc(64,64,62,0,7);g.fill();g.strokeStyle='#d9cfae';g.lineWidth=2;
+  for(var i=0;i<=12;i++){var a=Math.PI*0.75+i/12*Math.PI*1.5;g.beginPath();g.moveTo(64+Math.cos(a)*50,64+Math.sin(a)*50);g.lineTo(64+Math.cos(a)*(i%2?44:40),64+Math.sin(a)*(i%2?44:40));g.stroke();}
+  g.fillStyle='#d9cfae';g.font='bold 11px Georgia';g.textAlign='center';g.fillText('km/h',64,92);});}
+function texRadio(){return canvasTex(256,64,function(g,w,h){g.fillStyle='#0a0805';g.fillRect(0,0,w,h);g.strokeStyle='rgba(255,200,120,.75)';g.lineWidth=1;
+  for(var i=0;i<=20;i++){var x=14+i*11.4;g.beginPath();g.moveTo(x,40);g.lineTo(x,i%5?48:52);g.stroke();}
+  g.fillStyle='rgba(255,205,130,.8)';g.font='10px Georgia';['88','92','96','100','104','108'].forEach(function(t,i){g.fillText(t,10+i*45,30);});});}
+function makeLunaHand(){
+  var skin=std({color:0xe2c9b8,roughness:0.55,emissive:0x2a1a14}),sl=std({color:0xe8e4dc,roughness:0.9});
+  var g=new T.Group(),w=new T.Group();g.add(w);
+  w.add(new T.Mesh(new T.CylinderGeometry(0.03,0.038,0.42,12).rotateZ(Math.PI/2).translate(0.25,0,0),sl));
+  w.add(new T.Mesh(new T.CylinderGeometry(0.022,0.025,0.06,10).rotateZ(Math.PI/2).translate(0.03,0,0),skin));
+  var palm=new T.Mesh(new T.SphereGeometry(1,14,10),skin);palm.scale.set(0.042,0.013,0.036);palm.position.set(-0.035,0,0);w.add(palm);
+  var fing=[];[-0.022,-0.007,0.008,0.022].forEach(function(z,i){var len=[0.036,0.044,0.042,0.032][i],f=new T.Group();f.position.set(-0.075,0,z);
+    var a=new T.Mesh(new T.CylinderGeometry(0.0062,0.007,len,7).rotateZ(Math.PI/2).translate(-len/2,0,0),skin);f.add(a);
+    var jn=new T.Group();jn.position.x=-len;f.add(jn);jn.add(new T.Mesh(new T.CylinderGeometry(0.0052,0.006,len*0.8,7).rotateZ(Math.PI/2).translate(-len*0.4,0,0),skin));
+    w.add(f);fing.push({f:f,j:jn});});
+  var th=new T.Mesh(new T.CylinderGeometry(0.007,0.008,0.045,7).rotateZ(Math.PI/2).translate(-0.022,0,0),skin);th.position.set(-0.02,0.004,-0.035);th.rotation.y=-0.6;w.add(th);
+  g.userData={fing:fing};g.visible=false;return g;
+}
+function buildCar(){
+  var C=GL.car=new T.Group();C.position.set(CO.x,0,CO.z);scene.add(C);C.visible=false;
+  /* the street */
+  var ST=GL.street=new T.Group();C.add(ST);
+  var asph=std({color:0x0b0c0e,roughness:0.2,metalness:0.55});
+  var road=new T.Mesh(new T.PlaneGeometry(10,240).rotateX(-Math.PI/2),asph);road.position.set(0,0,-60);road.receiveShadow=true;ST.add(road);
+  var curbM=std({color:0x2a2a2c,roughness:0.75});[-1,1].forEach(function(sd){box(3,0.15,240,curbM,sd*6.5,0.075,-60,ST);});
+  var lineM=new T.MeshBasicMaterial({color:0x8c8778});for(var z=12;z>-180;z-=7){var ln=new T.Mesh(new T.PlaneGeometry(0.12,3).rotateX(-Math.PI/2),lineM);ln.position.set(0,0.004,z);ST.add(ln);}
+  var winT=texWindows();winT.wrapS=winT.wrapT=T.RepeatWrapping;
+  var bm=std({color:0x0d0d10,roughness:0.9,emissive:0xffffff,emissiveMap:winT,emissiveIntensity:0.55});
+  var r=rnd(7);for(var bz=20;bz>-180;bz-=9){[-1,1].forEach(function(sd){var hh=6+r()*12,bw=6+r()*2;box(bw,hh,8.4,bm,sd*(8+bw/2+r()*1.5),hh/2,bz,ST);});}
+  /* streetlights: every 16 m, alternating sides; the near ones carry a real light */
+  var poleM=std({color:0x141416,roughness:0.6,metalness:0.4});GL.lamps=[];
+  for(var i=0;i<12;i++){var lz=8-i*16,sd=i%2?1:-1,lp=new T.Group();lp.position.set(sd*5.4,0,lz);ST.add(lp);
+    box(0.14,6.2,0.14,poleM,0,3.1,0,lp);box(1.6,0.1,0.1,poleM,-sd*0.8,6.1,0,lp);
+    var headM=new T.MeshBasicMaterial({color:0xffb04a});var hd=new T.Mesh(new T.BoxGeometry(0.5,0.12,0.28),headM);hd.position.set(-sd*1.5,6.0,0);lp.add(hd);
+    var spr=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffa040,transparent:true,opacity:0.75,depthWrite:false,blending:T.AdditiveBlending,fog:false}));spr.scale.set(3.2,3.2,1);spr.position.copy(hd.position);lp.add(spr);
+    var pl=null;if(i<4){pl=new T.PointLight(0xff9a3c,3.2,22,1.6);pl.position.set(-sd*1.5,5.8,0);lp.add(pl);}
+    GL.lamps.push({g:lp,m:headM,s:spr,l:pl,z:lz,on:1});}
+  /* the traffic light, hanging over the road ahead */
+  var TL=new T.Group();TL.position.set(0.6,0,-11);ST.add(TL);
+  box(0.16,7,0.16,poleM,4.6,3.5,0,TL);box(4.8,0.1,0.1,poleM,2.3,6.6,0,TL);
+  box(0.36,1.05,0.32,std({color:0x111214,roughness:0.5}),0,6.0,0,TL);
+  GL.tlR=new T.MeshBasicMaterial({color:0xff1a10});GL.tlY=new T.MeshBasicMaterial({color:0x221a08});GL.tlG=new T.MeshBasicMaterial({color:0x06200e});
+  [[GL.tlR,6.32],[GL.tlY,6.0],[GL.tlG,5.68]].forEach(function(e){var c=new T.Mesh(new T.CircleGeometry(0.11,20),e[0]);c.position.set(0,e[1],0.165);TL.add(c);});
+  GL.tlGlow=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xff2010,transparent:true,opacity:0.9,depthWrite:false,blending:T.AdditiveBlending,fog:false}));GL.tlGlow.scale.set(2.2,2.2,1);GL.tlGlow.position.set(0,6.32,0.2);TL.add(GL.tlGlow);
+  GL.tlLight=new T.PointLight(0xff2010,2.4,18,1.3);GL.tlLight.position.set(0,5.4,1.8);TL.add(GL.tlLight);GL.tl=TL;
+  /* rain */
+  var N=700,rp=new Float32Array(N*3);for(var j=0;j<N;j++){var rx2,rz2;do{rx2=(Math.random()-0.5)*16;rz2=-26+Math.random()*34;}while(Math.abs(rx2)<1.0&&rz2>-1.3&&rz2<2.0);rp[j*3]=rx2;rp[j*3+1]=Math.random()*9;rp[j*3+2]=rz2;}
+  var rg=new T.BufferGeometry();rg.setAttribute('position',new T.BufferAttribute(rp,3));
+  GL.rain=new T.Points(rg,new T.PointsMaterial({color:0x9fb0c8,size:0.035,transparent:true,opacity:0.55,depthWrite:false}));C.add(GL.rain);
+
+  /* ---- the Beetle (stand-in) ---- */
+  var B=GL.carBody=new T.Group();C.add(B);
+  var gold=std({color:0xb8913c,roughness:0.32,metalness:0.55}),blk=std({color:0x0c0c0d,roughness:0.6}),
+      leather=std({color:0x2a1f19,roughness:0.75}),head=std({color:0x8a8172,roughness:0.95,side:T.BackSide}),chrome=std({color:0xb9bcc2,roughness:0.25,metalness:0.9});
+  /* floor, sills, firewall */
+  box(1.36,0.05,2.5,blk,0,0.3,0.25,B);box(0.04,0.48,2.3,gold,-0.68,0.55,0.25,B);box(0.04,0.48,2.3,gold,0.68,0.55,0.25,B);
+  /* the painted dashboard (Beetles had the body colour on the dash), the padded top */
+  box(1.34,0.28,0.14,gold,0,0.83,-0.73,B);box(1.34,0.06,0.3,blk,0,0.98,-0.72,B);box(1.34,0.45,0.05,blk,0,0.52,-0.84,B);
+  /* the round speedometer in front of the driver */
+  var dial=new T.Mesh(new T.CircleGeometry(0.085,32),new T.MeshBasicMaterial({map:texDial(),color:0xbfb6a0}));dial.position.set(-0.31,0.86,-0.657);B.add(dial);
+  var rim=new T.Mesh(new T.TorusGeometry(0.088,0.008,8,32),chrome);rim.position.copy(dial.position);B.add(rim);
+  GL.needle=new T.Mesh(new T.BoxGeometry(0.004,0.06,0.002),new T.MeshBasicMaterial({color:0xff5a20}));GL.needle.geometry.translate(0,0.03,0);GL.needle.position.set(-0.31,0.86,-0.655);GL.needle.rotation.z=2.2;B.add(GL.needle);
+  /* the radio in the middle */
+  box(0.3,0.09,0.03,chrome,CAR.radio[0],CAR.radio[1],-0.655,B);
+  GL.radioFace=new T.Mesh(new T.PlaneGeometry(0.22,0.055),new T.MeshBasicMaterial({map:texRadio(),color:0xffffff}));GL.radioFace.position.set(CAR.radio[0],CAR.radio[1]+0.008,-0.638);B.add(GL.radioFace);
+  GL.radioNeedle=new T.Mesh(new T.BoxGeometry(0.003,0.045,0.002),new T.MeshBasicMaterial({color:0xff3010}));GL.radioNeedle.position.set(CAR.radio[0]-0.09,CAR.radio[1]+0.008,-0.636);B.add(GL.radioNeedle);
+  [-0.135,0.135].forEach(function(dx){var kn=new T.Mesh(new T.CylinderGeometry(0.016,0.016,0.025,14).rotateX(Math.PI/2),chrome);kn.position.set(CAR.radio[0]+dx,CAR.radio[1],-0.64);B.add(kn);});
+  GL.radioL=new T.PointLight(0xffb060,0.25,0.8,2);GL.radioL.position.set(CAR.radio[0],CAR.radio[1]+0.02,-0.55);B.add(GL.radioL);
+  /* the thin steering wheel and its column */
+  var wh=new T.Group();wh.position.set(CAR.wheel[0],CAR.wheel[1],CAR.wheel[2]);wh.rotation.x=-0.55;B.add(wh);
+  wh.add(new T.Mesh(new T.TorusGeometry(0.19,0.011,8,48),std({color:0xe4dccb,roughness:0.4})));
+  [0,2.1,-2.1].forEach(function(a){var sp=new T.Mesh(new T.BoxGeometry(0.012,0.17,0.008),chrome);sp.rotation.z=a;sp.position.set(Math.sin(-a)*0.09,Math.cos(a)*-0.09*-1,0);wh.add(sp);});
+  wh.add(new T.Mesh(new T.CylinderGeometry(0.035,0.035,0.03,16).rotateX(Math.PI/2),chrome));
+  var col=new T.Mesh(new T.CylinderGeometry(0.022,0.026,0.42,10),blk);col.position.set(CAR.wheel[0],CAR.wheel[1]-0.1,CAR.wheel[2]-0.18);col.rotation.x=1.0;B.add(col);
+  /* seats: two fronts and the bench */
+  function seat(x){box(0.48,0.12,0.5,leather,x,0.5,0.2,B);var bk=box(0.48,0.62,0.1,leather,x,0.86,0.47,B);bk.rotation.x=-0.18;box(0.3,0.2,0.08,leather,x,1.27,0.55,B);}
+  seat(-0.31);seat(0.31);box(1.25,0.14,0.5,leather,0,0.5,1.0,B);var bb2=box(1.25,0.55,0.12,leather,0,0.86,1.3,B);bb2.rotation.x=-0.25;
+  /* the round roof (headliner) and pillars */
+  var rf=new T.Mesh(new T.CylinderGeometry(0.78,0.78,2.3,28,1,true,-1.12,2.24).rotateZ(Math.PI/2).rotateY(Math.PI/2),head);rf.geometry.rotateX(0);rf.position.set(0,0.62,0.3);rf.scale.set(1,1,1);B.add(rf);
+  /* the upright windshield with its frame, the A-pillars, the small rear window */
+  [-0.62,0.62].forEach(function(x){var pl=box(0.06,0.48,0.06,gold,x,1.17,-0.8,B);pl.rotation.z=x<0?0.18:-0.18;pl.rotation.x=-0.25;});
+  box(1.2,0.05,0.06,gold,0,1.0,-0.86,B);box(1.05,0.05,0.06,gold,0,1.38,-0.74,B);
+  var glassM=std({color:0x0a0f16,roughness:0.05,metalness:0.2,transparent:true,opacity:0.12,depthWrite:false});
+  var ws=new T.Mesh(new T.PlaneGeometry(1.14,0.4),glassM);ws.position.set(0,1.19,-0.8);ws.rotation.x=-0.3;B.add(ws);
+  GL.rainTex=texRainGlass();GL.rainTex.wrapS=GL.rainTex.wrapT=T.RepeatWrapping;GL.rainTex.repeat.set(2,1);
+  var rw=new T.Mesh(new T.PlaneGeometry(1.14,0.4),new T.MeshBasicMaterial({map:GL.rainTex,transparent:true,opacity:0.8,depthWrite:false,fog:false}));rw.position.set(0,1.19,-0.795);rw.rotation.x=-0.3;B.add(rw);
+  /* the wipers */
+  GL.wipers=[];[-0.32,0.22].forEach(function(x){var pv=new T.Group();pv.position.set(x,1.0,-0.83);pv.rotation.x=-0.3;var bl=new T.Mesh(new T.BoxGeometry(0.012,0.38,0.012),blk);bl.position.y=0.19;pv.add(bl);pv.rotation.z=1.35;B.add(pv);GL.wipers.push(pv);});
+  /* side windows (fogged on her side) */
+  [-0.66,0.66].forEach(function(x){var w=new T.Mesh(new T.PlaneGeometry(1.1,0.38),glassM);w.position.set(x,1.06,0.05);w.rotation.y=x<0?Math.PI/2:-Math.PI/2;B.add(w);});
+  GL.fogM=new T.MeshBasicMaterial({map:texFog(),transparent:true,opacity:0,depthWrite:false});var fg=new T.Mesh(new T.PlaneGeometry(0.42,0.3),GL.fogM);fg.position.set(0.655,1.06,-0.05);fg.rotation.y=-Math.PI/2;B.add(fg);
+  /* door cards */
+  [-0.66,0.66].forEach(function(x){box(0.03,0.36,1.0,leather,x,0.66,0.05,B);box(0.05,0.03,0.22,chrome,x*0.97,0.8,-0.15,B);});
+  /* the rear-view mirror (a real mirror: Hollow lives in it) */
+  box(0.02,0.08,0.02,blk,CAR.mirror[0],CAR.mirror[1]+0.08,CAR.mirror[2],B);
+  box(0.25,0.085,0.03,blk,CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]-0.012,B);
+  if(T.Reflector){var cm=GL.carMirror=new T.Reflector(new T.PlaneGeometry(0.23,0.07),{clipBias:0.003,textureWidth:384,textureHeight:118,color:0xbfbfbf});
+    cm.position.set(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]+0.005);cm.rotation.x=-0.08;B.add(cm);var ob=cm.onBeforeRender;
+    cm.onBeforeRender=function(){var hv=GL.hero.visible,hl=GL.hol?GL.hol.visible:false;GL.hero.visible=false;if(GL.hol)GL.hol.visible=hl||S.holMirror;try{ob.apply(this,arguments);}finally{GL.hero.visible=hv;if(GL.hol)GL.hol.visible=hl;}};}
+  GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
+  /* the cabin's own low light */
+  GL.carAmb=new T.HemisphereLight(0x4a3a2c,0x0a0806,0.35);C.add(GL.carAmb);
+  GL.dashL=new T.PointLight(0xffc890,0.35,1.2,2);GL.dashL.position.set(-0.31,0.92,-0.5);B.add(GL.dashL);
+  /* her hand, and the necklace it brings */
+  GL.lunaHand=makeLunaHand();B.add(GL.lunaHand);
+  GL.carNeck=new T.Group();var cn=new T.Mesh(new T.TorusGeometry(0.03,0.004,8,24),std({color:0xc9c9cc,metalness:0.85,roughness:0.3,emissive:0x222222}));cn.rotation.x=Math.PI/2;GL.carNeck.add(cn);
+  var cnc=new T.Mesh(new T.TorusGeometry(0.06,0.0018,5,40),std({color:0x5a3a24,roughness:0.8}));cnc.rotation.x=Math.PI/2;cnc.position.x=0.04;GL.carNeck.add(cnc);GL.carNeck.visible=false;B.add(GL.carNeck);
+}
+/* car audio: the engine idling, the radio static, the rain, the traffic light ticking */
+function carAudio(on){
+  if(!ac)return;
+  if(on&&!AU.car){try{var A={};
+    A.g=ac.createGain();A.g.gain.value=0;A.g.connect(AU.sfx);
+    var eo=ac.createOscillator();eo.type='sawtooth';eo.frequency.value=30;var ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=160;var eg=ac.createGain();eg.gain.value=0.07;
+    var lfo=ac.createOscillator();lfo.frequency.value=7.5;var lg=ac.createGain();lg.gain.value=0.025;lfo.connect(lg);lg.connect(eg.gain);eo.connect(ef);ef.connect(eg);eg.connect(A.g);eo.start();lfo.start();A.eng=eo;A.engF=ef;A.engG=eg;
+    var nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),nd=nb.getChannelData(0);for(var i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+    var st=ac.createBufferSource();st.buffer=nb;st.loop=true;A.stF=ac.createBiquadFilter();A.stF.type='bandpass';A.stF.frequency.value=2400;A.stF.Q.value=0.8;A.stG=ac.createGain();A.stG.gain.value=0.0;st.connect(A.stF);A.stF.connect(A.stG);A.stG.connect(A.g);st.start();
+    var rn=ac.createBufferSource();rn.buffer=nb;rn.loop=true;rn.playbackRate.value=0.7;var rf=ac.createBiquadFilter();rf.type='highpass';rf.frequency.value=2200;var rg=ac.createGain();rg.gain.value=0.035;rn.connect(rf);rf.connect(rg);rg.connect(A.g);rn.start();
+    AU.car=A;}catch(e){console.warn('car audio',e);}}
+  if(AU.car)AU.car.g.gain.setTargetAtTime(on?1:0,ac.currentTime,0.3);
+}
+function sTick(){noiseBurst(0.02,1800,3,0.12,false);}
+/* entering the car */
+function goCar(loop){
+  if(S.busy)return;S.busy=true;sCreak();GL.dCar.want=1.2;
+  after(0.5,function(){fadeTo(1,0.6,function(){enterCar(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
+}
+function enterCar(loop){
+  setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3+Math.floor(Math.random()*3);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
+  S.ring=Math.min(S.ring,0.2);
+  P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.12;S.camDY=CAR.eye[1]-EYE;P.spd=0;
+  GL.street.position.z=0;GL.carBody.position.y=0;
+  GL.lamps.forEach(function(l){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});
+  setTL('red');GL.lunaHand.visible=false;GL.carNeck.visible=false;GL.fogM.opacity=0;
+  if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
+  GL.carAmb.intensity=loop===4?0.12:0.35;GL.radioL.intensity=loop===4?0.08:0.25;
+  carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
+  if(loop===1)after(2.2,function(){hint(tx('radio'),2600);});
+  if(loop===2)after(2.2,function(){hint(tx('reach'),2600);});
+  if(loop===3)after(2.2,function(){hint(tx('rear'),2600);});
+}
+function setTL(c){GL.tlR.color.setHex(c==='red'?0xff1a10:0x200606);GL.tlG.color.setHex(c==='green'?0x20ff70:0x06200e);
+  var col=c==='red'?0xff2010:0x30ff80;GL.tlGlow.material.color.setHex(col);GL.tlLight.color.setHex(col);GL.tlGlow.position.y=c==='red'?6.32:5.68;}
+function nextCarLoop(delay){
+  after(delay||4,function(){S.busy=true;fadeTo(1,1.0,function(){S.holMirror=false;if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}enterCar(S.loop+1);fadeTo(0,1.2,function(){S.busy=false;});});});
+}
+/* Damian's hands in the car: on the wheel, or reaching where the scene needs them */
+function carArms(dt){
+  var f=fbInit();if(!f)return;var h=GL.hero;GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
+  h.position.set(P.x,S.camDY,P.z+0.05);h.rotation.y=Math.PI;h.updateMatrixWorld(true);
+  var w=CAR.wheel,br=Math.sin(time*1.6)*0.004;
+  var L1=cw(w[0]-0.15,w[1]+0.07+br,w[2]+0.04),R1=cw(w[0]+0.15,w[1]+0.07+br,w[2]+0.04);
+  /* the little walking figure: two fingers stepping across the dash toward her seat */
+  if(S.walk>=0){var u=S.walk;var x=-0.12+0.5*ss(0.6,3.6,u),hop=Math.abs(Math.sin(u*7))*0.025*(u>0.6&&u<3.6?1:0),back=ss(5.2,6.4,u);
+    var tgt=cw(x,0.99+hop,-0.66);R1.lerp(tgt,ss(0,0.6,u)*(1-back));}
+  if(S.give>=0){var g2=S.give;R1.lerp(cw(0.06,0.86,-0.28),ss(0,1.0,g2)*(1-ss(6.2,7.2,g2)));}
+  [['Left',L1,-1],['Right',R1,1]].forEach(function(e){var A=f[e[0]+'Arm'],FA=f[e[0]+'ForeArm'],HD=f[e[0]+'Hand'];
+    A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);});
+}
+function carTick(dt){
+  var L4=S.loop===4;
+  /* the cabin breathes: engine shudder, rain on the glass, the wipers now and then, the traffic light ticking */
+  GL.carBody.position.y=Math.sin(time*31)*0.0009+(S.drive>0?Math.sin(time*13)*0.002:0);
+  GL.rainTex.offset.y-=dt*0.03;
+  var rp=GL.rain.geometry.attributes.position;for(var i=0;i<rp.count;i++){var y=rp.getY(i)-dt*9;if(y<0)y+=9;rp.setY(i,y);}rp.needsUpdate=true;
+  S.wipeT-=dt;var wp=S.wipeT<0?ss(0,0.45,-S.wipeT)*(1-ss(0.55,1.0,-S.wipeT)):0;if(S.wipeT<-1.05)S.wipeT=5+Math.random()*4;GL.wipers.forEach(function(w2){w2.rotation.z=1.35-wp*2.0;});
+  S.tickT-=dt;if(S.tickT<=0&&!S.drive){S.tickT=1;sTick();}
+  GL.needle.rotation.z=2.2-(S.drive>0?ss(0,3,S.drive)*2.6:0)+Math.sin(time*23)*0.01;
+  if(S.loop<4)GL.fogM.opacity=0.25+0.2*Math.sin(time*0.9);
+  /* look limits: you can turn your head, not your body */
+  var dy=Math.atan2(Math.sin(P.yaw-Math.PI),Math.cos(P.yaw-Math.PI));if(Math.abs(dy)>2.75)P.yaw=Math.PI+Math.sign(dy)*2.75;P.pitch=clamp(P.pitch,-0.95,0.55);
+  if(!S.revealing)carArms(dt);
+  if(S.walk>=0)S.walk+=dt;if(S.give>=0)S.give+=dt;
+  /* 1: the radio has lost her; tune until she comes through */
+  if(S.loop===1&&AU.car)GL.radioNeedle.position.x=CO.x*0+CAR.radio[0]-0.09+((S.tune/S.tuneGoal)*0.15);
+  /* 3: someone sits behind you; you only see him in the mirror. Don't turn around. */
+  if(S.loop===3&&GL.hol){
+    var ml=lookingAt(GL.carMirrorPos,2,0.93);
+    if(!S.holSeen&&ml&&!S.busy){S.lookT+=dt;if(S.lookT>0.8){S.holSeen=true;S.holMirror=true;
+      GL.hol.position.set(CO.x+0.28,-0.62,CO.z+1.0);GL.hol.rotation.y=Math.PI;sBoom(0.4);hint(tx('dontLook'),3600);}}
+    if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.ringSrc=true;S.ring=Math.min(1,S.ring+dt*0.04);
+      var back=Math.abs(dy)>1.75||lookingAt(_v.set(GL.hol.position.x,1.05,GL.hol.position.z),3,0.6);
+      if(back){GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,1.3,GL.hol.position.z-0.3);GL.holLight.intensity=1.0;sBoom(0.9);if(G.buzz)G.buzz([200,60,200],1);
+        S.holMirror=false;after(0.25,function(){GL.hol.visible=false;GL.holLight.intensity=0;S.ring=1.1;});S.busy=true;after(0.3,function(){S.busy=false;});}
+      else if(S.c3T>8){S.trig=true;S.holMirror=false;setTL('off');after(0.15,function(){setTL('red');});after(0.4,function(){setTL('off');});after(0.6,function(){setTL('red');});nextCarLoop(1.2);}}
+  }
+  /* 4: the streetlights die, far to near; her voice; the ringing. Close your eyes until it passes. */
+  if(L4){
+    S.c4T+=dt;
+    GL.lamps.forEach(function(l,i){var off=1.0+(GL.lamps.length-1-i)*0.75;if(l.on&&S.c4T>off){l.on=0;l.m.color.setHex(0x110a04);l.s.visible=false;if(l.l)l.l.intensity=0;noiseBurst(0.12,180,0.7,0.2,false,0.6);}
+      else if(l.on&&S.c4T>off-0.5&&Math.random()<0.2){l.s.visible=!l.s.visible;}});
+    if(!S.handOut){S.mockT-=dt;if(S.mockT<=0){S.mockT=6;vo('mock',3000,3);}
+      S.ring=Math.min(1.2,S.ring+dt*0.1);S.ringSrc=true;
+      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(0.5,0.84,-0.18);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
+    else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(0.3-hp.x)*Math.min(1,dt*0.8);}
+  }
+  /* the payoff: she closes his hand around the necklace, then the light turns green */
+  if(S.give>=0){var g3=S.give,lh=GL.lunaHand;
+    var tgt=new T.Vector3(0.1,0.88,-0.26);lh.position.lerp(tgt,Math.min(1,dt*2.2)*ss(0.8,1.6,g3));
+    lh.userData.fing.forEach(function(F){F.f.rotation.z=0.9*ss(2.4,3.4,g3);F.j.rotation.z=1.0*ss(2.4,3.4,g3);});
+    GL.carNeck.visible=g3>1.2&&g3<4.4;GL.carNeck.position.set(0.06,0.86,-0.27);
+    if(g3>4.6)lh.visible=g3<5.6&&Math.random()>ss(4.6,5.6,g3);
+    if(g3>6.4&&!S.drive){S.drive=0.001;setTL('green');noiseBurst(0.6,120,0.5,0.4,true,0.6);
+      /* the street comes back on, one lamp after another */
+      GL.lamps.forEach(function(l,i){after(0.15+i*0.12,function(){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});});GL.carAmb.intensity=0.35;}
+  }
+  /* pulling away: the street slides past faster and faster, and it all goes white */
+  if(S.drive>0){S.drive+=dt;var v=ss(0,3.2,S.drive)*16;GL.street.position.z+=v*dt;
+    if(AU.car){AU.car.eng.frequency.setTargetAtTime(30+v*3.2,ac.currentTime,0.1);AU.car.engF.frequency.setTargetAtTime(160+v*40,ac.currentTime,0.1);}
+    if(S.drive>3.4&&!S.white&&!S.carEnd){S.carEnd=true;whiteout(function(){S.carDone=true;S.drive=0;carAudio(false);if(AU.car){AU.car.eng.frequency.value=30;AU.car.engF.frequency.value=160;}fpHands(0,0,0,0);toHub(true);});}}
+}
+function takeHand(){
+  S.give=0;S.busy=true;S.lockInput=true;noiseBurst(0.2,2600,1.5,0.15,true);
+  after(1.4,function(){sChime();});after(2.6,function(){vo('c4',4200,0);});
+  after(9.5,function(){S.lockInput=false;});
+}
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
 function setArea(a){
-  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';
-  if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:0,ac.currentTime,0.05);}
+  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(a!=='car'){S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);}
+  if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
   if(S.busy)return;S.busy=true;sCreak();GL.dBed.want=1.2;
@@ -686,9 +925,11 @@ function takeNecklace(){
   after(4.2,function(){whiteout(function(){S.roomDone=true;S.ringRamp=0;S.ringLock=false;S.ring=0;toHub(true);});});
 }
 function toHub(after2){
-  setArea('hub');P.x=0;P.z=7;P.yaw=Math.PI;P.pitch=-0.02;GL.dBed.open=GL.dBed.want=0;
+  setArea('hub');P.x=0;P.z=7;P.yaw=Math.PI;P.pitch=-0.02;GL.dBed.open=GL.dBed.want=0;GL.dCar.open=GL.dCar.want=0;
   S.hubT=0;S.hol.d=9;S.hol.on=false;S.hol.cool=after2?999:14;S.busy=false;
-  if(after2){GL.spot.intensity=6.5;GL.dBed.light.intensity=0;GL.dBed.strip.material.opacity=0;after(2.5,function(){hint(tx('veil'),3000);});}
+  if(after2){GL.dBed.light.intensity=0;GL.dBed.strip.material.opacity=0;
+    if(S.carDone){GL.spot.intensity=6.5;GL.dCar.light.intensity=0;GL.dCar.strip.material.opacity=0;after(2.5,function(){hint(tx('veil'),3000);});}
+    else after(2.5,function(){hint(tx('nextDoor'),3000);});}
 }
 function whiteout(cb){
   if(S.white)return;S.white=1;sWhoosh(0.5);
@@ -699,7 +940,7 @@ function whiteout(cb){
 function fail(){
   /* the ringing wins: start this moment over */
   S.ring=0;S.busy=true;
-  whiteout(function(){if(P.area==='room'){enterRoom(S.loop);}else{toHub(S.roomDone);}S.busy=false;});
+  whiteout(function(){if(P.area==='room'){enterRoom(S.loop);}else if(P.area==='car'){enterCar(S.loop);}else{toHub(S.roomDone);}S.busy=false;});
 }
 
 /* ---------- the reveal (end of the slice) ---------- */
@@ -749,7 +990,7 @@ function showEnd(){
   try{if(document.pointerLockElement)document.exitPointerLock();}catch(er){}
   if(ac&&AU.sfx){AU.sfx.gain.setTargetAtTime(1,ac.currentTime,0.5);}
   sDrip();after(1.6,sDrip);after(3.1,sDrip);
-  try{localStorage.setItem('nihdo_p2_bed','1');}catch(er){}
+  try{localStorage.setItem('nihdo_p2_bed','1');localStorage.setItem('nihdo_p2_car','1');}catch(er){}
 }
 
 /* ---------- per-frame ---------- */
@@ -784,7 +1025,7 @@ L.frame=function(dt){
   var eyesHeld=!S.lockInput&&(K.KeyF||K.KeyC||S.eyesTouch||S.eyesPad);
   /* lids: quick to close, slow and heavy to open */
   var eT=eyesHeld?1:0;S.eyes+=(eT-S.eyes)*Math.min(1,dt*(eT>S.eyes?8.5:3.6));
-  var sp=(K.ShiftLeft||K.ShiftRight?1.4:1.0)*len*(1-0.65*S.eyes);
+  var sp=P.area==='car'?0:(K.ShiftLeft||K.ShiftRight?1.4:1.0)*len*(1-0.65*S.eyes);
   var fx=Math.sin(P.yaw),fz=Math.cos(P.yaw),rx=-Math.cos(P.yaw),rz=Math.sin(P.yaw);
   var vx=(fx*fwd+rx*str),vz=(fz*fwd+rz*str),vl=Math.hypot(vx,vz)||1;vx=vx/vl*sp;vz=vz/vl*sp;
   var nx=P.x+vx*dt,nz=P.z+vz*dt;
@@ -795,18 +1036,18 @@ L.frame=function(dt){
   var bob=Math.sin(P.phase)*0.028*Math.min(1,P.spd/1.3);
   cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
   var baseF=57+((G.CAM.fov||62)-62)*0.6;if(Math.abs(cam.fov-baseF)>0.05){cam.fov=baseF;cam.updateProjectionMatrix();}
-  GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:0.25;
+  GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:P.area==='car'?0.06:0.25;
   /* Damian's body (only the mirror sees it) */
   if(!GL.fpOn){GL.hero.position.set(P.x,0,P.z);GL.hero.rotation.y=P.yaw;}
   if(G.dmn&&G.dmn.mixer&&G.dmn.acts){var A=G.dmn.acts,wk=Math.min(1,P.spd/1.2);if(A.idle)A.idle.setEffectiveWeight(1-wk);if(A.walk){A.walk.setEffectiveWeight(wk);A.walk.timeScale=Math.max(0.6,P.spd/0.95);}if(A.run)A.run.setEffectiveWeight(0);G.dmn.mixer.update(dt);}
   if(GL.hol&&G.hol.mixer&&(GL.hol.visible||S.holMirror)){G.hol.mixer.update(dt);}
   /* doors swing */
-  [GL.dBed,GL.dExit,GL.dBath].forEach(function(d){d.open+=(d.want-d.open)*Math.min(1,dt*2.5);d.piv.rotation.y=-d.open;});
+  [GL.dBed,GL.dCar,GL.dExit,GL.dBath].forEach(function(d){d.open+=(d.want-d.open)*Math.min(1,dt*2.5);d.piv.rotation.y=-d.open;});
   var fl=0.5+0.5*Math.sin(time*31)*Math.sin(time*7.3);
   if(GL.dParty.light)GL.dParty.light.intensity=0.3+0.5*fl;
   if(!S.revealing)GL.veil.rotation.y=Math.sin(time*0.3)*0.04;
   /* the area's own logic */
-  if(P.area==='hub')hubTick(dt);else roomTick(dt);
+  if(P.area==='hub')hubTick(dt);else if(P.area==='car')carTick(dt);else roomTick(dt);
   if(S.revealing)revealTick(dt);
   breathTick(dt);
   rippleTick(dt);
@@ -844,6 +1085,7 @@ L.frame=function(dt){
 function hubTick(dt){
   S.hubT+=dt;
   GL.dBed.light.intensity=S.roomDone?0:0.5+0.15*Math.sin(time*1.7);
+  GL.dCar.light.intensity=S.carDone?0:S.roomDone?0.55+0.35*Math.sin(time*2.4):0.25;GL.dCar.strip.material.opacity=S.carDone?0:S.roomDone?0.6:0.3;
   if(S.revealing)return;
   /* Hollow stands behind you in the dark. Look at him and the ringing comes; each time he comes back closer. */
   var h=S.hol;if(!GL.hol)return;
@@ -913,6 +1155,10 @@ function breathTick(dt){
   if(GL.hol)_hp.set(GL.hol.position.x,1.6,GL.hol.position.z);
   if(S.revealing){if(hv){var d0=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.2-d0*0.12,0.35,1);heavy=d0<4;gap=0.25;}}
   else if(P.area==='hub'){if(S.hol&&S.hol.on&&GL.hol){var d1=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1-(d1-2)/12,0.15,0.9);heavy=d1<4;gap=0.5;}}
+  else if(P.area==='car'){
+    if(S.loop===3&&S.holSeen&&GL.hol&&!S.trig){_hp.set(GL.hol.position.x,1.1,GL.hol.position.z);src=_hp;vol=0.75;heavy=Math.random()<0.5;gap=0.3;}
+    else if(S.loop===4&&!S.handOut){_hp.set(P.x+0.3,1.1,P.z+0.9);src=_hp;vol=0.4;heavy=Math.random()<0.3;gap=1.5+Math.random()*2;}
+  }
   else if(P.area==='room'){
     if(S.loop===3&&S.holSeen&&GL.hol){var d2=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.1-d2*0.18,0.35,1);heavy=d2<2.2;gap=0.35;}
     else if(S.loop===4&&!S.bathOpen){/* in the dark, right behind you */_hp.set(P.x-Math.sin(P.yaw)*1.2,1.6,P.z-Math.cos(P.yaw)*1.2);src=_hp;vol=0.55;heavy=Math.random()<0.4;gap=1.2+Math.random()*1.5;}
@@ -939,7 +1185,7 @@ function resetState(){
      hol:{on:false,d:9,cool:14,told:false},hubT:0,loop:0};
   GL.veil.position.set(0,0,-5);GL.veil.scale.set(1,1,1);GL.veil.material.opacity=1;
   GL.spot.color.setHex(0xf3eee4);GL.cone.material.uniforms.c.value.setHex(0xf3eee4);GL.spot.intensity=5;
-  GL.dBed.light.intensity=0.5;GL.dBed.strip.material.opacity=0.55;
+  GL.dBed.light.intensity=0.5;GL.dBed.strip.material.opacity=0.55;S.carDone=false;S.camDY=0;
   if(GL.luna){GL.luna.visible=false;G.lunaOp(0);}
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   UI.lbHands.style.opacity='0';UI.lbHands.innerHTML=handsSVG();armsHide();UI.lbDeep.style.opacity='0';fpHands(0,0,0,0);GL.veil.rotation.y=0;
@@ -953,7 +1199,7 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
-L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,toHub:toHub,reveal:reveal};};
+L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
