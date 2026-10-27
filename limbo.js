@@ -125,6 +125,29 @@ function fpHandsSimple(rise,reach,shake,panic){
     u.th.rotation.x=-curl*0.4;});
 }
 /* the shroud over her, and the pendant: models swapped into the meshes the game already moves around */
+/* the makeup kit on the shelf (its lipstick is the one he takes), and the necklace on the tub */
+function loadKitModels(){
+  if(!T.GLTFLoader)return;
+  new T.GLTFLoader().load('makeup.glb?v=1',function(gl){
+    var k=gl.scene,sh=GL.shelf,BA=GL.bath;k.scale.setScalar(0.00085);k.rotation.y=-Math.PI/2;k.position.set(sh.x,sh.y,sh.z-0.14);
+    k.traverse(function(o){if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});BA.add(k);k.updateMatrixWorld(true);
+    var lip=k.getObjectByName('lipstick'),cap=k.getObjectByName('cap001');
+    if(lip){var g=new T.Group();BA.add(g);g.updateMatrixWorld(true);g.attach(lip);if(cap)g.attach(cap);
+      var wasVis=GL.brush.visible;BA.remove(GL.brush);GL.brush=g;g.visible=wasVis;
+      lip.traverse(function(o){if(o.isMesh&&o.material&&/crimson/i.test(o.material.name)){o.material=o.material.clone();o.material.emissive=new T.Color(0);GL.bristleM=o.material;}});
+      var bb=new T.Box3().setFromObject(lip);GL.brushPos.copy(bb.getCenter(new T.Vector3()));}
+    (GL.stubs||[]).forEach(function(m){BA.remove(m);});GL.kit=k;
+  },undefined,function(){});
+  new T.GLTFLoader().load('necklace.glb?v=1',function(gl){
+    var m=gl.scene;m.updateMatrixWorld(true);var bb=new T.Box3().setFromObject(m),c=bb.getCenter(new T.Vector3());
+    var piv=new T.Group();piv.add(m);m.position.set(-c.x,-bb.max.y,-c.z);
+    GL.neck.children.slice().forEach(function(o){if(!o.isSprite)o.visible=false;});
+    /* lying on the wet tiles in front of the tub, pendant face up */
+    var flat=new T.Group();flat.scale.set(1.8,0.5,1.8);piv.rotation.x=-Math.PI/2;flat.add(piv);flat.position.set(0,0.03,0.12);GL.neck.add(flat);GL.neckModel=flat;
+    var nl=new T.PointLight(0xffe2b0,0.9,0.9,2);nl.position.set(0,0.35,0.1);GL.neck.add(nl);
+    m.traverse(function(o){if(o.isMesh){o.castShadow=true;if(o.material){o.material.emissive=new T.Color(0xffffff);o.material.emissiveMap=o.material.map;o.material.emissiveIntensity=1.4;o.material.needsUpdate=true;}}});
+  },undefined,function(){});
+}
 function loadVeilModels(){
   if(!T.GLTFLoader)return;
   function geoOf(gl){var g=null;gl.scene.updateMatrixWorld(true);gl.scene.traverse(function(o){if(o.isMesh&&!g){g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);}});return g;}
@@ -419,7 +442,7 @@ function build(){
   /* the player carries no light; a faint presence keeps the nearest few metres readable */
   GL.near=new T.PointLight(0x8090a0,0.35,4.5,2);scene.add(GL.near);
   GL.rip=[];GL.ripI=0;for(var ri=0;ri<10;ri++){var rm=new T.Mesh(new T.RingGeometry(0.9,1.0,48).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0xc8d4e0,transparent:true,opacity:0,depthWrite:false,fog:false}));rm.visible=false;scene.add(rm);GL.rip.push({m:rm,t:9,big:1});}
-  loadHandModel();loadVeilModels();makeFPHands();
+  loadHandModel();loadVeilModels();makeFPHands();loadKitModels();
 
   /* === HUB: endless dark, one light from above === */
   var H=GL.hub=new T.Group();scene.add(H);
@@ -519,7 +542,7 @@ function build(){
   var shG=new T.CylinderGeometry(0.55,0.95,2.4,4,1,true);shG.rotateY(Math.PI/4);shG.translate(0,-1.2,0);
   GL.shaft=new T.Mesh(shG,shM);GL.shaft.position.set(BX0-0.05,WYC,WZC);GL.shaft.lookAt(TUBC[0],0.1,TUBC[1]+0.15);GL.shaft.rotateX(-Math.PI/2);GL.shaft.scale.set(1,1,0.75);BA.add(GL.shaft);
   /* the mirror over the sink (model coords) */
-  var MP=ML(5.335,5.0,-14.70),MX=MP[0],MY=MP[1],MZ=MP[2],MRW=0.3,MRH=0.3;
+  var MP=ML(5.335,5.0,-14.70),MX=MP[0],MY=MP[1],MZ=MP[2],MRW=0.4,MRH=0.24;
   /* warm light: a bulb over the sink mirror */
   GL.bathL=new T.PointLight(0xffa660,0,5,1.6);GL.bathL.position.set(BX1-0.38,MY+0.3,MZ);BA.add(GL.bathL);
   GL.bathFill=new T.HemisphereLight(0x3a3430,0x050505,0);BA.add(GL.bathFill);
@@ -531,9 +554,9 @@ function build(){
   GL.bulbM=std({color:0xfff2d8,emissive:0xffd9a0,emissiveIntensity:1.4});var bulb=new T.Mesh(new T.SphereGeometry(0.032,10,8),GL.bulbM);bulb.position.set(BX1-0.07,MY+MRH+0.14,MZ);BA.add(bulb);
   box(0.02,0.07,0.02,std({color:0x111111}),BX1-0.015,MY+MRH+0.2,MZ,BA);
   var SHY=ML(0,3.4,0)[1];
-  var shelfM=std({color:0x0d0d0e,roughness:0.3});box(0.12,0.02,0.5,shelfM,BX1-0.06,SHY,MZ,BA);
-  var potW=new T.Mesh(new T.CylinderGeometry(0.032,0.032,0.045,16),std({color:0xf0ede6,roughness:0.4}));potW.position.set(BX1-0.06,SHY+0.033,MZ-0.19);BA.add(potW);
-  var potB=new T.Mesh(new T.CylinderGeometry(0.032,0.032,0.045,16),std({color:0x0a0a0b,roughness:0.3}));potB.position.set(BX1-0.06,SHY+0.033,MZ-0.1);BA.add(potB);
+  var shelfM=std({color:0x0d0d0e,roughness:0.3});box(0.21,0.02,0.8,shelfM,BX1-0.105,SHY,MZ,BA);GL.shelf={x:BX1-0.1,y:SHY+0.01,z:MZ};
+  var potW=new T.Mesh(new T.CylinderGeometry(0.032,0.032,0.045,16),std({color:0xf0ede6,roughness:0.4}));potW.position.set(BX1-0.06,SHY+0.033,MZ-0.19);BA.add(potW);GL.stubs=[potW];
+  var potB=new T.Mesh(new T.CylinderGeometry(0.032,0.032,0.045,16),std({color:0x0a0a0b,roughness:0.3}));potB.position.set(BX1-0.06,SHY+0.033,MZ-0.1);BA.add(potB);GL.stubs.push(potB);
   /* the red lipstick, standing open on the shelf */
   var brush=GL.brush=new T.Group(),gold=std({color:0xc9a35a,metalness:0.85,roughness:0.28}),caseM=std({color:0x0c0c0d,metalness:0.4,roughness:0.25});
   brush.add(new T.Mesh(new T.CylinderGeometry(0.0115,0.0115,0.042,18).translate(0,0.021,0),caseM));
@@ -578,7 +601,7 @@ function build(){
   var ch=new T.Mesh(new T.TorusGeometry(0.07,0.004,6,40),nkM);ch.rotation.x=Math.PI/2;nk.add(ch);
   var pend=GL.pend=new T.Mesh(new T.TorusGeometry(0.018,0.006,8,20,Math.PI*1.4),nkM);pend.position.set(0,0,0.075);pend.rotation.x=Math.PI/2;nk.add(pend);
   var ng=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffe9b0,transparent:true,opacity:0.35,depthWrite:false,blending:T.AdditiveBlending}));ng.scale.set(0.25,0.25,1);nk.add(ng);
-  nk.position.set(TUBC[0]+0.3,TUBY+0.008,TUB[3]-0.035);BA.add(nk);GL.neckPos=new T.Vector3(RO.x+TUBC[0]+0.3,TUBY+0.05,RO.z+TUB[3]-0.035);BA.visible=false;
+  nk.position.set(TUBC[0]+0.3,0.004,TUB[3]+0.16);BA.add(nk);GL.neckPos=new T.Vector3(RO.x+TUBC[0]+0.3,0.08,RO.z+TUB[3]+0.25);BA.visible=false;
 
   /* things you can use */
   inter=[
