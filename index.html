@@ -4415,7 +4415,7 @@ function enterLimbo(){
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
   var need=THREE.Reflector?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js');
-  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=9');}).then(function(){
+  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=10');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();

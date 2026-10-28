@@ -651,7 +651,7 @@ function build(){
 }
 
 /* ================= THE CAR (blocked-out Beetle; a model can replace GL.carBody later) ================= */
-var CAR={eye:[-0.31,1.12,0.06],wheel:[-0.31,0.84,-0.44],radio:[0.02,0.8,-0.66],mirror:[0.0,1.27,-0.7],dash:[0.12,0.97,-0.66]};
+var CAR={eye:[-0.31,1.12,0.06],wheel:[-0.31,0.84,-0.44],radio:[0.02,0.8,-0.66],mirror:[0.0,1.27,-0.7],dash:[0.12,0.97,-0.66],hol:[0.28,-0.62,1.0],hand:[0.5,0.84,-0.18]};
 function cw(a,b,c){return new T.Vector3(CO.x+a,b,CO.z+c);}  /* car-local to world (the car faces -z) */
 function texRainGlass(){return canvasTex(256,256,function(g,w,h){g.clearRect(0,0,w,h);var r=rnd(21);
   for(var i=0;i<140;i++){var x=r()*w,y=r()*h,rr=1+r()*3.2;var gr=g.createRadialGradient(x-rr*0.3,y-rr*0.3,0,x,y,rr);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(0.6,'rgba(200,210,225,.18)');gr.addColorStop(1,'rgba(200,210,225,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,rr,0,7);g.fill();
@@ -762,12 +762,105 @@ function buildCar(){
     cm.onBeforeRender=function(){var hv=GL.hero.visible,hl=GL.hol?GL.hol.visible:false;GL.hero.visible=false;if(GL.hol)GL.hol.visible=hl||S.holMirror;try{ob.apply(this,arguments);}finally{GL.hero.visible=hv;if(GL.hol)GL.hol.visible=hl;}};}
   GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
   /* the cabin's own low light */
-  GL.carAmb=new T.HemisphereLight(0x4a3a2c,0x0a0806,0.35);C.add(GL.carAmb);
+  GL.carAmb=new T.HemisphereLight(0x5a4632,0x0a0806,0.5);C.add(GL.carAmb);
   GL.dashL=new T.PointLight(0xffc890,0.35,1.2,2);GL.dashL.position.set(-0.31,0.92,-0.5);B.add(GL.dashL);
   /* her hand, and the necklace it brings */
   GL.lunaHand=makeLunaHand();B.add(GL.lunaHand);
   GL.carNeck=new T.Group();var cn=new T.Mesh(new T.TorusGeometry(0.03,0.004,8,24),std({color:0xc9c9cc,metalness:0.85,roughness:0.3,emissive:0x222222}));cn.rotation.x=Math.PI/2;GL.carNeck.add(cn);
   var cnc=new T.Mesh(new T.TorusGeometry(0.06,0.0018,5,40),std({color:0x5a3a24,roughness:0.8}));cnc.rotation.x=Math.PI/2;cnc.position.x=0.04;GL.carNeck.add(cnc);GL.carNeck.visible=false;B.add(GL.carNeck);
+}
+/* ---------- the real car and the lonely road (loaded in the background) ---------- */
+var RD={FS:9,pts:[[0.8,4.4],[-0.4,3.4],[-1.2,2.4],[-1.75,1.4],[-1.9,0.4],[-1.4,-0.6],[-0.2,-1.3],[1.0,-1.9],[1.8,-2.7],[2.2,-3.6],[2.3,-4.4]],car:[-1.88,0.9]};
+function loadRoadModels(){
+  if(GL.roadLoading||!T.GLTFLoader)return;GL.roadLoading=true;
+  var got={},need=['beetle','forest','tl','sl'];
+  function ok(k,g){got[k]=g;if(need.every(function(n){return n in got;}))dressCar(got);}
+  [['beetle','beetle.glb?v=1'],['forest','forestroad.glb?v=1'],['tl','trafficlight.glb?v=1'],['sl','streetlight.glb?v=1']].forEach(function(e){
+    new T.GLTFLoader().load(e[1],function(g){ok(e[0],g.scene);},undefined,function(){ok(e[0],null);});});
+}
+function dressCar(m){
+  /* --- the gold Beetle --- */
+  if(m.beetle){
+    var bs=0.86,oy=0.25,B=GL.carBody,keep=[GL.carMirror,GL.lunaHand,GL.carNeck,GL.dashL,GL.radioL];
+    B.children.forEach(function(o){if(keep.indexOf(o)<0)o.visible=false;});
+    var car=m.beetle;car.scale.setScalar(bs);car.rotation.y=Math.PI;car.position.y=oy;B.add(car);GL.beetle=car;
+    car.traverse(function(o){if(o.isMesh){o.castShadow=false;o.receiveShadow=true;if(/mirror_rear/.test(o.name))GL.beetleMirror=o;if(/visor/.test(o.name))o.visible=false;
+      if(o.material&&/windows/.test(o.name)){o.material.depthWrite=false;o.material.opacity=0.18;o.material.transparent=true;}}});
+    function L(x,y,z){return [-x*bs,y*bs+oy,-z*bs];}
+    CAR.eye=L(0.355,1.27,0.2);CAR.wheel=L(0.335,0.86,0.69);CAR.radio=L(0.0,0.93,0.93);CAR.mirror=L(0.005,1.325,0.85);CAR.dash=L(0.12,1.03,0.86);
+    CAR.hol=[0.26,L(0,0.3,0)[1]-0.72,0.48];CAR.hand=[0.46,L(0,0.56,0)[1]+0.24,-0.16];
+    if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]-0.02);GL.carMirror.rotation.set(-0.06,Math.PI*0,0);GL.carMirror.scale.set(0.82,1.05,1);}
+    GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
+    GL.dashL.position.set(CAR.wheel[0],CAR.wheel[1]+0.1,CAR.wheel[2]-0.05);GL.radioL.position.set(CAR.radio[0],CAR.radio[1]+0.02,CAR.radio[2]+0.1);
+    /* rain on the windshield and her fogged window, moved onto the real glass */
+    var rw=new T.Mesh(new T.PlaneGeometry(1.2,0.42),new T.MeshBasicMaterial({map:GL.rainTex,transparent:true,opacity:0.7,depthWrite:false,fog:false}));rw.position.set(0,L(0,1.2,0)[1],L(0,0,1.02)[2]+0.06);rw.rotation.x=-0.42;B.add(rw);
+    var fg=new T.Mesh(new T.PlaneGeometry(0.5,0.32),GL.fogM);fg.position.set(0.62,L(0,1.16,0)[1],-0.05);fg.rotation.y=-Math.PI/2;B.add(fg);
+    if(P.area==='car'){P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];S.camDY=CAR.eye[1]-EYE;}
+  }
+  /* --- the forest road --- */
+  if(m.forest){
+    var ST=GL.street;ST.children.forEach(function(o){o.visible=false;});
+    var W=GL.roadW=new T.Group();ST.add(W);var F=m.forest;F.scale.setScalar(RD.FS);W.add(F);
+    var ground=null;
+    F.traverse(function(o){if(!o.isMesh)return;o.receiveShadow=true;var mt=o.material;
+      if(mt&&mt.name==='Material'){mt.transparent=false;mt.alphaTest=0.45;mt.depthWrite=true;mt.side=T.DoubleSide;}
+      if(mt&&mt.name==='Material.003'){ground=o;dequant(o.geometry);}if(mt){mt.roughness=0.95;mt.metalness=0;mt.color.setRGB(0.42,0.44,0.5);}});
+    W.updateMatrixWorld(true);
+    /* the road as a curve, with the ground height sampled along it */
+    var pts=RD.pts.map(function(p){return new T.Vector3(p[0]*RD.FS,0,p[1]*RD.FS);});
+    var cv=new T.CatmullRomCurve3(pts,false,'centripetal');var len=cv.getLength();
+    var rc=new T.Raycaster();ST.updateMatrixWorld(true);
+    function gy(x,z){if(!ground)return 0;W.updateMatrixWorld(true);var inv=new T.Matrix4().copy(W.matrixWorld).invert(),o=new T.Vector3(x,60,z).applyMatrix4(W.matrixWorld);
+      rc.set(o,new T.Vector3(0,-1,0).transformDirection(W.matrixWorld));var h=rc.intersectObject(ground,false);return h.length?h[0].point.applyMatrix4(inv).y:0;}
+    var N=120,ys=[];for(var i=0;i<=N;i++){var q=cv.getPointAt(i/N);ys.push(gy(q.x,q.z));}
+    /* where the car stops: the arc length nearest to RD.car */
+    var best=0,bd=1e9,cp=new T.Vector3(RD.car[0]*RD.FS,0,RD.car[1]*RD.FS);for(var j=0;j<=400;j++){var d=cv.getPointAt(j/400).distanceTo(cp);if(d<bd){bd=d;best=j/400;}}
+    GL.road={cv:cv,len:len,ys:ys,s0:best*len,gy:gy};
+    function at(dist){var u=clamp((GL.road.s0+dist)/len,0,1);return {p:cv.getPointAt(u),t:cv.getTangentAt(u),y:ys[Math.round(u*N)]};}
+    /* the traffic light hangs over the road 12 m ahead; the pole stands on the right */
+    if(m.tl){var tl=m.tl,ts=1.05;
+      /* 13 m straight ahead of the driver, lenses 3.7 m over the road, the pole on the left verge, the arm reaching over (mirrored model), facing the car */
+      placeRoad(0);GL.car.updateMatrixWorld(true);W.updateMatrixWorld(true);
+      var lw=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,-13))),cw0=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,0)));
+      var ang=Math.atan2(cw0.x-lw.x,cw0.z-lw.z);tl.scale.set(-ts,ts,ts);tl.rotation.y=ang;
+      var off=new T.Vector3(2.9*ts,0,-0.42*ts).applyAxisAngle(new T.Vector3(0,1,0),ang);var ox=lw.x-off.x,oz=lw.z-off.z;
+      tl.position.set(ox,at(12).y+3.4-4.88*ts,oz);W.add(tl);W.position.set(0,0,0);W.rotation.set(0,0,0);
+      tl.traverse(function(o){if(o.isMesh){o.castShadow=true;}});
+      /* move the glowing lenses onto the real housing */
+      var TL=GL.tl;TL.visible=true;TL.children.forEach(function(o){o.visible=false;});
+      var hz=-0.19+0.012,lens=[[GL.tlR,4.88],[GL.tlY,4.565],[GL.tlG,4.25]];
+      lens.forEach(function(e){e[0].side=T.DoubleSide;e[0].needsUpdate=true;var c=new T.Mesh(new T.CircleGeometry(0.125,24),e[0]);c.position.set(-2.9,e[1],-0.15);tl.add(c);});
+      GL.tlGlow.position.set(-2.9,4.88,0.05);GL.tlGlow.scale.set(3.2,3.2,1);tl.add(GL.tlGlow);GL.tlGlow.visible=true;
+      GL.tlLight.position.set(-2.9,3.2,2.6);tl.add(GL.tlLight);GL.tlLight.visible=true;GL.tlLight.distance=30;GL.tlLight.intensity=5.5;GL.tlLight.decay=1.2;GL.tlHeads={red:4.88,green:4.25};}
+    /* street lights along the road, alternating sides, the closest ones casting light */
+    if(m.sl){GL.lamps.forEach(function(l){if(l.l)l.l.intensity=0;});GL.lamps=[];
+      [-16,3,22,40,58,-34].forEach(function(dd,i){var a2=at(dd),sd=i%2?1:-1,rt=new T.Vector3(-a2.t.z,0,a2.t.x).normalize();
+        var lp=new T.Group(),bx=a2.p.x+rt.x*sd*3.6,bz=a2.p.z+rt.z*sd*3.6;lp.position.set(bx,gy(bx,bz)-0.05,bz);
+        lp.rotation.y=Math.atan2(-rt.x*sd,-rt.z*sd);W.add(lp);
+        var sl=m.sl.clone(true);sl.scale.setScalar(0.015);sl.position.set(229.8*0.015,0,0);lp.add(sl);
+        var lensM=new T.MeshBasicMaterial({color:0xffb04a});sl.traverse(function(o){if(o.isMesh&&/385/.test(o.name))o.material=lensM;if(o.isMesh)o.castShadow=false;});
+        var hx=0.0,hy=4.80*1.5,hzz=180.5*0.015;var spr=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xffa040,transparent:true,opacity:0.8,depthWrite:false,blending:T.AdditiveBlending,fog:false}));spr.scale.set(3.4,3.4,1);spr.position.set(hx,hy-0.1,hzz);lp.add(spr);
+        var pl=null;if(Math.abs(dd)<30){pl=new T.PointLight(0xff9a3c,2.0,17,1.6);pl.position.set(hx,hy-0.4,hzz);lp.add(pl);}
+        GL.lamps.push({g:lp,m:lensM,s:spr,l:pl,z:dd,on:1});});
+      GL.lamps.sort(function(x,y){return Math.abs(x.z)-Math.abs(y.z);});}
+    /* the headlights: the only thing that shows the road */
+    GL.heads=[];[-0.55,0.55].forEach(function(x){var h=new T.SpotLight(0xffe8c0,2.6,34,0.42,0.55,1.2);h.position.set(x,0.75,-1.9);var tg=new T.Object3D();tg.position.set(x*1.5,0,-16);GL.car.add(tg);h.target=tg;GL.car.add(h);GL.heads.push(h);});
+    GL.roadAmb=new T.HemisphereLight(0x22324e,0x070809,0.24);GL.car.add(GL.roadAmb);
+    GL.moonL=new T.DirectionalLight(0x6f86b8,0.22);GL.moonL.position.set(-20,40,10);GL.car.add(GL.moonL);
+    GL.carFog=new T.FogExp2(0x04070d,0.055);
+    if(P.area==='car'){scene.fog=GL.carFog;placeRoad(S.dist||0);}else placeRoad(0);
+    try{var v=GL.car.visible;GL.car.visible=true;R.compile(scene,cam);GL.car.visible=v;}catch(e){}
+  }
+  GL.roadReady=true;
+}
+/* quantized vertex data reads raw on the CPU in this three.js: expand it so raycasts see real positions */
+function dequant(g){var a=g.attributes.position;if(!a||!a.normalized)return;var arr=a.isInterleavedBufferAttribute?a.data.array:a.array,d=arr instanceof Int16Array?32767:arr instanceof Uint16Array?65535:arr instanceof Int8Array?127:arr instanceof Uint8Array?255:1,f=new Float32Array(a.count*3);
+  for(var i=0;i<a.count;i++){f[i*3]=Math.max(a.getX(i)/d,-1);f[i*3+1]=Math.max(a.getY(i)/d,-1);f[i*3+2]=Math.max(a.getZ(i)/d,-1);}g.setAttribute('position',new T.BufferAttribute(f,3));g.computeBoundingSphere();g.computeBoundingBox();}
+/* put the road under the car: the point 'dist' metres along the road sits at the car, heading forward */
+function placeRoad(dist){
+  var r=GL.road,W=GL.roadW;if(!r||!W)return;var u=clamp((r.s0+dist)/r.len,0,1),p=r.cv.getPointAt(u),t=r.cv.getTangentAt(u);
+  var a=Math.PI-Math.atan2(t.x,t.z),y=r.ys[Math.round(u*(r.ys.length-1))];
+  W.rotation.y=a;var v=new T.Vector3(p.x,0,p.z).applyAxisAngle(new T.Vector3(0,1,0),a);W.position.set(-v.x,-y,-v.z);
 }
 /* car audio: the engine idling, the radio static, the rain, the traffic light ticking */
 function carAudio(on){
@@ -785,25 +878,25 @@ function carAudio(on){
 function sTick(){noiseBurst(0.02,1800,3,0.12,false);}
 /* entering the car */
 function goCar(loop){
-  if(S.busy)return;S.busy=true;sCreak();GL.dCar.want=1.2;
+  if(S.busy)return;loadRoadModels();S.busy=true;sCreak();GL.dCar.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterCar(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterCar(loop){
   setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3+Math.floor(Math.random()*3);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
   S.ring=Math.min(S.ring,0.2);
-  P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.12;S.camDY=CAR.eye[1]-EYE;P.spd=0;
-  GL.street.position.z=0;GL.carBody.position.y=0;
+  P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.03;S.camDY=CAR.eye[1]-EYE;P.spd=0;
+  GL.street.position.z=0;GL.carBody.position.y=0;S.dist=0;if(GL.road)placeRoad(0);
   GL.lamps.forEach(function(l){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});
-  setTL('red');GL.lunaHand.visible=false;GL.carNeck.visible=false;GL.fogM.opacity=0;
+  setTL('red');if(GL.heads)GL.heads.forEach(function(h){h.intensity=2.6;});GL.lunaHand.visible=false;GL.carNeck.visible=false;GL.fogM.opacity=0;
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
-  GL.carAmb.intensity=loop===4?0.12:0.35;GL.radioL.intensity=loop===4?0.08:0.25;
+  GL.carAmb.intensity=loop===4?0.14:0.5;GL.radioL.intensity=loop===4?0.08:0.25;
   carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
   if(loop===1)after(2.2,function(){hint(tx('radio'),2600);});
   if(loop===2)after(2.2,function(){hint(tx('reach'),2600);});
   if(loop===3)after(2.2,function(){hint(tx('rear'),2600);});
 }
 function setTL(c){GL.tlR.color.setHex(c==='red'?0xff1a10:0x200606);GL.tlG.color.setHex(c==='green'?0x20ff70:0x06200e);
-  var col=c==='red'?0xff2010:0x30ff80;GL.tlGlow.material.color.setHex(col);GL.tlLight.color.setHex(col);GL.tlGlow.position.y=c==='red'?6.32:5.68;}
+  var col=c==='red'?0xff2010:0x30ff80;GL.tlGlow.material.color.setHex(col);GL.tlLight.color.setHex(col);GL.tlGlow.position.y=GL.tlHeads?(c==='red'?GL.tlHeads.red:GL.tlHeads.green):(c==='red'?6.32:5.68);}
 function nextCarLoop(delay){
   after(delay||4,function(){S.busy=true;fadeTo(1,1.0,function(){S.holMirror=false;if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}enterCar(S.loop+1);fadeTo(0,1.2,function(){S.busy=false;});});});
 }
@@ -815,8 +908,8 @@ function carArms(dt){
   var L1=cw(w[0]-0.15,w[1]+0.07+br,w[2]+0.04),R1=cw(w[0]+0.15,w[1]+0.07+br,w[2]+0.04);
   /* the little walking figure: two fingers stepping across the dash toward her seat */
   if(S.walk>=0){var u=S.walk;var x=-0.12+0.5*ss(0.6,3.6,u),hop=Math.abs(Math.sin(u*7))*0.025*(u>0.6&&u<3.6?1:0),back=ss(5.2,6.4,u);
-    var tgt=cw(x,0.99+hop,-0.66);R1.lerp(tgt,ss(0,0.6,u)*(1-back));}
-  if(S.give>=0){var g2=S.give;R1.lerp(cw(0.06,0.86,-0.28),ss(0,1.0,g2)*(1-ss(6.2,7.2,g2)));}
+    var tgt=cw(x,CAR.dash[1]+0.02+hop,CAR.dash[2]);R1.lerp(tgt,ss(0,0.6,u)*(1-back));}
+  if(S.give>=0){var g2=S.give;R1.lerp(cw(0.06,CAR.hand[1]+0.02,CAR.hand[2]-0.1),ss(0,1.0,g2)*(1-ss(6.2,7.2,g2)));}
   [['Left',L1,-1],['Right',R1,1]].forEach(function(e){var A=f[e[0]+'Arm'],FA=f[e[0]+'ForeArm'],HD=f[e[0]+'Hand'];
     A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);});
 }
@@ -840,7 +933,7 @@ function carTick(dt){
   if(S.loop===3&&GL.hol){
     var ml=lookingAt(GL.carMirrorPos,2,0.93);
     if(!S.holSeen&&ml&&!S.busy){S.lookT+=dt;if(S.lookT>0.8){S.holSeen=true;S.holMirror=true;
-      GL.hol.position.set(CO.x+0.28,-0.62,CO.z+1.0);GL.hol.rotation.y=Math.PI;sBoom(0.4);hint(tx('dontLook'),3600);}}
+      GL.hol.position.set(CO.x+CAR.hol[0],CAR.hol[1],CO.z+CAR.hol[2]);GL.hol.rotation.y=Math.PI;sBoom(0.4);hint(tx('dontLook'),3600);}}
     if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.ringSrc=true;S.ring=Math.min(1,S.ring+dt*0.04);
       var back=Math.abs(dy)>1.75||lookingAt(_v.set(GL.hol.position.x,1.05,GL.hol.position.z),3,0.6);
       if(back){GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,1.3,GL.hol.position.z-0.3);GL.holLight.intensity=1.0;sBoom(0.9);if(G.buzz)G.buzz([200,60,200],1);
@@ -852,23 +945,24 @@ function carTick(dt){
     S.c4T+=dt;
     GL.lamps.forEach(function(l,i){var off=1.0+(GL.lamps.length-1-i)*0.75;if(l.on&&S.c4T>off){l.on=0;l.m.color.setHex(0x110a04);l.s.visible=false;if(l.l)l.l.intensity=0;noiseBurst(0.12,180,0.7,0.2,false,0.6);}
       else if(l.on&&S.c4T>off-0.5&&Math.random()<0.2){l.s.visible=!l.s.visible;}});
+    if(GL.heads){var hf=S.c4T>1.0+GL.lamps.length*0.75+0.6?0:1;if(S.c4T>1.0+GL.lamps.length*0.75&&hf&&Math.random()<0.3)hf=0.2;GL.heads.forEach(function(h){h.intensity=2.6*hf;});}
     if(!S.handOut){S.mockT-=dt;if(S.mockT<=0){S.mockT=6;vo('mock',3000,3);}
       S.ring=Math.min(1.2,S.ring+dt*0.1);S.ringSrc=true;
-      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(0.5,0.84,-0.18);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
-    else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(0.3-hp.x)*Math.min(1,dt*0.8);}
+      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(CAR.hand[0],CAR.hand[1],CAR.hand[2]);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
+    else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(CAR.hand[0]-0.2-hp.x)*Math.min(1,dt*0.8);}
   }
   /* the payoff: she closes his hand around the necklace, then the light turns green */
   if(S.give>=0){var g3=S.give,lh=GL.lunaHand;
-    var tgt=new T.Vector3(0.1,0.88,-0.26);lh.position.lerp(tgt,Math.min(1,dt*2.2)*ss(0.8,1.6,g3));
+    var tgt=new T.Vector3(0.1,CAR.hand[1]+0.04,CAR.hand[2]-0.08);lh.position.lerp(tgt,Math.min(1,dt*2.2)*ss(0.8,1.6,g3));
     lh.userData.fing.forEach(function(F){F.f.rotation.z=0.9*ss(2.4,3.4,g3);F.j.rotation.z=1.0*ss(2.4,3.4,g3);});
-    GL.carNeck.visible=g3>1.2&&g3<4.4;GL.carNeck.position.set(0.06,0.86,-0.27);
+    GL.carNeck.visible=g3>1.2&&g3<4.4;GL.carNeck.position.set(0.06,CAR.hand[1]+0.02,CAR.hand[2]-0.09);
     if(g3>4.6)lh.visible=g3<5.6&&Math.random()>ss(4.6,5.6,g3);
     if(g3>6.4&&!S.drive){S.drive=0.001;setTL('green');noiseBurst(0.6,120,0.5,0.4,true,0.6);
       /* the street comes back on, one lamp after another */
-      GL.lamps.forEach(function(l,i){after(0.15+i*0.12,function(){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});});GL.carAmb.intensity=0.35;}
+      GL.lamps.forEach(function(l,i){after(0.15+i*0.12,function(){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});});GL.carAmb.intensity=0.35;if(GL.heads)GL.heads.forEach(function(h){h.intensity=3.2;});}
   }
   /* pulling away: the street slides past faster and faster, and it all goes white */
-  if(S.drive>0){S.drive+=dt;var v=ss(0,3.2,S.drive)*16;GL.street.position.z+=v*dt;
+  if(S.drive>0){S.drive+=dt;var v=ss(0,3.2,S.drive)*16;if(GL.road){S.dist+=v*dt;placeRoad(S.dist);}else GL.street.position.z+=v*dt;
     if(AU.car){AU.car.eng.frequency.setTargetAtTime(30+v*3.2,ac.currentTime,0.1);AU.car.engF.frequency.setTargetAtTime(160+v*40,ac.currentTime,0.1);}
     if(S.drive>3.4&&!S.white&&!S.carEnd){S.carEnd=true;whiteout(function(){S.carDone=true;S.drive=0;carAudio(false);if(AU.car){AU.car.eng.frequency.value=30;AU.car.engF.frequency.value=160;}fpHands(0,0,0,0);toHub(true);});}}
 }
@@ -880,11 +974,11 @@ function takeHand(){
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
 function setArea(a){
-  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(a!=='car'){S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);}
+  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
-  if(S.busy)return;S.busy=true;sCreak();GL.dBed.want=1.2;
+  if(S.busy)return;loadRoadModels();S.busy=true;sCreak();GL.dBed.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterRoom(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterRoom(loop){
@@ -1034,7 +1128,8 @@ L.frame=function(dt){
   if(P.spd>0.2){P.phase+=dt*P.spd*5.2;P.stepAcc+=P.spd*dt;if(P.stepAcc>0.6){P.stepAcc=0;sStep();}}
   /* camera */
   var bob=Math.sin(P.phase)*0.028*Math.min(1,P.spd/1.3);
-  cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
+  cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);
+  if(P.area==='car'){var ln=ss(0.06,0.32,P.pitch)*(S.drive?0:1);cam.position.x+=Math.sin(P.yaw)*0.26*ln;cam.position.z+=Math.cos(P.yaw)*0.26*ln;cam.position.y-=0.09*ln;}cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
   var baseF=57+((G.CAM.fov||62)-62)*0.6;if(Math.abs(cam.fov-baseF)>0.05){cam.fov=baseF;cam.updateProjectionMatrix();}
   GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:P.area==='car'?0.06:0.25;
   /* Damian's body (only the mirror sees it) */
@@ -1199,7 +1294,7 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
-L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
