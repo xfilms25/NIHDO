@@ -482,9 +482,7 @@ function build(){
   /* a dim light over each door so the wood reads in the void */
   [[GL.dBed,0xffc89a],[GL.dCar,0xff8070],[GL.dParty,0xc8a0ff]].forEach(function(e){var l=new T.SpotLight(e[1],4,6,0.6,0.7,1);l.position.set(0,3.2,1.6);var tg=new T.Object3D();tg.position.set(0,1.0,0);e[0].g.add(tg);l.target=tg;e[0].g.add(l);});
   /* Hollow waits in the dark (borrowed from the forest, made human-sized) */
-  if(G.hol&&G.hol.g){try{if(G.hol.act){G.hol.act.setEffectiveWeight(1);G.hol.act.timeScale=0.3;}if(G.hol.runAct)G.hol.runAct.setEffectiveWeight(0);if(G.hol.stompAct)G.hol.stompAct.setEffectiveWeight(0);G.hol.grab=false;}catch(e){}
-    GL.hol=G.hol.g;scene.add(GL.hol);GL.hol.visible=false;GL.hol.scale.setScalar(0.34);
-    GL.holLight=new T.PointLight(0x6f86a8,0.0,5,2);scene.add(GL.holLight);}
+  adoptHollow();
   /* Luna under the veil */
   if(G.luna&&G.luna.g){GL.luna=G.luna.g;scene.add(GL.luna);GL.luna.position.set(0,0,-5);GL.luna.rotation.set(0,Math.PI,0);G.lunaOp(0);GL.luna.visible=false;}
   /* Damian is only ever seen in the mirror */
@@ -971,6 +969,15 @@ function takeHand(){
   after(1.4,function(){sChime();});after(2.6,function(){vo('c4',4200,0);});
   after(9.5,function(){S.lockInput=false;});
 }
+/* Hollow comes from the forest; his model may still be loading when Limbo starts, so take him whenever he arrives */
+function adoptHollow(){
+  if(GL.hol||!G.hol||!G.hol.g||G.hol.ready===false)return false;
+  try{if(G.hol.act){G.hol.act.setEffectiveWeight(1);G.hol.act.timeScale=0.3;}if(G.hol.runAct)G.hol.runAct.setEffectiveWeight(0);if(G.hol.stompAct)G.hol.stompAct.setEffectiveWeight(0);G.hol.grab=false;}catch(e){}
+  GL.hol=G.hol.g;scene.add(GL.hol);GL.hol.visible=false;GL.hol.scale.setScalar(0.34);
+  GL.hol.traverse(function(o){o.frustumCulled=false;});
+  GL.holLight=new T.PointLight(0x6f86a8,0.0,5,2);scene.add(GL.holLight);
+  return true;
+}
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
 function setArea(a){
@@ -1142,6 +1149,7 @@ L.frame=function(dt){
   if(GL.dParty.light)GL.dParty.light.intensity=0.3+0.5*fl;
   if(!S.revealing)GL.veil.rotation.y=Math.sin(time*0.3)*0.04;
   /* the area's own logic */
+  if(!GL.hol)adoptHollow();
   if(P.area==='hub')hubTick(dt);else if(P.area==='car')carTick(dt);else roomTick(dt);
   if(S.revealing)revealTick(dt);
   breathTick(dt);
@@ -1204,8 +1212,10 @@ function roomTick(dt){
   if(S.loop===1&&!S.trig){if(mlook){S.lookT+=dt;if(S.lookT>1.4){S.trig=true;vo('v1',5000,0);unlockExit(2.5);}}}
   /* third visit: someone stands behind you in the mirror. Get to the door without looking back. */
   if(S.loop===3&&GL.hol){
-    if(!S.holSeen&&mlook&&!S.busy){S.lookT+=dt;if(S.lookT>0.9){S.holSeen=true;S.holMirror=true;
-        var hzn=GL.holZone,hx=clamp(P.x-1.3,RO.x+hzn[0],RO.x+hzn[1]),hz=clamp(P.z-0.6,RO.z+hzn[2],RO.z+hzn[3]);GL.hol.position.set(hx,0,hz);
+    if(!S.holSeen&&mlook&&!S.busy){S.lookT+=dt;if(S.lookT>0.6){S.holSeen=true;S.holMirror=true;
+        /* over his left shoulder, a step behind: clear of his head in the reflection */
+        var bb=GL.bathBox,hx=clamp(P.x-1.75,RO.x+bb[0]+0.6,RO.x+bb[1]-0.6),hz=clamp(P.z-0.7,RO.z+bb[2]+0.3,RO.z+bb[3]-0.3);GL.hol.position.set(hx,0,hz);
+        GL.holLight.color.setHex(0x9fb6ff);GL.holLight.position.set(hx+0.7,1.7,hz+0.1);GL.holLight.distance=3;GL.holLight.intensity=2.2;
         GL.hol.rotation.y=Math.atan2(P.x-hx,P.z-GL.hol.position.z);sBoom(0.35);hint(tx('dontLook'),3600);S.exitOpen=true;sClick(1);}}
     if(S.holSeen&&!S.busy){GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);S.ring=Math.min(1,S.ring+dt*0.05);S.ringSrc=true;
       if(lookingAt(_v.set(GL.hol.position.x,1.5,GL.hol.position.z),8,0.55)){
@@ -1304,7 +1314,7 @@ L.init=function(api,done){
     var bl=G.bloom();if(bl){bl.strength=0.55;bl.threshold=0.7;}
     window.addEventListener('resize',function(){cam.aspect=window.innerWidth/window.innerHeight;cam.updateProjectionMatrix();});
     /* the forest is gone: free what it held on the graphics card */
-    setTimeout(function(){try{G.scene.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
+    setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
     resetState();L.ready=true;
     /* compile shaders once, behind the black */
     try{R.compile(scene,cam);}catch(e){}
