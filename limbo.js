@@ -776,7 +776,7 @@ function buildCar(){
   var cnc=new T.Mesh(new T.TorusGeometry(0.06,0.0018,5,40),std({color:0x5a3a24,roughness:0.8}));cnc.rotation.x=Math.PI/2;cnc.position.x=0.04;GL.carNeck.add(cnc);GL.carNeck.visible=false;B.add(GL.carNeck);
 }
 /* ---------- the real car and the lonely road (loaded in the background) ---------- */
-var RD={FS:9,pts:[[0.8,4.4],[-0.4,3.4],[-1.2,2.4],[-1.75,1.4],[-1.9,0.4],[-1.4,-0.6],[-0.2,-1.3],[1.0,-1.9],[1.8,-2.7],[2.2,-3.6],[2.3,-4.4]],car:[-1.88,0.9]};
+var RD={FS:9,pts:[[0.8,4.4],[-0.4,3.4],[-1.2,2.4],[-1.75,1.4],[-1.9,0.4],[-1.4,-0.6],[-0.2,-1.3],[1.0,-1.9],[1.8,-2.7],[2.2,-3.6],[2.3,-4.4]],car:[-0.55,3.25]};
 function loadRoadModels(){
   if(GL.roadLoading||!T.GLTFLoader)return;GL.roadLoading=true;
   var got={},need=['beetle','forest','tl','sl'];
@@ -794,12 +794,12 @@ function dressCar(m){
       if(o.material&&/windows/.test(o.name)){o.material.depthWrite=false;o.material.opacity=0.18;o.material.transparent=true;}}});
     function L(x,y,z){return [-x*bs,y*bs+oy,-z*bs];}
     CAR.eye=L(0.355,1.27,0.2);CAR.wheel=L(0.335,0.86,0.69);CAR.radio=L(0.0,0.93,0.93);CAR.mirror=L(0.005,1.325,0.85);CAR.dash=L(0.12,1.03,0.86);
-    CAR.hol=[0.26,L(0,0.3,0)[1]-0.72,0.48];CAR.hand=[0.46,L(0,0.56,0)[1]+0.24,-0.16];
-    if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]-0.02);GL.carMirror.rotation.set(-0.06,Math.PI*0,0);GL.carMirror.scale.set(0.82,1.05,1);}
+    CAR.hol=[0.1,L(0,0.3,0)[1]-0.87,0.62];CAR.hand=[0.46,L(0,0.56,0)[1]+0.24,-0.16];
+    if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1]-0.005,CAR.mirror[2]+0.032);GL.carMirror.rotation.set(0.1,-0.16,0);GL.carMirror.scale.set(0.72,0.95,1);}
     GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
     GL.dashL.position.set(CAR.wheel[0],CAR.wheel[1]+0.02,CAR.wheel[2]+0.2);GL.dashL.distance=0.7;GL.radioL.position.set(CAR.radio[0],CAR.radio[1]+0.02,CAR.radio[2]+0.1);
     /* rain on the windshield and her fogged window, moved onto the real glass */
-    var rw=new T.Mesh(new T.PlaneGeometry(1.2,0.42),new T.MeshBasicMaterial({map:GL.rainTex,transparent:true,opacity:0.55,depthWrite:false,fog:false}));rw.position.set(0,L(0,1.2,0)[1],L(0,0,1.02)[2]+0.06);rw.rotation.x=-0.42;B.add(rw);
+    GL.rainGlass=new T.MeshBasicMaterial({map:GL.rainTex,transparent:true,opacity:0.5,depthWrite:false,fog:false});var rw=new T.Mesh(new T.PlaneGeometry(1.2,0.42),GL.rainGlass);rw.position.set(0,L(0,1.2,0)[1],L(0,0,1.02)[2]+0.06);rw.rotation.x=-0.42;B.add(rw);
     var fg=new T.Mesh(new T.PlaneGeometry(0.5,0.32),GL.fogM);fg.position.set(0.62,L(0,1.16,0)[1],-0.05);fg.rotation.y=-Math.PI/2;B.add(fg);
     if(P.area==='car'){P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];S.camDY=CAR.eye[1]-EYE;}
   }
@@ -826,12 +826,12 @@ function dressCar(m){
     function at(dist){var u=clamp((GL.road.s0+dist)/len,0,1);return {p:cv.getPointAt(u),t:cv.getTangentAt(u),y:ys[Math.round(u*N)]};}
     /* the traffic light hangs over the road 12 m ahead; the pole stands on the right */
     if(m.tl){var tl=m.tl,ts=1.05;
-      /* 13 m straight ahead of the driver, lenses 3.7 m over the road, the pole on the left verge, the arm reaching over (mirrored model), facing the car */
+      /* 18 m straight ahead of the driver, lenses low enough to sit inside the windshield, the pole on the left verge, the arm reaching over (mirrored model), facing the car */
       placeRoad(0);GL.car.updateMatrixWorld(true);W.updateMatrixWorld(true);
-      var lw=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,-13))),cw0=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,0)));
+      var lw=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,-18))),cw0=W.worldToLocal(GL.car.localToWorld(new T.Vector3(CAR.eye[0],0,0)));
       var ang=Math.atan2(cw0.x-lw.x,cw0.z-lw.z);tl.scale.set(-ts,ts,ts);tl.rotation.y=ang;
       var off=new T.Vector3(2.9*ts,0,-0.42*ts).applyAxisAngle(new T.Vector3(0,1,0),ang);var ox=lw.x-off.x,oz=lw.z-off.z;
-      tl.position.set(ox,at(12).y+3.4-4.88*ts,oz);W.add(tl);W.position.set(0,0,0);W.rotation.set(0,0,0);
+      tl.position.set(ox,2.95-4.88*ts-W.position.y,oz);W.add(tl);W.position.set(0,0,0);W.rotation.set(0,0,0);
       tl.traverse(function(o){if(o.isMesh){o.castShadow=true;}});
       /* move the glowing lenses onto the real housing */
       var TL=GL.tl;TL.visible=true;TL.children.forEach(function(o){o.visible=false;});
@@ -933,7 +933,7 @@ function enterCar(loop){
   P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.03;S.camDY=CAR.eye[1]-EYE;P.spd=0;
   GL.street.position.z=0;GL.carBody.position.y=0;S.dist=0;if(GL.road)placeRoad(0);
   GL.lamps.forEach(function(l){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});
-  setTL('red');if(GL.heads)GL.heads.forEach(function(h){h.intensity=2.6;});GL.lunaHand.visible=false;GL.carNeck.visible=false;GL.fogM.opacity=0;
+  lunaSeat(false);setTL('red');if(GL.heads)GL.heads.forEach(function(h){h.intensity=2.6;});GL.lunaHand.visible=false;GL.carNeck.visible=false;GL.fogM.opacity=0;
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   GL.carAmb.intensity=loop===4?0.14:0.5;GL.radioL.intensity=loop===4?0.08:0.25;
   carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
@@ -963,8 +963,18 @@ function carTick(dt){
   var L4=S.loop===4;
   /* the cabin breathes: engine shudder, rain on the glass, the wipers now and then, the traffic light ticking */
   GL.carBody.position.y=Math.sin(time*31)*0.0009+(S.drive>0?Math.sin(time*13)*0.002:0);
-  GL.rainTex.offset.y+=dt*0.012;
-  var rp=GL.rain.geometry.attributes.position,ra=rp.array;for(var i=0;i<GL.rainN;i++){var dy=GL.rainV[i]*dt,dx=dy*0.12,k=i*6;ra[k+1]-=dy;ra[k+4]-=dy;ra[k]-=dx;ra[k+3]-=dx;if(ra[k+4]<-0.2){var up=9;ra[k+1]+=up;ra[k+4]+=up;ra[k]+=up*0.12;ra[k+3]+=up*0.12;}}rp.needsUpdate=true;
+  GL.rainTex.offset.y+=dt*(0.012+(S.drive>0?ss(0,3,S.drive)*0.25:0));
+  /* rain only shows where there is light: fewer lamps and dead headlights, fainter rain and glass */
+  var lit=0;GL.lamps.forEach(function(l){if(l.on)lit++;});var hl=GL.heads&&GL.heads[0]?GL.heads[0].intensity/2.6:1,lv=clamp(0.25+0.45*lit/Math.max(1,GL.lamps.length)+0.3*Math.min(1,hl),0.06,1);
+  if(S.loop===4&&!S.drive)lv*=0.55;GL.rain.material.opacity=0.42*lv;if(GL.rainGlass)GL.rainGlass.opacity=0.5*lv;
+  var spd=S.drive>0?ss(0,3.2,S.drive)*16:0;GL.rain.scale.z=1;
+  var rp=GL.rain.geometry.attributes.position,ra=rp.array,dz=spd*dt,sl=spd*0.035;
+  for(var i=0;i<GL.rainN;i++){var dy=GL.rainV[i]*dt,dx=dy*0.12,k=i*6;ra[k+1]-=dy;ra[k+4]-=dy;ra[k]-=dx;ra[k+3]-=dx;ra[k+2]+=dz;ra[k+5]+=dz;
+    /* when driving, each streak leans back toward the car */
+    ra[k+2]=ra[k+5]-sl;
+    if(ra[k+4]<-0.2){var up=9;ra[k+1]+=up;ra[k+4]+=up;ra[k]+=up*0.12;ra[k+3]+=up*0.12;}
+    if(ra[k+5]>8){ra[k+5]-=38;ra[k+2]-=38;}
+    if(Math.abs(ra[k+3])<1.2&&ra[k+5]>-2.2&&ra[k+5]<2.4){ra[k+5]-=4.6;ra[k+2]-=4.6;}}rp.needsUpdate=true;
   if(GL.splash)GL.splash.forEach(function(o){o.t-=dt*3;if(o.t<=0){o.t=1;var gz=-2.5-Math.random()*16,gx=(Math.random()-0.5)*5.5;o.s.position.set(gx,GL.roadHere?GL.roadHere(gx,gz):0.02,gz);}o.s.material.opacity=0.55*o.t*o.t;var sc=0.06+0.16*(1-o.t);o.s.scale.set(sc*1.6,sc*0.45,1);});
   S.wipeT-=dt;var wp=S.wipeT<0?ss(0,0.45,-S.wipeT)*(1-ss(0.55,1.0,-S.wipeT)):0;if(S.wipeT<-1.05)S.wipeT=5+Math.random()*4;GL.wipers.forEach(function(w2){w2.rotation.z=1.35-wp*2.0;});
   S.tickT-=dt;if(S.tickT<=0&&!S.drive){S.tickT=1;sTick();}
@@ -980,7 +990,7 @@ function carTick(dt){
   if(S.loop===3&&GL.hol){
     var ml=lookingAt(GL.carMirrorPos,2,0.93);
     if(!S.holSeen&&ml&&!S.busy){S.lookT+=dt;if(S.lookT>0.8){S.holSeen=true;S.holMirror=true;
-      GL.hol.position.set(CO.x+CAR.hol[0],CAR.hol[1],CO.z+CAR.hol[2]);GL.hol.rotation.y=Math.PI;sBoom(0.4);hint(tx('dontLook'),3600);}}
+      GL.hol.position.set(CO.x+CAR.hol[0],CAR.hol[1],CO.z+CAR.hol[2]);GL.hol.rotation.y=Math.PI;GL.holLight.color.setHex(0x9fb6ff);GL.holLight.position.set(CO.x+CAR.hol[0],1.25,CO.z+CAR.hol[2]-0.45);GL.holLight.distance=1.6;GL.holLight.intensity=1.4;sBoom(0.4);hint(tx('dontLook'),3600);}}
     if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.ringSrc=true;S.ring=Math.min(1,S.ring+dt*0.04);
       var back=Math.abs(dy)>1.75||lookingAt(_v.set(GL.hol.position.x,1.05,GL.hol.position.z),3,0.6);
       if(back){GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,1.3,GL.hol.position.z-0.3);GL.holLight.intensity=1.0;sBoom(0.9);if(G.buzz)G.buzz([200,60,200],1);
@@ -995,15 +1005,16 @@ function carTick(dt){
     if(GL.heads){var hf=S.c4T>1.0+GL.lamps.length*0.75+0.6?0:1;if(S.c4T>1.0+GL.lamps.length*0.75&&hf&&Math.random()<0.3)hf=0.2;GL.heads.forEach(function(h){h.intensity=2.6*hf;});}
     if(!S.handOut){S.mockT-=dt;if(S.mockT<=0){S.mockT=6;vo('mock',3000,3);}
       S.ring=Math.min(1.2,S.ring+dt*0.1);S.ringSrc=true;
-      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(CAR.hand[0],CAR.hand[1],CAR.hand[2]);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
+      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(CAR.hand[0],CAR.hand[1],CAR.hand[2]);lunaSeat(true);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
     else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(CAR.hand[0]-0.2-hp.x)*Math.min(1,dt*0.8);}
   }
+  if(GL.lunaCar&&GL.lunaCar.on)lunaSeatTick(dt);
   /* the payoff: she closes his hand around the necklace, then the light turns green */
   if(S.give>=0){var g3=S.give,lh=GL.lunaHand;
     var tgt=new T.Vector3(0.1,CAR.hand[1]+0.04,CAR.hand[2]-0.08);lh.position.lerp(tgt,Math.min(1,dt*2.2)*ss(0.8,1.6,g3));
     lh.userData.fing.forEach(function(F){F.f.rotation.z=0.9*ss(2.4,3.4,g3);F.j.rotation.z=1.0*ss(2.4,3.4,g3);});
     GL.carNeck.visible=g3>1.2&&g3<4.4;GL.carNeck.position.set(0.06,CAR.hand[1]+0.02,CAR.hand[2]-0.09);
-    if(g3>4.6)lh.visible=g3<5.6&&Math.random()>ss(4.6,5.6,g3);
+    if(g3>4.6){lh.visible=g3<5.6&&Math.random()>ss(4.6,5.6,g3);if(GL.lunaCar)GL.lunaCar.on=lh.visible;}
     if(g3>6.4&&!S.drive){S.drive=0.001;setTL('green');noiseBurst(0.6,120,0.5,0.4,true,0.6);
       /* the street comes back on, one lamp after another */
       GL.lamps.forEach(function(l,i){after(0.15+i*0.12,function(){l.on=1;l.m.color.setHex(0xffb04a);l.s.visible=true;if(l.l)l.l.intensity=3.2;});});GL.carAmb.intensity=0.35;if(GL.heads)GL.heads.forEach(function(h){h.intensity=3.2;});}
@@ -1012,6 +1023,44 @@ function carTick(dt){
   if(S.drive>0){S.drive+=dt;var v=ss(0,3.2,S.drive)*16;if(GL.road){S.dist+=v*dt;placeRoad(S.dist);}else GL.street.position.z+=v*dt;
     if(AU.car){AU.car.eng.frequency.setTargetAtTime(30+v*3.2,ac.currentTime,0.1);AU.car.engF.frequency.setTargetAtTime(160+v*40,ac.currentTime,0.1);}
     if(S.drive>3.4&&!S.white&&!S.carEnd){S.carEnd=true;whiteout(function(){S.carDone=true;S.drive=0;carAudio(false);if(AU.car){AU.car.eng.frequency.value=30;AU.car.engF.frequency.value=160;}fpHands(0,0,0,0);toHub(true);});}}
+}
+/* Luna, sitting beside him: her own model, legs bent by aiming the bones; she watches the window, then turns to him and reaches */
+function lunaSeat(on){
+  if(!GL.luna||!G.luna)return;var Lg=GL.luna;
+  if(!GL.lunaCar){var c={on:false,b:{}};['Hips','Spine','Spine1','Spine2','Neck','Head','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].forEach(function(n){c.b[n]=Lg.getObjectByName('mixamorig'+n);});
+    c.q={};for(var n in c.b)if(c.b[n])c.q[n]=c.b[n].quaternion.clone();c.light=new T.PointLight(0xa8b8e0,0,1.8,1.6);GL.lunaCar=c;}
+  var C=GL.lunaCar;
+  if(on){C.on=true;C.t=0;GL.carBody.add(Lg);Lg.visible=true;G.lunaOp(1);if(G.luna.spr)G.luna.spr.visible=false;Lg.rotation.set(0,Math.PI,0);
+    /* size her from her own skeleton: hips to the top of the head ~0.78 m on a woman of 1.65 m */
+    if(!C.sc){for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);Lg.scale.setScalar(1);Lg.updateMatrixWorld(true);var top=Lg.getObjectByName('mixamorigHeadTop_End')||C.b.Head,d=C.b.Hips.getWorldPosition(new T.Vector3()).distanceTo(top.getWorldPosition(new T.Vector3()));C.sc=0.78/Math.max(0.01,d);}
+    Lg.scale.setScalar(C.sc);
+    GL.carBody.add(C.light);C.light.intensity=0.9;GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=false;});}
+  else{if(!C.on)return;C.on=false;for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);scene.add(Lg);Lg.visible=false;G.lunaOp(0);if(G.luna.spr)G.luna.spr.visible=true;Lg.scale.setScalar(1);C.light.intensity=0;
+    GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=true;});}
+}
+function lunaSeatTick(dt){
+  var C=GL.lunaCar,Lg=GL.luna,B=GL.carBody,b=C.b;C.t+=dt;
+  for(var m in C.q)b[m].quaternion.copy(C.q[m]);
+  /* sit: hips on the cushion, a little back */
+  var seat=new T.Vector3(0.3,0.76,-0.06);Lg.position.set(0,0,0);Lg.updateMatrixWorld(true);
+  var hp=B.worldToLocal(b.Hips.getWorldPosition(new T.Vector3()));Lg.position.set(seat.x-hp.x,seat.y-hp.y,seat.z-hp.z);Lg.updateMatrixWorld(true);
+  function W(x,y,z){return B.localToWorld(new T.Vector3(x,y,z));}
+  /* legs: thighs forward, shins down to the floor */
+  [['Left',-0.09],['Right',0.09]].forEach(function(e){var x=0.3+e[1];aimBone(b[e[0]+'UpLeg'],b[e[0]+'Leg'],W(x,0.8,-0.52));aimBone(b[e[0]+'Leg'],b[e[0]+'Foot'],W(x+e[1]*0.3,0.42,-0.62));});
+  /* back against the seat, a slight slump */
+  aimBone(b.Spine,b.Neck,W(0.32,1.4,0.02));
+  /* she looks out of her window; when she gives it to him, she turns */
+  var g=S.give>=0?S.give:-1,turn=g<0?0:ss(0.2,1.2,g);
+  /* the neck stays upright and only leans a little toward where she looks; the head turns with it */
+  if(b.Head&&b.Neck){var np=B.worldToLocal(b.Neck.getWorldPosition(new T.Vector3()));var lean=new T.Vector3(0.1,1,-0.12).lerp(new T.Vector3(-0.14,1,0.02),turn).normalize().multiplyScalar(0.3);
+    aimBone(b.Neck,b.Head,W(np.x+lean.x,np.y+lean.y,np.z+lean.z));
+    var hp2=B.worldToLocal(b.Head.getWorldPosition(new T.Vector3())),HT=Lg.getObjectByName('mixamorigHeadTop_End');if(HT){var tilt=new T.Vector3(0.14,1,-0.06).lerp(new T.Vector3(-0.1,1,0.0),turn).normalize().multiplyScalar(0.25);aimBone(b.Head,HT,W(hp2.x+tilt.x,hp2.y+tilt.y,hp2.z+tilt.z));}}
+  /* hands: resting in her lap; the left one reaches for his when she gives him the necklace */
+  aimBone(b.RightArm,b.RightForeArm,W(0.47,0.9,-0.12));aimBone(b.RightForeArm,b.RightHand,W(0.36,0.82,-0.32));
+  var lhT=B.localToWorld(GL.lunaHand.position.clone()),rest=W(0.24,0.82,-0.32),k=S.give>=0?ss(0.6,1.6,S.give):0.15*(1+Math.sin(C.t*0.7));
+  var tgt=rest.clone().lerp(lhT,k),sh=b.LeftArm.getWorldPosition(new T.Vector3()),el=sh.clone().lerp(tgt,0.5);el.y-=0.12;el.add(B.localToWorld(new T.Vector3(0.12,0,0)).sub(B.localToWorld(new T.Vector3())));
+  aimBone(b.LeftArm,b.LeftForeArm,el);aimBone(b.LeftForeArm,b.LeftHand,tgt);
+  C.light.position.set(0.55,1.3,-0.45);C.light.intensity=0.9*(GL.lunaHand.visible?1:0);
 }
 function takeHand(){
   S.give=0;S.busy=true;S.lockInput=true;noiseBurst(0.2,2600,1.5,0.15,true);
@@ -1029,7 +1078,7 @@ function adoptHollow(){
 }
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
-function setArea(a){
+function setArea(a){if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
   P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:0,ac.currentTime,0.05);}
 }
@@ -1184,8 +1233,7 @@ L.frame=function(dt){
   if(P.spd>0.2){P.phase+=dt*P.spd*5.2;P.stepAcc+=P.spd*dt;if(P.stepAcc>0.6){P.stepAcc=0;sStep();}}
   /* camera */
   var bob=Math.sin(P.phase)*0.028*Math.min(1,P.spd/1.3);
-  cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);
-  if(P.area==='car'){var ln=ss(0.06,0.32,P.pitch)*(S.drive?0:1);cam.position.x+=Math.sin(P.yaw)*0.26*ln;cam.position.z+=Math.cos(P.yaw)*0.26*ln;cam.position.y-=0.09*ln;}cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
+  cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
   var baseF=57+((G.CAM.fov||62)-62)*0.6;if(Math.abs(cam.fov-baseF)>0.05){cam.fov=baseF;cam.updateProjectionMatrix();}
   GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:P.area==='car'?0.06:0.25;
   /* Damian's body (only the mirror sees it) */
@@ -1353,7 +1401,7 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
-L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
