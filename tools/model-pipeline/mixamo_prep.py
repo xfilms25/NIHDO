@@ -1,10 +1,10 @@
 """Prepare a GLB character for Mixamo without touching its quality.
-usage: python3 mixamo_prep.py in.glb out_dir [height_m] [--tpose] [--proxy]
+usage: python3 mixamo_prep.py in.glb out_dir [height_m] [--tpose]
  - one mesh, original vertices/UVs (no simplification), scaled to height_m with feet on y=0
  - original base-color image bytes copied as-is (no re-encode); matte material (Ks 0, illum 1)
  - --tpose: rotate the arms up from the shoulders into a T-pose (tpose2.py; arms found by mesh connectivity)
- - --proxy: also write a light copy (~5% triangles) for Mixamo to rig when the full model is too heavy;
-            the rig is then transferred back onto the full model (nearest-vertex weights)"""
+ - heavy models: make a light copy for rigging first (gltf-transform weld + simplify ratio 0.05 on the GLB),
+   run this script on both, and transfer the rig back onto the full model (nearest-vertex weights)"""
 import sys,os,json,struct,trimesh,numpy as np
 sys.path.insert(0,os.path.dirname(__file__))
 src,out=sys.argv[1],sys.argv[2];H=float(sys.argv[3]) if len(sys.argv)>3 and not sys.argv[3].startswith('--') else 1.7
