@@ -1178,8 +1178,9 @@ function adoptHollow(){
 /* Hollow's drunk clips: stagger, sway, lurch */
 function loadHolClips(){
   if(GL.hcLoading)return;GL.hcLoading=true;
-  fetch('hollow_anims.json?v=1').then(function(r){return r.json();}).then(function(j){
-    var hp=GL.hol&&GL.hol.getObjectByName('mixamorigHips'),k=hp?hp.position.y/0.9602:1;GL.hc={};
+  fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){
+    /* the clips are already baked onto his own rig (rest pose to rest pose), hips included */
+    var k=1;GL.hc={};
     for(var n in j){var c=j[n];c.tracks.forEach(function(t){if(t.name==='mixamorigHips.position'){for(var i=0;i<t.values.length;i++)t.values[i]*=k;}});try{GL.hc[n]=T.AnimationClip.parse(c);}catch(e){}}
     holUse('idleA');
   }).catch(function(){});
@@ -1331,8 +1332,8 @@ function gothFollow(){
 function loadPartyCast(){
   loadAlt('suit','damian_suit.glb?v=1',function(D){kissDamian(D);var wc=D.anims.filter(function(a){return /walk/i.test(a.name);})[0];if(wc&&T.SkeletonUtils){GL.walkRig=restClone(D.g,null);GL.walkSrc=wc;makeLunaWalk();}});
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
-  fetch('hollow_anims.json?v=1').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb','seb.glb?v=1',[3.05,1.75],'idleB',0.85],['zuri','zuri.glb?v=1',[-2.35,1.85],'drink',0.9]].forEach(function(e){
+  fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
+  [['seb','seb.glb?v=1',[3.05,1.75],'drink',0.75],['zuri','zuri.glb?v=1',[-2.35,1.85],'drink',0.9]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
       m.scale.setScalar((e[0]==='seb'?1.76:1.64)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
@@ -1344,12 +1345,10 @@ function loadPartyCast(){
 /* the drunk idles, fitted to each guest's hips */
 function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if(C.act)continue;
   if(C.clip==='drink'){/* Luna's "stand and drink", fitted to her hips */
-    if(!GL.l2Act){loadLuna2();continue;}var lh=GL.luna&&GL.luna.getObjectByName('mixamorigHips'),zh=C.g.getObjectByName('mixamorigHips'),fz=lh&&zh?zh.position.y/lh.position.y:1,dc=GL.l2Act.getClip().clone();
-    dc.tracks=dc.tracks.filter(function(t){return !/(Index|Middle|Ring|Pinky|Thumb)/.test(t.name)&&(/\.quaternion$/.test(t.name)||/Hips\.position$/.test(t.name));});
-    dc.tracks.forEach(function(t){if(/Hips\.position$/.test(t.name)){var x0=zh?zh.position.x:0,z0=zh?zh.position.z:0;for(var i=0;i<t.values.length;i+=3){t.values[i]=x0;t.values[i+1]*=fz;t.values[i+2]=z0;}}});
+    if(!GL.l2Act||!GL.lunaRest||!T.SkeletonUtils){loadLuna2();continue;}var dc;try{dc=retarget(restClone(GL.luna,GL.lunaRest),GL.l2Act.getClip(),restClone(C.g,null));}catch(er){C.clip='-';continue;}
     C.act=C.mixer.clipAction(dc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*2;continue;}
   if(!GL.drunkRaw)continue;var raw=GL.drunkRaw[C.clip];if(!raw)continue;
-  var hp=C.g.getObjectByName('mixamorigHips'),f=hp?hp.position.y/0.9602:1,c=JSON.parse(JSON.stringify(raw));
+  var f=1,c=JSON.parse(JSON.stringify(raw));   /* baked offline onto this guest's own rig */
   c.tracks.forEach(function(t){if(t.name==='mixamorigHips.position'){for(var i=0;i<t.values.length;i++)t.values[i]*=f;}});
   try{C.act=C.mixer.clipAction(T.AnimationClip.parse(c));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){}}}
 function castTick(dt){if(!GL.cast)return;var px=P.x-PO.x,pz=P.z-PO.z,watch=S.loop===2?ss(0,2.5,4-(S.muteT||0)):0;
@@ -1366,7 +1365,11 @@ function boneRest(root){var r={};root.traverse(function(o){if(o.isBone)r[o.name]
 function restClone(root,rest){var c=T.SkeletonUtils.clone(root);c.position.set(0,0,0);c.rotation.set(0,0,0);c.scale.setScalar(1);if(rest)c.traverse(function(o){if(o.isBone&&rest[o.name])o.quaternion.copy(rest[o.name]);});c.updateMatrixWorld(true);return c;}
 function retarget(src,clip,dst){
   var bones=[];dst.traverse(function(o){if(o.isBone&&!/(Index|Middle|Ring|Pinky|Thumb|_End|headfront)/.test(o.name)&&src.getObjectByName(o.name))bones.push(o);});
-  var sR={},dR={},pR={};bones.forEach(function(b){sR[b.name]=src.getObjectByName(b.name).getWorldQuaternion(new T.Quaternion()).invert();dR[b.name]=b.getWorldQuaternion(new T.Quaternion());pR[b.name]=b.parent.getWorldQuaternion(new T.Quaternion());});
+  var sR={},dR={},pR={};bones.forEach(function(b){sR[b.name]=src.getObjectByName(b.name).getWorldQuaternion(new T.Quaternion()).invert();dR[b.name]=b.getWorldQuaternion(new T.Quaternion());pR[b.name]=b.parent.getWorldQuaternion(new T.Quaternion());
+    /* if the two rest poses differ (T-pose against A-pose), first turn the bone to point where the source's does */
+    var ch=null;for(var ci=0;ci<b.children.length;ci++){var cc=b.children[ci];if(cc.isBone&&src.getObjectByName(cc.name)&&!/(Index|Middle|Ring|Pinky|Thumb|headfront)/.test(cc.name)){ch=cc;break;}}
+    if(ch&&!/Hips$/.test(b.name)){var sb=src.getObjectByName(b.name),sc=src.getObjectByName(ch.name),dd=ch.getWorldPosition(new T.Vector3()).sub(b.getWorldPosition(new T.Vector3())),ds=sc.getWorldPosition(new T.Vector3()).sub(sb.getWorldPosition(new T.Vector3()));
+      if(dd.lengthSq()>1e-10&&ds.lengthSq()>1e-10){var cq=new T.Quaternion().setFromUnitVectors(dd.normalize(),ds.normalize());dR[b.name].premultiply(cq);}}});
   var hS=src.getObjectByName('mixamorigHips'),hD=dst.getObjectByName('mixamorigHips'),hs0=hS.position.y,hd0=hD.position.clone();
   var mx=new T.AnimationMixer(src);mx.clipAction(clip).play();
   var fps=30,n=Math.max(2,Math.round(clip.duration*fps)+1),times=new Float32Array(n),vals={},hy=new Float32Array(n*3),q=new T.Quaternion();bones.forEach(function(b){vals[b.name]=new Float32Array(n*4);});
@@ -1831,7 +1834,7 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
-L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
