@@ -32,3 +32,20 @@ def apply_fast(v,W,P=(0.165,1.28,0.0),Wr=(0.42,0.82,0.0)):
     idx=np.where((W>0)&(np.sign(v[:,0])==side))[0];a=(ang*W[idx])[:,None];r=v[idx]-p
     v[idx]=p+r*np.cos(a)+np.cross(k,r)*np.sin(a)+np.outer(r@k,k)*(1-np.cos(a))
   return v
+def palms_down(v,W,P=(0.165,1.28,0.0),ang=np.pi/2):
+  """after the T-pose: turn each arm about its own (now horizontal) axis so the palms face the floor"""
+  v=v.copy()
+  for side in (1,-1):
+    p=np.array([side*P[0],P[1],P[2]]);k=np.array([1.0,0,0])
+    idx=np.where((W>0)&(np.sign(v[:,0])==side))[0];a=(ang*W[idx])[:,None];r=v[idx]-p
+    v[idx]=p+r*np.cos(a)+np.cross(k,r)*np.sin(a)+np.outer(r@k,k)*(1-np.cos(a))
+  return v
+def palms_down2(v,W,P=(0.165,1.28,0.0),ang=np.pi/2,elbow=0.45,wrist=0.66):
+  """after the T-pose: pronate the forearms (the twist grows from elbow to wrist) so the palms face the floor; upper arm and shoulder untouched"""
+  v=v.copy()
+  for side in (1,-1):
+    p=np.array([side*P[0],P[1],P[2]]);k=np.array([1.0,0,0])
+    idx=np.where((W>0)&(np.sign(v[:,0])==side))[0];tw=ss(elbow,wrist,np.abs(v[idx,0]))*(W[idx]>0.99)
+    a=(ang*tw)[:,None];r=v[idx]-p
+    v[idx]=p+r*np.cos(a)+np.cross(k,r)*np.sin(a)+np.outer(r@k,k)*(1-np.cos(a))
+  return v
