@@ -130,7 +130,7 @@ function loadAlt(key,file,cb){if(GL.alt[key]||GL['altL_'+key]||!T.GLTFLoader)ret
       if(GL.heroAlt===D){GL.dmActs={};if(P.area==='car')dmUse('Driving');}if(key==='suit')kissMix();});
   },undefined,function(e){console.warn('damian '+key,e);});}
 /* Damian wears the black suit everywhere in the Limbo: bathroom, car and party */
-function loadSuit(){loadAlt('suit','damian_suit.glb?v=1',function(D){kissDamian(D);var wc=D.anims.filter(function(a){return /walk/i.test(a.name);})[0];if(wc&&T.SkeletonUtils){GL.walkRig=restClone(D.g,null);GL.walkSrc=wc;makeLunaWalk();}});}
+function loadSuit(){loadAlt('suit','damian_suit.glb?v=2',function(D){kissDamian(D);var wc=D.anims.filter(function(a){return /walk/i.test(a.name);})[0];if(wc&&T.SkeletonUtils){GL.walkRig=restClone(D.g,null);GL.walkSrc=wc;makeLunaWalk();}});}
 function loadDamianPP(){loadSuit();}
 function heroSync(){if(!GL.hero)return;var want=altFor(P.area)||null;if(want===(GL.heroAlt||null))return;
   var old=GL.hero,vis=old.visible,f=GL.fb;
@@ -1132,7 +1132,7 @@ function carTick(dt){
 /* Luna for the car and the party: the angel-costume model (with her own "stand and drink"), the forest Luna until it loads */
 function loadLuna2(){
   if(GL.luna2Loading||!T.GLTFLoader)return;GL.luna2Loading=true;
-  new T.GLTFLoader().load('luna2.glb?v=1',function(gl){
+  new T.GLTFLoader().load('luna2.glb?v=2',function(gl){
     if(GL.lunaCar&&GL.lunaCar.on)return;   /* don't swap her out from under the scene */
     var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
     if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
@@ -1319,7 +1319,7 @@ function partyMusicTick(){
 /* the other girl: the goth girl he cheats with (a real model, posed by aiming the bones) */
 function loadGoth(){
   if(GL.gothLoading||!T.GLTFLoader)return;GL.gothLoading=true;
-  new T.GLTFLoader().load('goth.glb?v=1',function(gl){
+  new T.GLTFLoader().load('goth.glb?v=2',function(gl){
     var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material){o.material.roughness=Math.max(0.45,o.material.roughness||0.5);if(o.material.map)o.material.map.anisotropy=4;}}});
     var b={};['Hips','Spine','Spine2','Neck','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].forEach(function(n){b[n]=g.getObjectByName('mixamorig'+n)||g.getObjectByName('mixamorig:'+n);});
     var q={};for(var n in b)if(b[n])q[n]=b[n].quaternion.clone();
@@ -1366,7 +1366,7 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.suit&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.suit);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb','seb.glb?v=1',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=1',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=1',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=1',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=1',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=1',[0.45,0.95],'own',1.0]].forEach(function(e){
+  [['seb','seb.glb?v=2',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=2',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=2',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=2',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=2',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=2',[0.45,0.95],'own',1.0]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
       m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
