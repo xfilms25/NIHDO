@@ -943,7 +943,7 @@ function carAudio(on){
 function sTick(){noiseBurst(0.02,1800,3,0.12,false);}
 /* entering the car */
 function goCar(loop){
-  if(S.busy)return;loadRoadModels();loadGoth();S.busy=true;sCreak();GL.dCar.want=1.2;
+  if(S.busy)return;loadRoadModels();loadGoth();loadLuna2();S.busy=true;sCreak();GL.dCar.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterCar(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterCar(loop){
@@ -1046,17 +1046,34 @@ function carTick(dt){
     if(S.drive>3.4&&!S.white&&!S.carEnd){S.carEnd=true;whiteout(function(){S.carDone=true;S.drive=0;carAudio(false);if(AU.car){AU.car.eng.frequency.value=30;AU.car.engF.frequency.value=160;}fpHands(0,0,0,0);toHub(true);});}}
 }
 /* Luna, sitting beside him: her own model, legs bent by aiming the bones; she watches the window, then turns to him and reaches */
+/* Luna for the car and the party: the angel-costume model (with her own "stand and drink"), the forest Luna until it loads */
+function loadLuna2(){
+  if(GL.luna2Loading||!T.GLTFLoader)return;GL.luna2Loading=true;
+  new T.GLTFLoader().load('luna2.glb?v=1',function(gl){
+    if(GL.lunaCar&&GL.lunaCar.on)return;   /* don't swap her out from under the scene */
+    var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
+    if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
+    GL.luna=g;g.visible=false;scene.add(g);GL.lunaNew=true;GL.lunaCar=null;GL.lunaStand=null;
+    if(gl.animations&&gl.animations[0]){GL.l2Mix=new T.AnimationMixer(g);GL.l2Act=GL.l2Mix.clipAction(gl.animations[0]);}
+  },undefined,function(){});
+}
+function lunaShow(v){if(!GL.luna)return;if(GL.lunaNew){GL.luna.visible=v;}else{G.lunaOp(v?1:0);if(G.luna.spr)G.luna.spr.visible=!v;}}
+/* standing: her drink at the party; still and watching in the hallway */
+function lunaAnim(dt,drink){
+  if(GL.lunaNew){if(!GL.l2Act)return;if(drink){if(!GL.l2Act.isRunning()){GL.l2Act.reset();GL.l2Act.play();}GL.l2Mix.update(dt);}else{GL.l2Act.play();GL.l2Act.paused=true;GL.l2Act.time=0;GL.l2Mix.update(0);}return;}
+  try{G.lunaIdle(time);}catch(e){}
+}
 function lunaSeat(on){
   if(!GL.luna||!G.luna)return;var Lg=GL.luna;
   if(!GL.lunaCar){var c={on:false,b:{}};['Hips','Spine','Spine1','Spine2','Neck','Head','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].forEach(function(n){c.b[n]=Lg.getObjectByName('mixamorig'+n);});
     c.q={};for(var n in c.b)if(c.b[n])c.q[n]=c.b[n].quaternion.clone();c.light=new T.PointLight(0xa8b8e0,0,1.8,1.6);GL.lunaCar=c;}
   var C=GL.lunaCar;
-  if(on){C.on=true;C.t=0;GL.carBody.add(Lg);Lg.visible=true;G.lunaOp(1);if(G.luna.spr)G.luna.spr.visible=false;Lg.rotation.set(0,Math.PI,0);
+  if(on){if(GL.l2Act)GL.l2Act.stop();C.on=true;C.t=0;GL.carBody.add(Lg);Lg.visible=true;lunaShow(true);Lg.rotation.set(0,Math.PI,0);
     /* size her from her own skeleton: hips to the top of the head ~0.78 m on a woman of 1.65 m */
     if(!C.sc){for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);Lg.scale.setScalar(1);Lg.updateMatrixWorld(true);var top=Lg.getObjectByName('mixamorigHeadTop_End')||C.b.Head,d=C.b.Hips.getWorldPosition(new T.Vector3()).distanceTo(top.getWorldPosition(new T.Vector3()));C.sc=0.78/Math.max(0.01,d);}
     Lg.scale.setScalar(C.sc);
     GL.carBody.add(C.light);C.light.intensity=0.9;GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=false;});}
-  else{if(!C.on)return;C.on=false;for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);scene.add(Lg);Lg.visible=false;G.lunaOp(0);if(G.luna.spr)G.luna.spr.visible=true;Lg.scale.setScalar(1);C.light.intensity=0;
+  else{if(!C.on)return;C.on=false;for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);scene.add(Lg);Lg.visible=false;lunaShow(false);Lg.scale.setScalar(1);C.light.intensity=0;
     GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=true;});}
 }
 function lunaSeatTick(dt){
@@ -1259,12 +1276,13 @@ function lunaStandScale(){var L=GL.luna;if(!L)return 1;if(GL.lunaStand)return GL
   var keep=L.scale.x;L.scale.setScalar(1);L.updateMatrixWorld(true);var top=L.getObjectByName('mixamorigHeadTop_End')||L.getObjectByName('mixamorigHead'),hip=L.getObjectByName('mixamorigHips');
   var d=hip&&top?hip.getWorldPosition(new T.Vector3()).distanceTo(top.getWorldPosition(new T.Vector3())):1;L.scale.setScalar(keep);GL.lunaStand=0.78/Math.max(0.01,d);return GL.lunaStand;}
 function placeLunaParty(i){
-  if(!GL.luna)return;var L=GL.luna,sp=GL.lunaSpots[i];GL.party.add(L);L.scale.setScalar(lunaStandScale());L.visible=true;G.lunaOp(1);if(G.luna.spr)G.luna.spr.visible=false;
-  if(GL.lunaCar&&GL.lunaCar.q)for(var m in GL.lunaCar.q)GL.lunaCar.b[m].quaternion.copy(GL.lunaCar.q[m]);
+  if(!GL.luna)return;var L=GL.luna,sp=GL.lunaSpots[i];GL.party.add(L);L.scale.setScalar(lunaStandScale());L.visible=true;lunaShow(true);
+  if(GL.lunaCar&&GL.lunaCar.q&&!GL.lunaNew)for(var m in GL.lunaCar.q)GL.lunaCar.b[m].quaternion.copy(GL.lunaCar.q[m]);
+  if(GL.lunaNew&&GL.l2Mix){GL.l2Act.stop();GL.l2Act.reset();GL.l2Act.play();GL.l2Mix.update(0.01);}
   L.position.set(sp[0],0,sp[1]);L.updateMatrixWorld(true);var mn=new T.Box3().setFromObject(L).min.y;S.lunaI=i;
   if(!GL.lunaPL){GL.lunaPL=new T.PointLight(0xf0e8ff,0,3,1.6);GL.party.add(GL.lunaPL);}GL.lunaPL.position.set(sp[0],2.1,sp[1]+0.6);GL.lunaPL.intensity=1.8;
 }
-function hideLunaParty(){if(GL.luna&&GL.luna.parent===GL.party){scene.add(GL.luna);GL.luna.visible=false;G.lunaOp(0);if(G.luna.spr)G.luna.spr.visible=true;}if(GL.lunaPL)GL.lunaPL.intensity=0;}
+function hideLunaParty(){if(GL.luna&&GL.luna.parent===GL.party){scene.add(GL.luna);GL.luna.visible=false;lunaShow(false);}if(GL.lunaPL)GL.lunaPL.intensity=0;}
 function nextPartyLoop(delay){
   after(delay||4,function(){S.busy=true;fadeTo(1,1.0,function(){if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}enterParty(S.loop+1);fadeTo(0,1.2,function(){S.busy=false;});});});
 }
@@ -1285,7 +1303,7 @@ function partyTick(dt){
   if(GL.gothWatch&&GL.gothWatch.visible){var gw=GL.gothWatch,ty=Math.atan2(px-gw.position.x,pz-gw.position.z);gw.rotation.y+=Math.atan2(Math.sin(ty-gw.rotation.y),Math.cos(ty-gw.rotation.y))*Math.min(1,dt*0.8);}
   /* 1: she is always just ahead, in the crowd */
   if(L===1&&!S.trig&&GL.luna&&GL.luna.visible){var sp=GL.lunaSpots[S.lunaI],dd=Math.hypot(px-sp[0],pz-sp[1]);
-    try{G.lunaIdle(time);}catch(e){}GL.luna.rotation.y=Math.atan2(px-sp[0],pz-sp[1])+Math.PI*0.85;
+    lunaAnim(dt,true);GL.luna.rotation.y=Math.atan2(px-sp[0],pz-sp[1])+Math.PI*0.85;
     if(dd<2.1){sWhoosh(0.5);GL.luna.visible=false;GL.lunaPL.intensity=0;
       if(S.lunaI<2){var nx=S.lunaI+1;after(1.4,function(){placeLunaParty(nx);});}
       else{S.trig=true;hideLunaParty();vo('p1',5000,0);nextPartyLoop(5.5);}}}
@@ -1334,7 +1352,7 @@ function kissTick(dt){
   /* he turns round */
   if(k>5.2){var tu=ss(5.2,6.6,k);P.yaw=Math.PI+tu*Math.PI;if(!S.lunaBack&&GL.luna){S.lunaBack=1;placeLunaParty(2);var L=GL.luna;L.position.set(0,0,-PD-HL+2.6);L.rotation.y=Math.PI;GL.lunaPL.position.set(0.2,2.0,-PD-HL+1.9);GL.lunaPL.intensity=1.6;
       if(AU.party)AU.party.g.gain.setTargetAtTime(0,ac.currentTime,0.08);sBoom(0.5);}}
-  if(k>6.6&&k<9.6&&GL.luna){try{G.lunaIdle(time);}catch(e){}GL.luna.rotation.y=Math.PI;}
+  if(k>6.6&&k<9.6&&GL.luna){lunaAnim(dt,false);GL.luna.rotation.y=Math.PI;}
   if(k>9.6&&!S.pEnd){S.pEnd=true;whiteout(function(){S.partyDone=true;S.lunaBack=0;S.pEnd=false;S.kiss=-1;S.lockInput=false;hideLunaParty();partyAudio(false);GL.kissRoom.visible=false;toHub(true);});}
 }
 /* ---------- areas and transitions ---------- */
@@ -1344,7 +1362,7 @@ function setArea(a){if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
-  if(S.busy)return;loadRoadModels();S.busy=true;sCreak();GL.dBed.want=1.2;
+  if(S.busy)return;loadRoadModels();loadLuna2();S.busy=true;sCreak();GL.dBed.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterRoom(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterRoom(loop){
@@ -1654,7 +1672,7 @@ function resetState(){
   GL.veil.position.set(0,0,-5);GL.veil.scale.set(1,1,1);GL.veil.material.opacity=1;
   GL.spot.color.setHex(0xf3eee4);GL.cone.material.uniforms.c.value.setHex(0xf3eee4);GL.spot.intensity=5;
   GL.dBed.light.intensity=0.5;GL.dBed.strip.material.opacity=0.55;S.carDone=false;S.partyDone=false;S.camDY=0;
-  if(GL.luna){GL.luna.visible=false;G.lunaOp(0);}
+  if(GL.luna){lunaShow(false);}
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   dmStop();S.fpOpen=0;UI.lbHands.style.opacity='0';UI.lbHands.innerHTML=handsSVG();armsHide();UI.lbDeep.style.opacity='0';fpHands(0,0,0,0);GL.veil.rotation.y=0;
   if(ac&&AU.drone){AU.drone.gain.cancelScheduledValues(ac.currentTime);AU.drone.gain.setTargetAtTime(1,ac.currentTime,0.5);}UI.lbEnd.style.display='none';UI.lbWhite.style.opacity='0';
@@ -1667,7 +1685,7 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
-L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
