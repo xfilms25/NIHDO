@@ -98,10 +98,18 @@ function makeFPHands(){
 function loadDamianClips(){
   if(GL.clipsLoading)return;GL.clipsLoading=true;
   fetch('damian_anims.json?v=1').then(function(r){return r.json();}).then(function(j){GL.clips={};for(var n in j){try{GL.clips[n]=T.AnimationClip.parse(j[n]);}catch(e){}}
-    if(P.area==='car'&&!S.dmUse)dmUse('Driving');if(GL.dClone&&GL.clips.Kiss&&GL.dClone.isObject3D){GL.dcMix=new T.AnimationMixer(GL.dClone);GL.dcAct=GL.dcMix.clipAction(GL.clips.Kiss);GL.dcAct.play();}
+    if(P.area==='car'&&!S.dmUse)dmUse('Driving');kissMix();
   }).catch(function(){});
 }
-function dmAct(name){var D=DM();if(!GL.clips||!GL.clips[name]||!D||!D.mixer)return null;GL.dmActs=GL.dmActs||{};return GL.dmActs[name]||(GL.dmActs[name]=D.mixer.clipAction(GL.clips[name]));}
+function dmAct(name){var D=DM();if(!GL.clips||!GL.clips[name]||!D||!D.mixer)return null;var clip=GL.clips[name];if(D!==G.dmn){clip=altClip(D,name,clip);if(!clip)return null;}
+  GL.dmActs=GL.dmActs||{};return GL.dmActs[name]||(GL.dmActs[name]=D.mixer.clipAction(clip));}
+/* his clips were made on his old rig: the new bodies get them re-aimed bone by bone (see retarget) */
+function damRest(cb){if(GL.dRest){cb(GL.dRest);return;}(GL.dRestQ=GL.dRestQ||[]).push(cb);if(GL.dRestL)return;GL.dRestL=true;
+  fetch('damian.b64.txt').then(function(r){return r.text();}).then(function(t){var bin=atob(t.trim()),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    new T.GLTFLoader().parse(u.buffer,'',function(g){GL.dRest=restClone(g.scene,null);var q=GL.dRestQ;GL.dRestQ=[];q.forEach(function(f){try{f(GL.dRest);}catch(e){console.warn(e);}});});}).catch(function(e){console.warn('damRest',e);});}
+function altClip(D,name,clip){if(!D.src||!clip)return null;D.rc=D.rc||{};if(!D.rc[name]){try{D.rc[name]=retarget(restClone(D.src,null),clip,D.rest);}catch(e){console.warn('rt '+name,e);D.rc[name]=null;}}return D.rc[name];}
+function kissMix(){var D=GL.alt.suit;if(!GL.dClone||!GL.dClone.isObject3D||!GL.clips||!GL.clips.Kiss)return;
+  var c=GL.clips.Kiss;if(D&&GL.dClone.userData.suit){c=altClip(D,'Kiss',c);if(!c)return;}GL.dcMix=new T.AnimationMixer(GL.dClone);GL.dcAct=GL.dcMix.clipAction(c);GL.dcAct.play();}
 /* Damian's other bodies: before the party (white shirt, painted face) in the bathroom and the car; the black suit at the party */
 function DM(){return GL.heroAlt||G.dmn;}
 function altFor(a){return a==='party'?GL.alt.suit:(a==='room'||a==='car')?GL.alt.pp:null;}
@@ -115,9 +123,11 @@ function loadAlt(key,file,cb){if(GL.alt[key]||GL['altL_'+key]||!T.GLTFLoader)ret
     var al=function(r){var a=r.getObjectByName('mixamorigRightArm'),b=r.getObjectByName('mixamorigRightForeArm'),c=r.getObjectByName('mixamorigRightHand');if(!a||!b||!c)return 0;r.updateMatrixWorld(true);var pa=a.getWorldPosition(new T.Vector3()),pb=b.getWorldPosition(new T.Vector3()),pc=c.getWorldPosition(new T.Vector3());return (pa.distanceTo(pb)+pb.distanceTo(pc))/r.scale.x;};
     var la=al(m),lo=G.hero?al(G.hero):0;if(la>0&&lo>0)sc=Math.max(sc,0.5*(sc+lo/la));
     m.scale.setScalar(sc);m.visible=false;scene.add(m);
-    var D={g:m,key:key,sc:sc,mixer:new T.AnimationMixer(m),acts:{},anims:g.animations||[]},A=G.dmn&&G.dmn.acts;
-    if(A)['idle','walk'].forEach(function(n){if(A[n]){var ac2=D.mixer.clipAction(A[n].getClip());ac2.play();ac2.setEffectiveWeight(0);D.acts[n]=ac2;}});
+    var D={g:m,key:key,sc:sc,mixer:new T.AnimationMixer(m),acts:{},anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};
     GL.alt[key]=D;heroSync();if(cb)cb(D);
+    if(D.rest)damRest(function(src){D.src=src;var A=G.dmn&&G.dmn.acts;
+      if(A)['idle','walk'].forEach(function(n){if(A[n]){var c=altClip(D,n,A[n].getClip());if(!c)return;var ac2=D.mixer.clipAction(c);ac2.play();ac2.setEffectiveWeight(0);D.acts[n]=ac2;}});
+      if(GL.heroAlt===D){GL.dmActs={};if(P.area==='car')dmUse('Driving');}if(key==='suit')kissMix();});
   },undefined,function(e){console.warn('damian '+key,e);});}
 function loadDamianPP(){loadAlt('pp','damian_pp.glb?v=2');}
 function heroSync(){if(!GL.hero)return;var want=altFor(P.area)||null;if(want===(GL.heroAlt||null))return;
@@ -1357,9 +1367,9 @@ function castTick(dt){if(!GL.cast)return;var px=P.x-PO.x,pz=P.z-PO.z,watch=S.loo
     var ty=watch>0?Math.atan2(px-C.g.position.x,pz-C.g.position.z):C.yaw;C.g.rotation.y+=Math.atan2(Math.sin(ty-C.g.rotation.y),Math.cos(ty-C.g.rotation.y))*Math.min(1,dt*1.5);}}
 /* the Damian behind the door wears the suit too */
 function kissDamian(D){if(!T.SkeletonUtils||!GL.kissRoom)return;try{var dm=T.SkeletonUtils.clone(D.g);dm.traverse(function(o){o.frustumCulled=false;});
-  var hd=dm.getObjectByName('mixamorigHead');if(hd)hd.scale.setScalar(1);dm.visible=true;dm.scale.setScalar(D.sc);
+  var hd=dm.getObjectByName('mixamorigHead');if(hd)hd.scale.setScalar(1);dm.visible=true;dm.scale.setScalar(D.sc);dm.userData.suit=true;
   if(GL.dClone&&GL.dClone.parent)GL.dClone.parent.remove(GL.dClone);GL.kissRoom.add(dm);dm.position.set(-0.22,0,-1.55);dm.rotation.y=Math.PI/2-0.25;GL.dClone=dm;
-  if(GL.clips&&GL.clips.Kiss){GL.dcMix=new T.AnimationMixer(dm);GL.dcAct=GL.dcMix.clipAction(GL.clips.Kiss);GL.dcAct.play();}else GL.dcMix=null;}catch(e){console.warn('kissDamian',e);}}
+  GL.dcMix=null;kissMix();}catch(e){console.warn('kissDamian',e);}}
 /* moving a clip between two different rigs: compare each bone in world space against its own rest pose, then rebuild the locals */
 function boneRest(root){var r={};root.traverse(function(o){if(o.isBone)r[o.name]=o.quaternion.clone();});return r;}
 function restClone(root,rest){var c=T.SkeletonUtils.clone(root);c.position.set(0,0,0);c.rotation.set(0,0,0);c.scale.setScalar(1);if(rest)c.traverse(function(o){if(o.isBone&&rest[o.name])o.quaternion.copy(rest[o.name]);});c.updateMatrixWorld(true);return c;}
