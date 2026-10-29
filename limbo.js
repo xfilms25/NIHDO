@@ -1070,6 +1070,7 @@ function lunaSeat(on){
   var C=GL.lunaCar;
   if(on){if(GL.l2Act)GL.l2Act.stop();C.on=true;C.t=0;GL.carBody.add(Lg);Lg.visible=true;lunaShow(true);Lg.rotation.set(0,Math.PI,0);
     /* size her from her own skeleton: hips to the top of the head ~0.78 m on a woman of 1.65 m */
+    if(GL.lunaNew)C.sc=1.0;
     if(!C.sc){for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);Lg.scale.setScalar(1);Lg.updateMatrixWorld(true);var top=Lg.getObjectByName('mixamorigHeadTop_End')||C.b.Head,d=C.b.Hips.getWorldPosition(new T.Vector3()).distanceTo(top.getWorldPosition(new T.Vector3()));C.sc=0.78/Math.max(0.01,d);}
     Lg.scale.setScalar(C.sc);
     GL.carBody.add(C.light);C.light.intensity=0.9;GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=false;});}
@@ -1080,13 +1081,13 @@ function lunaSeatTick(dt){
   var C=GL.lunaCar,Lg=GL.luna,B=GL.carBody,b=C.b;C.t+=dt;
   for(var m in C.q)b[m].quaternion.copy(C.q[m]);
   /* sit: hips on the cushion, a little back */
-  var seat=new T.Vector3(0.3,0.76,-0.06);Lg.position.set(0,0,0);Lg.updateMatrixWorld(true);
+  var seat=new T.Vector3(0.3,GL.lunaNew?0.69:0.76,GL.lunaNew?-0.02:-0.06);Lg.position.set(0,0,0);Lg.updateMatrixWorld(true);
   var hp=B.worldToLocal(b.Hips.getWorldPosition(new T.Vector3()));Lg.position.set(seat.x-hp.x,seat.y-hp.y,seat.z-hp.z);Lg.updateMatrixWorld(true);
   function W(x,y,z){return B.localToWorld(new T.Vector3(x,y,z));}
   /* legs: thighs forward, shins down to the floor */
-  [['Left',-0.09],['Right',0.09]].forEach(function(e){var x=0.3+e[1];aimBone(b[e[0]+'UpLeg'],b[e[0]+'Leg'],W(x,0.8,-0.52));aimBone(b[e[0]+'Leg'],b[e[0]+'Foot'],W(x+e[1]*0.3,0.42,-0.62));});
+  [['Left',-0.09],['Right',0.09]].forEach(function(e){var x=0.3+e[1];var kz=GL.lunaNew?-0.46:-0.52,ky=GL.lunaNew?0.72:0.8;aimBone(b[e[0]+'UpLeg'],b[e[0]+'Leg'],W(x,ky,kz));aimBone(b[e[0]+'Leg'],b[e[0]+'Foot'],W(x+e[1]*0.3,0.3,kz-0.06));});
   /* back against the seat, a slight slump */
-  aimBone(b.Spine,b.Neck,W(0.32,1.4,0.02));
+  aimBone(b.Spine,b.Neck,GL.lunaNew?W(0.31,1.4,-0.06):W(0.32,1.4,0.02));
   /* she looks out of her window; when she gives it to him, she turns */
   var g=S.give>=0?S.give:-1,turn=g<0?0:ss(0.2,1.2,g);
   /* the neck stays upright and only leans a little toward where she looks; the head turns with it */
@@ -1272,7 +1273,7 @@ function enterParty(loop){
   if(loop===3)after(1.5,function(){hint(tx('dontLook'),3000);});
   if(loop===4)after(1.5,function(){hint(tx('someone'),2600);});
 }
-function lunaStandScale(){var L=GL.luna;if(!L)return 1;if(GL.lunaStand)return GL.lunaStand;
+function lunaStandScale(){var L=GL.luna;if(!L)return 1;if(GL.lunaNew)return 1.0;if(GL.lunaStand)return GL.lunaStand;
   var keep=L.scale.x;L.scale.setScalar(1);L.updateMatrixWorld(true);var top=L.getObjectByName('mixamorigHeadTop_End')||L.getObjectByName('mixamorigHead'),hip=L.getObjectByName('mixamorigHips');
   var d=hip&&top?hip.getWorldPosition(new T.Vector3()).distanceTo(top.getWorldPosition(new T.Vector3())):1;L.scale.setScalar(keep);GL.lunaStand=0.78/Math.max(0.01,d);return GL.lunaStand;}
 function placeLunaParty(i){
