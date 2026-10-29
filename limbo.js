@@ -101,7 +101,30 @@ function loadDamianClips(){
     if(P.area==='car'&&!S.dmUse)dmUse('Driving');if(GL.dClone&&GL.clips.Kiss&&GL.dClone.isObject3D){GL.dcMix=new T.AnimationMixer(GL.dClone);GL.dcAct=GL.dcMix.clipAction(GL.clips.Kiss);GL.dcAct.play();}
   }).catch(function(){});
 }
-function dmAct(name){if(!GL.clips||!GL.clips[name]||!G.dmn||!G.dmn.mixer)return null;GL.dmActs=GL.dmActs||{};return GL.dmActs[name]||(GL.dmActs[name]=G.dmn.mixer.clipAction(GL.clips[name]));}
+function dmAct(name){var D=DM();if(!GL.clips||!GL.clips[name]||!D||!D.mixer)return null;GL.dmActs=GL.dmActs||{};return GL.dmActs[name]||(GL.dmActs[name]=D.mixer.clipAction(GL.clips[name]));}
+/* Damian as he leaves for the party (white shirt, painted face): his body in the bathroom and in the car */
+function DM(){return GL.heroPP&&GL.pp?GL.pp:G.dmn;}
+function loadDamianPP(){if(GL.ppLoading||!T.GLTFLoader)return;GL.ppLoading=true;
+  new T.GLTFLoader().load('damian_pp.glb?v=2',function(g){var m=g.scene;
+    m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.roughness=0.85;x.metalness=0;});}});
+    m.updateMatrixWorld(true);var hp=m.getObjectByName('mixamorigHips'),hy=hp?hp.getWorldPosition(new T.Vector3()).y:0.9677;
+    var sc=0.8324/Math.max(0.1,hy);
+    /* his arms have to reach the same wheel and the same mirror: match arm length to the old rig */
+    var al=function(r){var a=r.getObjectByName('mixamorigRightArm'),b=r.getObjectByName('mixamorigRightForeArm'),c=r.getObjectByName('mixamorigRightHand');if(!a||!b||!c)return 0;r.updateMatrixWorld(true);var pa=a.getWorldPosition(new T.Vector3()),pb=b.getWorldPosition(new T.Vector3()),pc=c.getWorldPosition(new T.Vector3());return (pa.distanceTo(pb)+pb.distanceTo(pc))/r.scale.x;};
+    var la=al(m),lo=G.hero?al(G.hero):0;if(la>0&&lo>0)sc=Math.max(sc,0.5*(sc+lo/la));GL.ppInfo=[sc,la,lo,hy];
+    m.scale.setScalar(sc);m.visible=false;scene.add(m);
+    var D={g:m,mixer:new T.AnimationMixer(m),acts:{}},A=G.dmn&&G.dmn.acts;
+    if(A)['idle','walk'].forEach(function(n){if(A[n]){var a=D.mixer.clipAction(A[n].getClip());a.play();a.setEffectiveWeight(0);D.acts[n]=a;}});
+    GL.pp=D;heroSync();
+  },undefined,function(e){console.warn('damian_pp',e);});}
+function heroSync(){var want=!!(GL.pp&&(P.area==='room'||P.area==='car'));if(want===!!GL.heroPP||!GL.hero)return;
+  var old=GL.hero,vis=old.visible,f=GL.fb;
+  if(f){if(f.Head)f.Head.scale.setScalar(1);if(f.q)for(var n in f.q)f[n].quaternion.copy(f.q[n]);}
+  var use=S.dmUse;dmStop();GL.dmActs={};
+  GL.heroPP=want;GL.hero=want?GL.pp.g:G.hero;GL.fb=undefined;
+  GL.hero.position.copy(old.position);GL.hero.rotation.copy(old.rotation);old.visible=false;GL.hero.visible=vis;
+  if(vis){var f2=fbInit();if(f2&&f2.Head)f2.Head.scale.setScalar(0.001);}
+  if(use)dmUse(use);}
 function dmUse(name,o){o=o||{};var a=dmAct(name);if(!a)return false;dmStop();a.reset();a.setLoop(o.once?T.LoopOnce:T.LoopRepeat,Infinity);a.clampWhenFinished=true;a.timeScale=o.speed||1;a.setEffectiveWeight(1);a.play();if(o.at)a.time=o.at;S.dmUse=name;return true;}
 function dmStop(){if(GL.dmActs)for(var n in GL.dmActs){GL.dmActs[n].stop();}S.dmUse=null;}
 /* his body behind the camera, head hidden, so his arms are what you see */
@@ -116,6 +139,21 @@ function fbInit(){if(GL.fb!==undefined)return GL.fb;var h=GL.hero,f={};if(!h)ret
   ['LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','Head'].forEach(function(n){f[n]=h.getObjectByName('mixamorig'+n);});
   if(!f.LeftArm||!f.RightArm||!f.LeftForeArm||!f.RightForeArm||!f.LeftHand||!f.RightHand)return (GL.fb=null);
   f.q={};['LeftArm','LeftForeArm','RightArm','RightForeArm'].forEach(function(n){f.q[n]=f[n].quaternion.clone();});return (GL.fb=f);}
+/* turn a hand so its palm and fingers point where asked, then close the fingers (rig-agnostic: reads the knuckles) */
+var _hv1=new T.Vector3(),_hv2=new T.Vector3(),_hq=new T.Quaternion(),_hm=new T.Matrix4(),_hm2=new T.Matrix4(),_ha=new T.Vector3(),_hb=new T.Vector3(),_hc=new T.Vector3(),_hd=new T.Vector3(),_hx=new T.Vector3(),_hy=new T.Vector3(),_hz=new T.Vector3();
+function handFrame(HD,side,F,N){var r=HD.parent;while(r.parent&&r.parent.parent)r=r.parent;var g=function(n){return HD.getObjectByName('mixamorig'+side+'Hand'+n);};
+  var mi=g('Middle1'),ix=g('Index1'),pk=g('Pinky1');if(!mi||!ix||!pk)return false;HD.updateMatrixWorld(true);
+  HD.getWorldPosition(_ha);mi.getWorldPosition(_hb);ix.getWorldPosition(_hc);pk.getWorldPosition(_hd);
+  F.copy(_hb).sub(_ha).normalize();_hc.sub(_hd).normalize();N.crossVectors(F,_hc).multiplyScalar(side==='Right'?-1:1).normalize();return true;}
+function handPose(HD,side,palm,fwd,curl){
+  if(!handFrame(HD,side,_hx,_hy))return;
+  _hz.crossVectors(_hx,_hy);_hm.makeBasis(_hx,_hy,_hz);
+  var tf=_ha.copy(fwd).normalize(),tp=_hb.copy(palm).addScaledVector(tf,-palm.dot(tf)).normalize();_hc.crossVectors(tf,tp);_hm2.makeBasis(tf,tp,_hc);
+  _hq.setFromRotationMatrix(_hm2.multiply(_hm.transpose()));
+  var wq=HD.getWorldQuaternion(_q2).premultiply(_hq);HD.parent.getWorldQuaternion(_q3);HD.quaternion.copy(_q3.invert().multiply(wq));HD.updateMatrixWorld(true);
+  if(!curl)return;var ax=_hd.crossVectors(tf,tp).normalize();
+  ['Index','Middle','Ring','Pinky','Thumb'].forEach(function(fn){for(var j=1;j<=3;j++){var b=HD.getObjectByName('mixamorig'+side+'Hand'+fn+j);if(!b)continue;
+    var ang=(fn==='Thumb'?0.35:(j===1?0.9:0.8))*curl;_hq.setFromAxisAngle(ax,ang);var bq=b.getWorldQuaternion(_q2).premultiply(_hq);b.parent.getWorldQuaternion(_q3);b.quaternion.copy(_q3.invert().multiply(bq));b.updateMatrixWorld(true);}});}
 function aimBone(b,c,target){
   b.updateMatrixWorld(true);b.getWorldPosition(_v1);c.getWorldPosition(_v2);
   _v2.sub(_v1).normalize();_v3.copy(target).sub(_v1).normalize();
@@ -487,7 +525,7 @@ function build(){
   /* the player carries no light; a faint presence keeps the nearest few metres readable */
   GL.near=new T.PointLight(0x8090a0,0.35,4.5,2);scene.add(GL.near);
   GL.rip=[];GL.ripI=0;for(var ri=0;ri<10;ri++){var rm=new T.Mesh(new T.RingGeometry(0.9,1.0,48).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0xc8d4e0,transparent:true,opacity:0,depthWrite:false,fog:false}));rm.visible=false;scene.add(rm);GL.rip.push({m:rm,t:9,big:1});}
-  loadHandModel();loadVeilModels();makeFPHands();loadKitModels();loadDoorModels();loadDamianClips();
+  loadHandModel();loadVeilModels();makeFPHands();loadKitModels();loadDoorModels();loadDamianClips();loadDamianPP();
 
   /* === HUB: endless dark, one light from above === */
   var H=GL.hub=new T.Group();scene.add(H);
@@ -971,15 +1009,16 @@ function nextCarLoop(delay){
 function carArms(dt){
   var f=fbInit();if(!f)return;var h=GL.hero;GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
   h.position.set(P.x,S.camDY,P.z+0.05);h.rotation.y=Math.PI;h.updateMatrixWorld(true);
-  if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+0.14);h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
+  if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
   var w=CAR.wheel,br=Math.sin(time*1.6)*0.004;
-  var L1=cw(w[0]-0.15,w[1]+0.07+br,w[2]+0.04),R1=cw(w[0]+0.15,w[1]+0.07+br,w[2]+0.04);
+  var hi=GL.heroPP?0.11:0.15,hu=GL.heroPP?0.1:0.07,L1=cw(w[0]-hi,w[1]+hu+br,w[2]+0.06),R1=cw(w[0]+hi,w[1]+hu+br,w[2]+0.06);
   /* the little walking figure: two fingers stepping across the dash toward her seat */
   if(S.walk>=0){var u=S.walk;var x=-0.12+0.5*ss(0.6,3.6,u),hop=Math.abs(Math.sin(u*7))*0.025*(u>0.6&&u<3.6?1:0),back=ss(5.2,6.4,u);
     var tgt=cw(x,CAR.dash[1]+0.02+hop,CAR.dash[2]);R1.lerp(tgt,ss(0,0.6,u)*(1-back));}
   if(S.give>=0){var g2=S.give;R1.lerp(cw(0.06,CAR.hand[1]+0.02,CAR.hand[2]-0.1),ss(0,1.0,g2)*(1-ss(6.2,7.2,g2)));}
   [['Left',L1,-1],['Right',R1,1]].forEach(function(e){var A=f[e[0]+'Arm'],FA=f[e[0]+'ForeArm'],HD=f[e[0]+'Hand'];
-    A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);});
+    A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);
+    if(GL.heroPP){var cf=_hv1.set(-e[2]*0.25,1,0.2),cp=_hv2.set(-e[2]*0.2,-0.3,-1);handPose(HD,e[0],cp,cf,S.walk>=0||S.give>=0?0.3:1);}});
 }
 function carTick(dt){
   var L4=S.loop===4;
@@ -1394,7 +1433,7 @@ function kissTick(dt){
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
 function setArea(a){if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
-  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
+  P.area=a;heroSync();GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
@@ -1557,7 +1596,7 @@ L.frame=function(dt){
   /* Damian's body (only the mirror sees it) */
   if(S.fpOpen>0){S.fpOpen-=dt;fpBody(0.16,0.06);if(S.fpOpen<=0){fpBodyOff();if(S.dmUse==='Opening')dmStop();}}
   if(!GL.fpOn){GL.hero.position.set(P.x,0,P.z);GL.hero.rotation.y=P.yaw;}
-  if(G.dmn&&G.dmn.mixer&&G.dmn.acts){var A=G.dmn.acts,wk=S.dmUse?0:Math.min(1,P.spd/1.2);if(A.idle)A.idle.setEffectiveWeight(S.dmUse?0:1-wk);if(A.walk){A.walk.setEffectiveWeight(wk);A.walk.timeScale=Math.max(0.6,P.spd/0.95);}if(A.run)A.run.setEffectiveWeight(0);G.dmn.mixer.update(dt);}
+  var DD=DM();if(DD&&DD.mixer&&DD.acts){var A=DD.acts,wk=S.dmUse?0:Math.min(1,P.spd/1.2);if(A.idle)A.idle.setEffectiveWeight(S.dmUse?0:1-wk);if(A.walk){A.walk.setEffectiveWeight(wk);A.walk.timeScale=Math.max(0.6,P.spd/0.95);}if(A.run)A.run.setEffectiveWeight(0);DD.mixer.update(dt);}
   if(GL.hol&&G.hol.mixer&&(GL.hol.visible||S.holMirror)){G.hol.mixer.update(dt);}
   /* doors swing */
   [GL.dBed,GL.dCar,GL.dParty,GL.pDoor,GL.dExit,GL.dBath].forEach(function(d){d.open+=(d.want-d.open)*Math.min(1,dt*2.5);d.piv.rotation.y=-d.open;});
@@ -1731,7 +1770,7 @@ L.init=function(api,done){
     var bl=G.bloom();if(bl){bl.strength=0.55;bl.threshold=0.7;}
     window.addEventListener('resize',function(){cam.aspect=window.innerWidth/window.innerHeight;cam.updateProjectionMatrix();});
     /* the forest is gone: free what it held on the graphics card */
-    setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
+    setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(GL.pp&&GL.pp.g)||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
     resetState();L.ready=true;
     /* compile shaders once, behind the black */
     try{R.compile(scene,cam);}catch(e){}
