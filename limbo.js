@@ -5,6 +5,7 @@
 'use strict';
 var L={ready:false};window.LIMBO=L;
 var G,T=window.THREE,R,scene,cam,ac,AU={},UI={},GL={};
+var HOLS=0.235; /* Hollow at Damian's height in the Limbo */
 var RO={x:0,z:-60};            /* the bedroom lives here, far from the hub */
 var CO={x:80,z:0};             /* the car, stopped at the red light */
 var PO={x:-80,z:0};            /* the party house */
@@ -24,7 +25,7 @@ var TX={
   endA:'Continuará',endB:'Parte II · El Limbo',endC:'La habitación. El carro. La fiesta. Ahora él sabe.',menu:'Menú principal',again:'Volver a jugar',
   brush:'El labial rojo',mirror:'El espejo',neck:'El collar',door:'La puerta',
   tune:'Sintonizar',reach:'Acercarte',takeHand:'Tomar su mano',radio:'La radio',rear:'El retrovisor',nextDoor:'Otra puerta te espera.',
-  c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédatelo.',
+  noStare:'No lo mires fijamente.',c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédatelo.',
   findHer:'Encuéntrala.',hall:'El pasillo.',someone:'Hay alguien adentro.',p1:'Te busqué toda la noche.',p2:'Nadie me veía.',p3:'No me sueltes.'},
  en:{lily:'I believe the white lily appears when love goes rotten.',find:'Find the light.',dontLook:"Don't look back.",
   open:'Open',look:'Look',take:'Take',veil:'Lift the veil',locked:'Not yet.',stuck:"It won't open.",
@@ -35,7 +36,7 @@ var TX={
   endA:'To be continued',endB:'Part II · Limbo',endC:'The bedroom. The car. The party. Now he knows.',menu:'Main menu',again:'Play again',
   brush:'The red lipstick',mirror:'The mirror',neck:'The necklace',door:'The door',
   tune:'Tune',reach:'Reach out',takeHand:'Take her hand',radio:'The radio',rear:'The rear-view mirror',nextDoor:'Another door is waiting.',
-  c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Keep it.',
+  noStare:"Don't stare at him.",c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Keep it.',
   findHer:'Find her.',hall:'The hallway.',someone:'Someone is inside.',p1:'I looked for you all night.',p2:'Nobody could see me.',p3:"Don't let go of me."}};
 function tx(k){var l=(G&&G.lang())==='es'?'es':'en';return TX[l][k]!==undefined?TX[l][k]:k;}
 
@@ -814,7 +815,7 @@ function dressCar(m){
     function L(x,y,z){return [-x*bs,y*bs+oy,-z*bs];}
     CAR.eye=L(0.355,1.27,0.2);CAR.wheel=L(0.335,0.86,0.69);CAR.radio=L(0.0,0.93,0.93);CAR.mirror=L(0.005,1.325,0.85);CAR.dash=L(0.12,1.03,0.86);
     CAR.hol=[0.1,L(0,0.3,0)[1]-0.87,0.62];CAR.hand=[0.46,L(0,0.56,0)[1]+0.24,-0.16];
-    if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1]-0.005,CAR.mirror[2]+0.032);GL.carMirror.rotation.set(0.1,-0.16,0);GL.carMirror.scale.set(0.72,0.95,1);}
+    if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1]-0.005,CAR.mirror[2]+0.032);GL.carMirror.rotation.set(0.02,-0.13,0);GL.carMirror.scale.set(0.72,0.95,1);}
     GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
     GL.dashL.position.set(CAR.wheel[0],CAR.wheel[1]+0.02,CAR.wheel[2]+0.2);GL.dashL.distance=0.7;GL.radioL.position.set(CAR.radio[0],CAR.radio[1]+0.02,CAR.radio[2]+0.1);
     /* rain on the windshield and her fogged window, moved onto the real glass */
@@ -947,7 +948,7 @@ function goCar(loop){
   after(0.5,function(){fadeTo(1,0.6,function(){enterCar(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterCar(loop){
-  setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3+Math.floor(Math.random()*3);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
+  setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.leanT=0;S.leanSnd=0;if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3+Math.floor(Math.random()*3);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
   S.ring=Math.min(S.ring,0.2);
   P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.03;S.camDY=CAR.eye[1]-EYE;P.spd=0;
   GL.street.position.z=0;GL.carBody.position.y=0;S.dist=0;if(GL.road)placeRoad(0);
@@ -959,7 +960,7 @@ function enterCar(loop){
   carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
   if(loop===1)after(2.2,function(){hint(tx('radio'),2600);});
   if(loop===2)after(2.2,function(){hint(tx('reach'),2600);});
-  if(loop===3)after(2.2,function(){hint(tx('rear'),2600);});
+  S.knock1=S.knock2=0;
 }
 function setTL(c){GL.tlR.color.setHex(c==='red'?0xff1a10:0x200606);GL.tlG.color.setHex(c==='green'?0x20ff70:0x06200e);
   var col=c==='red'?0xff2010:0x30ff80;GL.tlGlow.material.color.setHex(col);GL.tlLight.color.setHex(col);GL.tlGlow.position.y=GL.tlHeads?(c==='red'?GL.tlHeads.red:GL.tlHeads.green):(c==='red'?6.32:5.68);}
@@ -1008,15 +1009,29 @@ function carTick(dt){
   /* 1: the radio has lost her; tune until she comes through */
   if(S.loop===1&&AU.car)GL.radioNeedle.position.x=CO.x*0+CAR.radio[0]-0.09+((S.tune/S.tuneGoal)*0.15);
   /* 3: someone sits behind you; you only see him in the mirror. Don't turn around. */
+  /* 3: someone is coming up the road, drunk, through the headlights. Don't stare at him. He reaches your window. */
   if(S.loop===3&&GL.hol){
-    var ml=lookingAt(GL.carMirrorPos,2,0.93);
-    if(!S.holSeen&&ml&&!S.busy){S.lookT+=dt;if(S.lookT>0.8){S.holSeen=true;S.holMirror=true;
-      GL.hol.position.set(CO.x+CAR.hol[0],CAR.hol[1],CO.z+CAR.hol[2]);GL.hol.rotation.y=Math.PI;GL.holLight.color.setHex(0x9fb6ff);GL.holLight.position.set(CO.x+CAR.hol[0],1.25,CO.z+CAR.hol[2]-0.45);GL.holLight.distance=1.6;GL.holLight.intensity=1.4;sBoom(0.4);hint(tx('dontLook'),3600);}}
-    if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.ringSrc=true;S.ring=Math.min(1,S.ring+dt*0.04);
-      var back=Math.abs(dy)>1.75||lookingAt(_v.set(GL.hol.position.x,1.05,GL.hol.position.z),3,0.6);
-      if(back){GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,1.3,GL.hol.position.z-0.3);GL.holLight.intensity=1.0;sBoom(0.9);if(G.buzz)G.buzz([200,60,200],1);
-        S.holMirror=false;after(0.25,function(){GL.hol.visible=false;GL.holLight.intensity=0;S.ring=1.1;});S.busy=true;after(0.3,function(){S.busy=false;});}
-      else if(S.c3T>8){S.trig=true;S.holMirror=false;setTL('off');after(0.15,function(){setTL('red');});after(0.4,function(){setTL('off');});after(0.6,function(){setTL('red');});nextCarLoop(1.2);}}
+    if(!S.holSeen&&!S.busy&&S.c3T===0){S.holSeen=true;S.hd=26;S.hx=0.35;S.hPh='walk';S.hT=0;S.stare=0;
+      GL.hol.scale.setScalar(HOLS);GL.hol.rotation.set(0,0,0);GL.hol.visible=true;holUse('walk',0.9);
+      GL.holLight.color.setHex(0xb8c4e8);GL.holLight.distance=5;GL.holLight.intensity=0;}
+    if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.hT+=dt;var H=GL.hol;H.visible=true;
+      /* stagger: forward along the road in the car's lane, weaving */
+      if(S.hPh==='walk'){S.hd=Math.max(2.3,S.hd-dt*0.78);S.hx=0.35+Math.sin(S.c3T*0.9)*0.55+Math.sin(S.c3T*2.3)*0.12;holUse('walk',0.9);
+        if(S.hd<=2.3){S.hPh='side';S.hT=0;holUse('turn');}}
+      /* round the front of the car to the driver's window */
+      else if(S.hPh==='side'){var u=ss(0,2.6,S.hT);S.hx=0.35+(-1.25-0.35)*u;S.hd=2.3+(0.2-2.3)*u;holUse(u<0.95?'walk':'idleB',0.7);if(S.hT>2.6){S.hPh='window';S.hT=0;}}
+      /* at the window: he sways, leans in, knocks on the glass */
+      else if(S.hPh==='window'){S.hx=-1.25;S.hd=0.2;holUse('idleB');
+        if(!S.knock1&&S.hT>1.2){S.knock1=1;knock();}if(!S.knock2&&S.hT>2.6){S.knock2=1;knock();}
+        if(S.hT>4.6){S.trig=true;setTL('off');GL.heads&&GL.heads.forEach(function(h){h.intensity=0;});H.visible=false;GL.holLight.intensity=0;sBoom(0.7);
+          after(0.5,function(){setTL('red');if(GL.heads)GL.heads.forEach(function(h){h.intensity=2.6;});});nextCarLoop(2.2);}}
+      /* place him (car-local: -z is ahead), facing where he goes, then the car */
+      var wx=CO.x+S.hx,wz=CO.z-S.hd;var face=S.hPh==='walk'?0:S.hPh==='side'?Math.atan2(-1,0.3):Math.atan2(CO.x+CAR.eye[0]-wx,CO.z+CAR.eye[2]-wz);
+      if(S.hPh==='window'){S.hLean=Math.min(1,(S.hLean||0)+dt*0.8);}else S.hLean=0;H.rotation.order='YXZ';H.rotation.x=0.22*ss(0,1,S.hLean);H.position.set(wx,-0.3*ss(0,1,S.hLean),wz);H.rotation.y+=Math.atan2(Math.sin(face-H.rotation.y),Math.cos(face-H.rotation.y))*Math.min(1,dt*3);
+      GL.holLight.position.set(wx+0.3,2.0,wz+(S.hPh==='window'?0.6:1.2));GL.holLight.intensity=S.hPh==='walk'?1.0:1.4;
+      /* staring at him is what brings the ringing */
+      var lk=lookingAt(_v.set(wx,1.5,wz),40,0.93);if(lk){S.stare+=dt;S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*(S.hPh==='window'?0.5:0.22));}else S.stare=Math.max(0,S.stare-dt*0.5);
+      if(S.c3T>0.5&&S.c3T<0.6)hint(tx('noStare'),3200);}
   }
   /* 4: the streetlights die, far to near; her voice; the ringing. Close your eyes until it passes. */
   if(L4){
@@ -1101,6 +1116,8 @@ function lunaSeatTick(dt){
   aimBone(b.LeftArm,b.LeftForeArm,el);aimBone(b.LeftForeArm,b.LeftHand,tgt);
   C.light.position.set(0.55,1.3,-0.45);C.light.intensity=0.9*(GL.lunaHand.visible?1:0);
 }
+/* three knuckles on the driver's window */
+function knock(){for(var i=0;i<3;i++)(function(i){after(i*0.22,function(){noiseBurst(0.04,1400,1.5,0.5,true,0.8);thud(ac?ac.currentTime:0,180,90,0.12);});})(i);}
 function takeHand(){
   S.give=0;S.busy=true;S.lockInput=true;noiseBurst(0.2,2600,1.5,0.15,true);
   after(1.4,function(){sChime();});after(2.6,function(){vo('c4',4200,0);});
@@ -1110,10 +1127,28 @@ function takeHand(){
 function adoptHollow(){
   if(GL.hol||!G.hol||!G.hol.g||G.hol.ready===false)return false;
   try{if(G.hol.act){G.hol.act.setEffectiveWeight(1);G.hol.act.timeScale=0.3;}if(G.hol.runAct)G.hol.runAct.setEffectiveWeight(0);if(G.hol.stompAct)G.hol.stompAct.setEffectiveWeight(0);G.hol.grab=false;}catch(e){}
-  GL.hol=G.hol.g;scene.add(GL.hol);GL.hol.visible=false;GL.hol.scale.setScalar(0.34);
+  GL.hol=G.hol.g;scene.add(GL.hol);GL.hol.visible=false;GL.hol.scale.setScalar(HOLS);
   GL.hol.traverse(function(o){o.frustumCulled=false;});
   GL.holLight=new T.PointLight(0x6f86a8,0.0,5,2);scene.add(GL.holLight);
+  loadHolClips();
   return true;
+}
+/* Hollow's drunk clips: stagger, sway, lurch */
+function loadHolClips(){
+  if(GL.hcLoading)return;GL.hcLoading=true;
+  fetch('hollow_anims.json?v=1').then(function(r){return r.json();}).then(function(j){
+    var hp=GL.hol&&GL.hol.getObjectByName('mixamorigHips'),k=hp?hp.position.y/0.9602:1;GL.hc={};
+    for(var n in j){var c=j[n];c.tracks.forEach(function(t){if(t.name==='mixamorigHips.position'){for(var i=0;i<t.values.length;i++)t.values[i]*=k;}});try{GL.hc[n]=T.AnimationClip.parse(c);}catch(e){}}
+    holUse('idleA');
+  }).catch(function(){});
+}
+function holUse(name,speed){
+  if(!GL.hc||!GL.hc[name]||!G.hol||!G.hol.mixer)return;var M=G.hol.mixer;GL.hcActs=GL.hcActs||{};
+  [G.hol.act,G.hol.runAct,G.hol.stompAct].forEach(function(a){if(a)a.setEffectiveWeight(0);});
+  var a=GL.hcActs[name]||(GL.hcActs[name]=M.clipAction(GL.hc[name]));a.timeScale=speed||1;
+  if(GL.hcCur===name){return;}
+  if(GL.hcCur&&GL.hcActs[GL.hcCur]){var o=GL.hcActs[GL.hcCur];o.fadeOut(0.4);}
+  a.reset();a.setEffectiveWeight(1);a.fadeIn(0.4);a.play();GL.hcCur=name;
 }
 /* ================= THE PARTY (scenes 6, 9, 14): a house, masks, colour, the door at the end of the hallway ================= */
 var PW=5,PD=4,PH=2.9,HW=0.8,HL=6;   /* room half-width / half-depth / height; hallway half-width and length (north) */
@@ -1317,7 +1352,7 @@ function partyTick(dt){
     if(!S.hp){S.hp=new T.Vector3(-3.2,0,-2.6);}
     if(S.strobeT<=0&&!S.trig){S.strobeT=0.7+Math.random()*0.6;GL.pStrobe.intensity=9;noiseBurst(0.05,3000,0.7,0.25,true);
       var dx=px-S.hp.x,dz=pz-S.hp.z,dl=Math.hypot(dx,dz)||1,step=Math.min(dl-0.6,0.6);S.hp.x+=dx/dl*step;S.hp.z+=dz/dl*step;
-      GL.hol.visible=true;GL.hol.position.set(PO.x+S.hp.x,0,PO.z+S.hp.z);GL.hol.rotation.y=Math.atan2(dx,dz);
+      GL.hol.visible=true;holUse(step>0.3?'walk':'idleA');GL.hol.position.set(PO.x+S.hp.x,0,PO.z+S.hp.z);GL.hol.rotation.y=Math.atan2(dx,dz);
       GL.crowd.forEach(function(d){var u=d.userData;d.position.set(u.home.x+(Math.random()-0.5)*1.2,0,u.home.z+(Math.random()-0.5)*1.2);d.rotation.y=Math.random()*6.3;});
       if(dl<1.25){S.ring=1.1;}}
     var lk=lookingAt(_pv.set(GL.hol.position.x,1.6,GL.hol.position.z),12,0.75);if(lk&&GL.pStrobe.intensity>0.5){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*1.4);}
@@ -1359,7 +1394,7 @@ function kissTick(dt){
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
 function setArea(a){if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
-  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
+  P.area=a;GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
@@ -1574,7 +1609,7 @@ function hubTick(dt){
   /* Hollow stands behind you in the dark. Look at him and the ringing comes; each time he comes back closer. */
   var h=S.hol;if(!GL.hol)return;
   if(!h.on){h.cool-=dt;if(h.cool<=0&&S.hubT>10){h.on=true;h.d=Math.max(3.2,h.d);var bx=P.x-Math.sin(P.yaw)*h.d,bz=P.z-Math.cos(P.yaw)*h.d;
-      GL.hol.position.set(bx,0,bz);GL.hol.visible=true;GL.holLight.intensity=0.35;GL.holLight.position.set(bx,2.3,bz);if(!h.told){h.told=true;after(0.8,function(){hint(tx('dontLook'),3200);});}
+      GL.hol.position.set(bx,0,bz);GL.hol.visible=true;holUse(Math.random()<0.5?'idleA':'idleB');GL.holLight.intensity=0.35;GL.holLight.position.set(bx,2.3,bz);if(!h.told){h.told=true;after(0.8,function(){hint(tx('dontLook'),3200);});}
       noiseBurst(0.6,300,0.5,0.25,true,0.6);}
     return;}
   GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);
@@ -1593,7 +1628,7 @@ function roomTick(dt){
   if(S.loop===1&&!S.trig){if(mlook){S.lookT+=dt;if(S.lookT>1.4){S.trig=true;vo('v1',5000,0);unlockExit(2.5);}}}
   /* third visit: someone stands behind you in the mirror. Get to the door without looking back. */
   if(S.loop===3&&GL.hol){
-    if(!S.holSeen&&mlook&&!S.busy){S.lookT+=dt;if(S.lookT>0.6){S.holSeen=true;S.holMirror=true;
+    if(!S.holSeen&&mlook&&!S.busy){S.lookT+=dt;if(S.lookT>0.6){S.holSeen=true;S.holMirror=true;holUse('idleB');
         /* over his left shoulder, a step behind: clear of his head in the reflection */
         var bb=GL.bathBox,hx=clamp(P.x-1.75,RO.x+bb[0]+0.6,RO.x+bb[1]-0.6),hz=clamp(P.z-0.7,RO.z+bb[2]+0.3,RO.z+bb[3]-0.3);GL.hol.position.set(hx,0,hz);
         GL.holLight.color.setHex(0x9fb6ff);GL.holLight.position.set(hx+0.7,1.7,hz+0.1);GL.holLight.distance=3;GL.holLight.intensity=2.2;
@@ -1643,7 +1678,7 @@ function breathTick(dt){
   else if(P.area==='hub'){if(S.hol&&S.hol.on&&GL.hol){var d1=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1-(d1-2)/12,0.15,0.9);heavy=d1<4;gap=0.5;}}
   else if(P.area==='party'){if(S.loop===3&&GL.hol&&S.hp){_hp.set(GL.hol.position.x,1.6,GL.hol.position.z);var d3=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.1-d3*0.15,0.3,1);heavy=d3<3;gap=0.3;}}
   else if(P.area==='car'){
-    if(S.loop===3&&S.holSeen&&GL.hol&&!S.trig){_hp.set(GL.hol.position.x,1.1,GL.hol.position.z);src=_hp;vol=0.75;heavy=Math.random()<0.5;gap=0.3;}
+    if(S.loop===3&&S.holSeen&&GL.hol&&!S.trig){_hp.set(GL.hol.position.x,1.5,GL.hol.position.z);var d4=_hp.distanceTo(cam.position);src=_hp;vol=clamp(1.1-d4*0.06,0.15,1);heavy=d4<4;gap=d4<4?0.3:1.2;}
     else if(S.loop===4&&!S.handOut){_hp.set(P.x+0.3,1.1,P.z+0.9);src=_hp;vol=0.4;heavy=Math.random()<0.3;gap=1.5+Math.random()*2;}
   }
   else if(P.area==='room'){
