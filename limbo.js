@@ -112,7 +112,7 @@ function kissMix(){var D=GL.alt.suit;if(!GL.dClone||!GL.dClone.isObject3D||!GL.c
   var c=GL.clips.Kiss;if(D&&GL.dClone.userData.suit){c=altClip(D,'Kiss',c);if(!c)return;}GL.dcMix=new T.AnimationMixer(GL.dClone);GL.dcAct=GL.dcMix.clipAction(c);GL.dcAct.play();}
 /* Damian's other bodies: before the party (white shirt, painted face) in the bathroom and the car; the black suit at the party */
 function DM(){return GL.heroAlt||G.dmn;}
-function altFor(a){return a==='party'?GL.alt.suit:(a==='room'||a==='car')?GL.alt.pp:null;}
+function altFor(a){return a==='party'?GL.alt.suit:a==='car'?(GL.alt.clown||GL.alt.pp):a==='room'?GL.alt.pp:null;}
 GL.alt={};
 function loadAlt(key,file,cb){if(GL.alt[key]||GL['altL_'+key]||!T.GLTFLoader)return;GL['altL_'+key]=true;
   new T.GLTFLoader().load(file,function(g){var m=g.scene;
@@ -129,12 +129,12 @@ function loadAlt(key,file,cb){if(GL.alt[key]||GL['altL_'+key]||!T.GLTFLoader)ret
       if(A)['idle','walk'].forEach(function(n){if(A[n]){var c=altClip(D,n,A[n].getClip());if(!c)return;var ac2=D.mixer.clipAction(c);ac2.play();ac2.setEffectiveWeight(0);D.acts[n]=ac2;}});
       if(GL.heroAlt===D){GL.dmActs={};if(P.area==='car')dmUse('Driving');}if(key==='suit')kissMix();});
   },undefined,function(e){console.warn('damian '+key,e);});}
-function loadDamianPP(){loadAlt('pp','damian_pp.glb?v=2');}
+function loadDamianPP(){loadAlt('pp','damian_pp.glb?v=2');loadAlt('clown','damian_clown.glb?v=1');}
 function heroSync(){if(!GL.hero)return;var want=altFor(P.area)||null;if(want===(GL.heroAlt||null))return;
   var old=GL.hero,vis=old.visible,f=GL.fb;
   if(f){if(f.Head)f.Head.scale.setScalar(1);if(f.q)for(var n in f.q)f[n].quaternion.copy(f.q[n]);}
   var use=S.dmUse;dmStop();GL.dmActs={};
-  GL.heroAlt=want;GL.heroPP=!!(want&&want.key==='pp');GL.hero=want?want.g:G.hero;GL.fb=undefined;
+  GL.heroAlt=want;GL.heroPP=!!(want&&(want.key==='pp'||want.key==='clown'));GL.hero=want?want.g:G.hero;GL.fb=undefined;
   GL.hero.position.copy(old.position);GL.hero.rotation.copy(old.rotation);old.visible=false;GL.hero.visible=vis;
   if(vis){var f2=fbInit();if(f2&&f2.Head)f2.Head.scale.setScalar(0.001);}
   if(use)dmUse(use);}
@@ -155,7 +155,13 @@ function fbInit(){if(GL.fb!==undefined)return GL.fb;var h=GL.hero,f={};if(!h)ret
 /* turn a hand so its palm and fingers point where asked, then close the fingers (rig-agnostic: reads the knuckles) */
 var _hv1=new T.Vector3(),_hv2=new T.Vector3(),_hq=new T.Quaternion(),_hm=new T.Matrix4(),_hm2=new T.Matrix4(),_ha=new T.Vector3(),_hb=new T.Vector3(),_hc=new T.Vector3(),_hd=new T.Vector3(),_hx=new T.Vector3(),_hy=new T.Vector3(),_hz=new T.Vector3();
 function handFrame(HD,side,F,N){var r=HD.parent;while(r.parent&&r.parent.parent)r=r.parent;var g=function(n){return HD.getObjectByName('mixamorig'+side+'Hand'+n);};
-  var mi=g('Middle1'),ix=g('Index1'),pk=g('Pinky1');if(!mi||!ix||!pk)return false;HD.updateMatrixWorld(true);
+  var mi=g('Middle1'),ix=g('Index1'),pk=g('Pinky1');
+  if(!mi||!ix||!pk){/* a hand without finger bones: fingers point at the middle-finger tip, the palm faces down in the T-pose rest */
+    var tip=g('Middle4'),D=GL.heroAlt;if(!tip||!D||!D.rest)return false;var rb=D.rest.getObjectByName(HD.name);if(!rb)return false;
+    if(!HD.userData.palmL){HD.userData.palmL=new T.Vector3(0,-1,0).applyQuaternion(rb.getWorldQuaternion(new T.Quaternion()).invert());}
+    HD.updateMatrixWorld(true);HD.getWorldPosition(_ha);tip.getWorldPosition(_hb);F.copy(_hb).sub(_ha).normalize();
+    N.copy(HD.userData.palmL).applyQuaternion(HD.getWorldQuaternion(_q2)).addScaledVector(F,-0).normalize();return true;}
+  HD.updateMatrixWorld(true);
   HD.getWorldPosition(_ha);mi.getWorldPosition(_hb);ix.getWorldPosition(_hc);pk.getWorldPosition(_hd);
   F.copy(_hb).sub(_ha).normalize();_hc.sub(_hd).normalize();N.crossVectors(F,_hc).multiplyScalar(side==='Right'?-1:1).normalize();return true;}
 function handPose(HD,side,palm,fwd,curl){
@@ -870,6 +876,8 @@ function dressCar(m){
     CAR.eye=L(0.355,1.27,0.2);CAR.wheel=L(0.335,0.86,0.69);CAR.radio=L(0.0,0.93,0.93);CAR.mirror=L(0.005,1.325,0.85);CAR.dash=L(0.12,1.03,0.86);
     CAR.hol=[0.1,L(0,0.3,0)[1]-0.87,0.62];CAR.hand=[0.46,L(0,0.56,0)[1]+0.24,-0.16];
     if(GL.carMirror){GL.carMirror.position.set(CAR.mirror[0],CAR.mirror[1]-0.005,CAR.mirror[2]+0.032);GL.carMirror.rotation.set(0.02,-0.13,0);GL.carMirror.scale.set(0.72,0.95,1);}
+    /* the Beetle's own rear-view mirror, as modelled: no live reflection on it */
+    if(GL.carMirror)GL.carMirror.visible=false;
     GL.carMirrorPos=cw(CAR.mirror[0],CAR.mirror[1],CAR.mirror[2]);
     GL.dashL.position.set(CAR.wheel[0],CAR.wheel[1]+0.02,CAR.wheel[2]+0.2);GL.dashL.distance=0.7;GL.radioL.position.set(CAR.radio[0],CAR.radio[1]+0.02,CAR.radio[2]+0.1);
     /* rain on the windshield and her fogged window, moved onto the real glass */
@@ -1027,7 +1035,7 @@ var _rrc=null;function roadYAt(x,z){if(!GL.asphalt)return 0;_rrc=_rrc||new T.Ray
 function carArms(dt){
   var f=fbInit();if(!f)return;var h=GL.hero;GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
   h.position.set(P.x,S.camDY,P.z+0.05);h.rotation.y=Math.PI;h.updateMatrixWorld(true);
-  if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
+  if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroAlt&&GL.heroAlt.key==='clown'?-0.05:GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
   var w=CAR.wheel,br=Math.sin(time*1.6)*0.004;
   var hi=0.15,hu=0.07,L1=cw(w[0]-hi,w[1]+hu+br,w[2]+0.06),R1=cw(w[0]+hi,w[1]+hu+br,w[2]+0.06);
   /* the little walking figure: two fingers stepping across the dash toward her seat */
@@ -1037,7 +1045,7 @@ function carArms(dt){
   [['Left',L1,-1],['Right',R1,1]].forEach(function(e){var A=f[e[0]+'Arm'],FA=f[e[0]+'ForeArm'],HD=f[e[0]+'Hand'];
     A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);
     if(GL.heroPP){var fr=f[e[0]+'Fing'];if(!fr){fr=f[e[0]+'Fing']={};HD.traverse(function(o){if(o.isBone&&o!==HD)fr[o.name]=o.quaternion.clone();});}for(var fn in fr){var fb=HD.getObjectByName(fn);if(fb)fb.quaternion.copy(fr[fn]);}HD.updateMatrixWorld(true);
-      handCurl(HD,e[0],S.walk>=0||S.give>=0?0.25:1);}});
+      if(GL.heroAlt&&GL.heroAlt.key==='clown'){if(S.walk<0&&S.give<0)handPose(HD,e[0],_hv2.set(-e[2]*0.2,-0.35,-1),_hv1.set(-e[2]*0.3,1,0.25),0);}else handCurl(HD,e[0],S.walk>=0||S.give>=0?0.25:1);}});
 }
 function carTick(dt){
   var L4=S.loop===4;
@@ -1349,10 +1357,10 @@ function loadPartyCast(){
   loadAlt('suit','damian_suit.glb?v=1',function(D){kissDamian(D);var wc=D.anims.filter(function(a){return /walk/i.test(a.name);})[0];if(wc&&T.SkeletonUtils){GL.walkRig=restClone(D.g,null);GL.walkSrc=wc;makeLunaWalk();}});
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb','seb.glb?v=1',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=1',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=1',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=1',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=1',[-1.25,-0.55],'own',1.0]].forEach(function(e){
+  [['seb','seb.glb?v=1',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=1',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=1',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=1',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=1',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=1',[0.45,0.95],'own',1.0]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
-      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
+      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
       /* make room for them in the crowd */
       GL.crowd.forEach(function(d){if(Math.hypot(d.userData.home.x-e[2][0],d.userData.home.z-e[2][1])<1.0){d.userData.home.x+=(d.userData.home.x-e[2][0]>0?1:-1)*0.9;d.position.copy(d.userData.home);}});
       GL.cast[e[0]]={g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();
@@ -1366,7 +1374,7 @@ function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if
       C.act=C.mixer.clipAction(ic);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
   if(C.clip.indexOf('from:')===0){/* another guest's own animation, moved onto this rig */var S2=GL.cast[C.clip.slice(5)];if(!S2||!S2.rest||!S2.anims[0]||!C.rest)continue;
     try{C.act=C.mixer.clipAction(retarget(restClone(S2.rest,null),S2.anims[0],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
-  if(C.clip==='own'){/* their own animation, made on their own rig */if(C.anims[0]){C.act=C.mixer.clipAction(C.anims[0]);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*C.anims[0].duration;}else C.clip='-';continue;}
+  if(C.clip==='own'){/* their own animation, made on their own rig */if(C.anims[0]){var oc=C.anims[0].clone();oc.tracks.forEach(function(t){if(/Hips\.position$/.test(t.name)){var x0=t.values[0],z0=t.values[2];for(var i=0;i<t.values.length;i+=3){t.values[i]=x0;t.values[i+2]=z0;}}});/* dance in place */C.act=C.mixer.clipAction(oc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*C.anims[0].duration;}else C.clip='-';continue;}
   if(C.clip==='drink'){/* Luna's "stand and drink", fitted to her hips */
     if(!GL.l2Act||!GL.lunaRest||!T.SkeletonUtils){loadLuna2();continue;}var dc;try{dc=retarget(restClone(GL.luna,GL.lunaRest),GL.l2Act.getClip(),restClone(C.g,null));}catch(er){C.clip='-';continue;}
     C.act=C.mixer.clipAction(dc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*2;continue;}
@@ -1867,7 +1875,7 @@ L.init=function(api,done){
     var bl=G.bloom();if(bl){bl.strength=0.55;bl.threshold=0.7;}
     window.addEventListener('resize',function(){cam.aspect=window.innerWidth/window.innerHeight;cam.updateProjectionMatrix();});
     /* the forest is gone: free what it held on the graphics card */
-    setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(GL.alt.pp&&GL.alt.pp.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
+    setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(GL.alt.pp&&GL.alt.pp.g)||q===(GL.alt.clown&&GL.alt.clown.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
     resetState();L.ready=true;
     /* compile shaders once, behind the black */
     try{R.compile(scene,cam);}catch(e){}
