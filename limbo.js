@@ -25,7 +25,7 @@ var TX={
   endA:'Continuará',endB:'Parte II · El Limbo',endC:'La habitación. El carro. La fiesta. Ahora él sabe.',menu:'Menú principal',again:'Volver a jugar',
   brush:'El labial rojo',mirror:'El espejo',neck:'El collar',door:'La puerta',
   tune:'Sintonizar',reach:'Acercarte',takeHand:'Tomar su mano',radio:'La radio',rear:'El retrovisor',nextDoor:'Otra puerta te espera.',
-  noStare:'No lo mires fijamente.',c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédatelo.',
+  noStare:'No lo mires fijamente.',c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédate conmigo.',
   findHer:'Encuéntrala.',hall:'El pasillo.',someone:'Hay alguien adentro.',p1:'Te busqué toda la noche.',lunaCall:'¿Damian?',p2:'Nadie me veía.',p3:'No me sueltes.'},
  en:{lily:'I believe the white lily appears when love goes rotten.',find:'Find the light.',dontLook:"Don't look back.",
   open:'Open',look:'Look',take:'Take',veil:'Lift the veil',locked:'Not yet.',stuck:"It won't open.",
@@ -36,7 +36,7 @@ var TX={
   endA:'To be continued',endB:'Part II · Limbo',endC:'The bedroom. The car. The party. Now he knows.',menu:'Main menu',again:'Play again',
   brush:'The red lipstick',mirror:'The mirror',neck:'The necklace',door:'The door',
   tune:'Tune',reach:'Reach out',takeHand:'Take her hand',radio:'The radio',rear:'The rear-view mirror',nextDoor:'Another door is waiting.',
-  noStare:"Don't stare at him.",c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Keep it.',
+  noStare:"Don't stare at him.",c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Stay with me.',
   findHer:'Find her.',hall:'The hallway.',someone:'Someone is inside.',p1:'I looked for you all night.',lunaCall:'Damian?',p2:'Nobody could see me.',p3:"Don't let go of me."}};
 function tx(k){var l=(G&&G.lang())==='es'?'es':'en';return TX[l][k]!==undefined?TX[l][k]:k;}
 
@@ -1045,7 +1045,7 @@ function carArms(dt){
   [['Left',L1,-1],['Right',R1,1]].forEach(function(e){var A=f[e[0]+'Arm'],FA=f[e[0]+'ForeArm'],HD=f[e[0]+'Hand'];
     A.getWorldPosition(_v1);_et.copy(_v1).add(e[1]).multiplyScalar(0.5);_et.x+=e[2]*0.12;_et.y-=0.1;aimBone(A,FA,_et);aimBone(FA,HD,e[1]);
     if(GL.heroPP){var fr=f[e[0]+'Fing'];if(!fr){fr=f[e[0]+'Fing']={};HD.traverse(function(o){if(o.isBone&&o!==HD)fr[o.name]=o.quaternion.clone();});}for(var fn in fr){var fb=HD.getObjectByName(fn);if(fb)fb.quaternion.copy(fr[fn]);}HD.updateMatrixWorld(true);
-      if(GL.heroAlt&&GL.heroAlt.key==='clown'){if(S.walk<0&&S.give<0)handPose(HD,e[0],_hv2.set(-e[2]*0.2,-0.35,-1),_hv1.set(-e[2]*0.3,1,0.25),0);}else handCurl(HD,e[0],S.walk>=0||S.give>=0?0.25:1);}});
+      if(GL.heroAlt&&GL.heroAlt.key==='clown'){if(S.walk<0&&S.give<0)handPose(HD,e[0],_hv2.set(e[2]*0.15,-1,-0.3),_hv1.set(-e[2]*0.3,-0.3,-1),0);}else handCurl(HD,e[0],S.walk>=0||S.give>=0?0.25:1);}});
 }
 function carTick(dt){
   var L4=S.loop===4;
@@ -1111,11 +1111,11 @@ function carTick(dt){
     else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(CAR.hand[0]-0.2-hp.x)*Math.min(1,dt*0.8);}
   }
   if(GL.lunaCar&&GL.lunaCar.on)lunaSeatTick(dt);
-  /* the payoff: she closes his hand around the necklace, then the light turns green */
+  /* the payoff: she takes his hand, holds it, then the light turns green */
   if(S.give>=0){var g3=S.give,lh=GL.lunaHand;
     var tgt=new T.Vector3(0.1,CAR.hand[1]+0.04,CAR.hand[2]-0.08);lh.position.lerp(tgt,Math.min(1,dt*2.2)*ss(0.8,1.6,g3));
     lh.userData.fing.forEach(function(F){F.f.rotation.z=0.9*ss(2.4,3.4,g3);F.j.rotation.z=1.0*ss(2.4,3.4,g3);});
-    GL.carNeck.visible=g3>1.2&&g3<4.4;GL.carNeck.position.set(0.06,CAR.hand[1]+0.02,CAR.hand[2]-0.09);
+    GL.carNeck.visible=false;   /* no necklace: she only holds his hand */
     if(g3>4.6){lh.visible=g3<5.6&&Math.random()>ss(4.6,5.6,g3);if(GL.lunaCar)GL.lunaCar.on=lh.visible;}
     if(g3>6.4&&!S.drive){S.drive=0.001;setTL('green');noiseBurst(0.6,120,0.5,0.4,true,0.6);
       /* the street comes back on, one lamp after another */
@@ -1141,7 +1141,7 @@ function loadLuna2(){
 function lunaShow(v){if(!GL.luna)return;if(GL.lunaNew){GL.luna.visible=v;}else{G.lunaOp(v?1:0);if(G.luna.spr)G.luna.spr.visible=!v;}}
 /* standing: her drink at the party; still and watching in the hallway */
 function lunaAnim(dt,drink){
-  if(GL.lunaNew){if(!GL.l2Act)return;if(drink){if(!GL.l2Act.isRunning()){GL.l2Act.reset();GL.l2Act.play();}GL.l2Mix.update(dt);}else{GL.l2Act.play();GL.l2Act.paused=true;GL.l2Act.time=0;GL.l2Mix.update(0);}return;}
+  if(GL.lunaNew){if(!GL.l2Act)return;if(GL.l2Walk&&!S.ls)GL.l2Walk.setEffectiveWeight(0);GL.l2Act.setEffectiveWeight(1);if(drink){if(!GL.l2Act.isRunning()){GL.l2Act.reset();GL.l2Act.play();}GL.l2Mix.update(dt);}else{GL.l2Act.play();GL.l2Act.paused=true;GL.l2Act.time=0;GL.l2Mix.update(0);}return;}
   try{G.lunaIdle(time);}catch(e){}
 }
 function lunaSeat(on){
@@ -1158,17 +1158,24 @@ function lunaSeat(on){
   else{if(!C.on)return;C.on=false;for(var m in C.q)C.b[m].quaternion.copy(C.q[m]);scene.add(Lg);Lg.visible=false;lunaShow(false);Lg.scale.setScalar(1);C.light.intensity=0;
     GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=true;});}
 }
+function lunaSitPose(){var L=GL.luna;if(!GL.lunaNew||!GL.lunaRest||!T.SkeletonUtils)return false;
+  if(!GL.lunaSitMix){if(GL.lunaSitFail)return false;if(!GL.dRest){damRest(function(){});loadDamianClips();return false;}if(!GL.clips||!GL.clips.Driving){loadDamianClips();return false;}
+    try{var c=retarget(restClone(GL.dRest,null),GL.clips.Driving,restClone(L,GL.lunaRest));GL.lunaSitMix=new T.AnimationMixer(L);GL.lunaSitAct=GL.lunaSitMix.clipAction(c);GL.lunaSitAct.play();}catch(e){GL.lunaSitFail=true;console.warn('lunaSit',e);return false;}}
+  L.traverse(function(o){if(o.isBone&&GL.lunaRest[o.name])o.quaternion.copy(GL.lunaRest[o.name]);});
+  GL.lunaSitAct.enabled=true;GL.lunaSitAct.setEffectiveWeight(1);GL.lunaSitMix.setTime(0.4);L.updateMatrixWorld(true);return true;}
 function lunaSeatTick(dt){
   var C=GL.lunaCar,Lg=GL.luna,B=GL.carBody,b=C.b;C.t+=dt;
   for(var m in C.q)b[m].quaternion.copy(C.q[m]);
+  /* a real seated pose: Damian's driving clip moved onto her rig, held still; her arms, neck and head are then placed by hand */
+  var sit=lunaSitPose();
   /* sit: hips on the cushion, a little back */
   var seat=new T.Vector3(0.3,GL.lunaNew?0.69:0.76,GL.lunaNew?-0.02:-0.06);Lg.position.set(0,0,0);Lg.updateMatrixWorld(true);
   var hp=B.worldToLocal(b.Hips.getWorldPosition(new T.Vector3()));Lg.position.set(seat.x-hp.x,seat.y-hp.y,seat.z-hp.z);Lg.updateMatrixWorld(true);
   function W(x,y,z){return B.localToWorld(new T.Vector3(x,y,z));}
   /* legs: thighs forward, shins down to the floor */
-  [['Left',-0.09],['Right',0.09]].forEach(function(e){var x=0.3+e[1];var kz=GL.lunaNew?-0.46:-0.52,ky=GL.lunaNew?0.72:0.8;aimBone(b[e[0]+'UpLeg'],b[e[0]+'Leg'],W(x,ky,kz));aimBone(b[e[0]+'Leg'],b[e[0]+'Foot'],W(x+e[1]*0.3,0.3,kz-0.06));});
+  if(!sit)[['Left',-0.09],['Right',0.09]].forEach(function(e){var x=0.3+e[1];var kz=GL.lunaNew?-0.46:-0.52,ky=GL.lunaNew?0.72:0.8;aimBone(b[e[0]+'UpLeg'],b[e[0]+'Leg'],W(x,ky,kz));aimBone(b[e[0]+'Leg'],b[e[0]+'Foot'],W(x+e[1]*0.3,0.3,kz-0.06));});
   /* back against the seat, a slight slump */
-  aimBone(b.Spine,b.Neck,GL.lunaNew?W(0.31,1.4,-0.06):W(0.32,1.4,0.02));
+  if(!sit)aimBone(b.Spine,b.Neck,GL.lunaNew?W(0.31,1.4,-0.06):W(0.32,1.4,0.02));
   /* she looks out of her window; when she gives it to him, she turns */
   var g=S.give>=0?S.give:-1,turn=g<0?0:ss(0.2,1.2,g);
   /* the neck stays upright and only leans a little toward where she looks; the head turns with it */
@@ -1458,7 +1465,7 @@ function lunaStandScale(){var L=GL.luna;if(!L)return 1;if(GL.lunaNew)return 1.0;
 function placeLunaParty(i){
   if(!GL.luna)return;S.ls=null;if(GL.l2Walk)GL.l2Walk.setEffectiveWeight(0);var L=GL.luna,sp=GL.lunaSpots[i];GL.party.add(L);L.scale.setScalar(lunaStandScale());L.visible=true;lunaShow(true);
   if(GL.lunaCar&&GL.lunaCar.q&&!GL.lunaNew)for(var m in GL.lunaCar.q)GL.lunaCar.b[m].quaternion.copy(GL.lunaCar.q[m]);
-  if(GL.lunaNew&&GL.l2Mix){GL.l2Act.stop();GL.l2Act.reset();GL.l2Act.play();GL.l2Mix.update(0.01);}
+  if(GL.lunaNew&&GL.l2Mix){GL.l2Act.stop();GL.l2Act.reset();GL.l2Act.setEffectiveWeight(1);GL.l2Act.play();GL.l2Mix.update(0.01);}
   L.position.set(sp[0],0,sp[1]);L.updateMatrixWorld(true);var mn=new T.Box3().setFromObject(L).min.y;S.lunaI=i;
   if(!GL.lunaPL){GL.lunaPL=new T.PointLight(0xf0e8ff,0,3,1.6);GL.party.add(GL.lunaPL);}GL.lunaPL.position.set(sp[0],2.1,sp[1]+0.6);GL.lunaPL.intensity=1.8;
 }

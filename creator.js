@@ -135,5 +135,5 @@ C.frame=function(dt){if(!C.on)return;var sp=(keys.ShiftLeft||keys.ShiftRight?9:2
   cam.rotation.set(pitch,yaw,0,'YXZ');cam.updateMatrixWorld(true);
   if(sel&&!C.dragging)refresh();
   var c=G.comp&&G.comp();if(c)c.render(dt);else R.render(scene,cam);};
-C.toggle=toggle;C.edits=function(){return EDITS;};
+C.toggle=toggle;C.view=function(x,y,z,yw,pt){if(!C.on||!cam)return;cam.position.set(x,y,z);yaw=yw;pitch=pt;};C.edits=function(){return EDITS;};
 })();
