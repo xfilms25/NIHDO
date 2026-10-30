@@ -1,0 +1,46 @@
+<html><body><script src="node_modules/three/build/three.min.js"></script><script src="node_modules/three/examples/js/loaders/GLTFLoader.js"></script><script src="node_modules/three/examples/js/exporters/GLTFExporter.js"></script><script>
+var T=THREE,V=T.Vector3,info={};
+function L(u){return new Promise(function(r){new T.GLTFLoader().load(u,r);});}
+var P=new URLSearchParams(location.search),SRC=P.get('src')||'yinyang/in.glb',REF=P.get('ref')||'yinyang/zuri.glb',H=+(P.get('h')||1.66);
+Promise.all([L(SRC),L(REF)]).then(function(a){try{
+ var her=null;a[0].scene.traverse(function(o){if(o.isMesh&&!her)her=o;});a[0].scene.updateMatrixWorld(true);
+ var G=her.geometry.clone();G.applyMatrix4(her.matrixWorld);G.computeBoundingBox();var bb=G.boundingBox,s=H/(bb.max.y-bb.min.y);
+ G.translate(-(bb.min.x+bb.max.x)/2,-bb.min.y,-(bb.min.z+bb.max.z)/2);G.scale(s,s,s);G.computeBoundingBox();
+ var hp=G.attributes.position,N=hp.count;
+ // reference rig
+ var Z=a[1].scene;Z.updateMatrixWorld(true);var zm=null;Z.traverse(function(o){if(o.isSkinnedMesh&&!zm)zm=o;});
+ var zb=new T.Box3();var zp=zm.geometry.attributes.position,tv=new V();for(var i=0;i<zp.count;i++){tv.fromBufferAttribute(zp,i).applyMatrix4(zm.matrixWorld);zb.expandByPoint(tv);}
+ var zs=H/(zb.max.y-zb.min.y);Z.scale.multiplyScalar(zs);Z.position.y-=zb.min.y*zs;Z.updateMatrixWorld(true);
+ function armStats(pts,side){var n=0,sy=0,sz=0,mx=0;for(var i=0;i<pts.length;i++){var p=pts[i];if(side*p.x>0.42&&p.y>0.9){n++;sy+=p.y;sz+=p.z;mx=Math.max(mx,side*p.x);}}return {y:sy/n,z:sz/n,max:mx,n:n};}
+ var herPts=[];for(var i=0;i<N;i+=3)herPts.push(new V().fromBufferAttribute(hp,i));
+ function zuriPts(){var out=[];for(var i=0;i<zp.count;i+=2){var v=new V();zm.boneTransform(i,v);v.applyMatrix4(zm.matrixWorld);out.push(v);}return out;}
+ zm.skeleton.update();var zpts=zuriPts();
+ [1,-1].forEach(function(side){var hs=armStats(herPts,side),zs2=armStats(zpts,side);info['arm'+side]={her:hs,zuri:zs2};
+   var arm=Z.getObjectByName('mixamorig'+(side>0?'Left':'Right')+'Arm');if(side*arm.getWorldPosition(new V()).x<0)arm=Z.getObjectByName('mixamorig'+(side>0?'Right':'Left')+'Arm');
+   var root=arm.getWorldPosition(new V()),k=(hs.max-side*root.x)/(zs2.max-side*root.x);info['k'+side]=k;
+   var chain=[];arm.traverse(function(b){if(b.isBone)chain.push(b);});var want=chain.map(function(b){var w=b.getWorldPosition(new V());w.y+=hs.y-zs2.y;w.z+=hs.z-zs2.z;w.x=root.x+(w.x-root.x)*k;return w;});
+   chain.forEach(function(b,j){b.parent.updateMatrixWorld(true);b.position.copy(b.parent.worldToLocal(want[j].clone()));b.updateMatrixWorld(true);});});
+ Z.updateMatrixWorld(true);zm.skeleton.update();
+ // deformed reference vertices with their weights
+ var ZN=zp.count,zx=new Float32Array(ZN*3),si=zm.geometry.attributes.skinIndex,sw=zm.geometry.attributes.skinWeight;
+ for(var i=0;i<ZN;i++){var v=new V();zm.boneTransform(i,v);v.applyMatrix4(zm.matrixWorld);zx[i*3]=v.x;zx[i*3+1]=v.y;zx[i*3+2]=v.z;}
+ var C=0.04,grid={};function key(x,y,z){return Math.floor(x/C)+','+Math.floor(y/C)+','+Math.floor(z/C);}
+ for(var i=0;i<ZN;i++){var kk=key(zx[i*3],zx[i*3+1],zx[i*3+2]);(grid[kk]=grid[kk]||[]).push(i);}
+ var SI=new Uint16Array(N*4),SW=new Float32Array(N*4),far=0;
+ for(var i=0;i<N;i++){var x=hp.getX(i),y=hp.getY(i),z=hp.getZ(i),gx=Math.floor(x/C),gy=Math.floor(y/C),gz=Math.floor(z/C),best=[];
+   for(var r=1;r<=6&&best.length<6;r++){best=[];for(var a1=-r;a1<=r;a1++)for(var b1=-r;b1<=r;b1++)for(var c1=-r;c1<=r;c1++){var l=grid[(gx+a1)+','+(gy+b1)+','+(gz+c1)];if(l)for(var q=0;q<l.length;q++){var j=l[q],dx=zx[j*3]-x,dy=zx[j*3+1]-y,dz=zx[j*3+2]-z;best.push([dx*dx+dy*dy+dz*dz,j]);}}}
+   best.sort(function(p,q){return p[0]-q[0];});best=best.slice(0,4);if(!best.length){far++;SI[i*4]=0;SW[i*4]=1;continue;}
+   var acc={};best.forEach(function(e){var w0=1/(Math.sqrt(e[0])+0.004),j=e[1];for(var c=0;c<4;c++){var bi=[si.getX(j),si.getY(j),si.getZ(j),si.getW(j)][c],bw=[sw.getX(j),sw.getY(j),sw.getZ(j),sw.getW(j)][c];if(bw>0)acc[bi]=(acc[bi]||0)+bw*w0;}});
+   var arr=Object.keys(acc).map(function(k2){return [acc[k2],+k2];}).sort(function(p,q){return q[0]-p[0];}).slice(0,4),tot=arr.reduce(function(t,e){return t+e[0];},0);
+   arr.forEach(function(e,c){SI[i*4+c]=e[1];SW[i*4+c]=e[0]/tot;});}
+ info.far=far;info.N=N;info.ZN=ZN;info.siType=si.array.constructor.name;info.swType=sw.array.constructor.name;info.swNorm=sw.normalized;info.nb=zm.skeleton.bones.length;var mx=0,bad=0;for(var i=0;i<N*4;i++){mx=Math.max(mx,SI[i]);}for(var i=0;i<N;i++){var t=SW[i*4]+SW[i*4+1]+SW[i*4+2]+SW[i*4+3];if(!(t>0.99&&t<1.01))bad++;}info.maxSI=mx;info.badW=bad;info.sample=[Array.from(SI.slice(0,8)),Array.from(SW.slice(0,8))];info.zsw=Array.from(sw.array.slice(0,8));info.zsi=Array.from(si.array.slice(0,8));
+ G.setAttribute('skinIndex',new T.Uint16BufferAttribute(SI,4));G.setAttribute('skinWeight',new T.Float32BufferAttribute(SW,4));
+ // put her mesh into the reference's own skinned mesh: same skeleton, same scene graph
+ Z.updateMatrixWorld(true);G.applyMatrix4(zm.matrixWorld.clone().invert());
+ var mat=new T.MeshStandardMaterial({name:'Body',skinning:true});zm.geometry=G;zm.material=mat;zm.name='Body';
+ zm.skeleton.calculateInverses();zm.bind(zm.skeleton,zm.matrixWorld);
+ var root=Z;
+ new T.GLTFExporter().parse(root,function(r){var u=new Uint8Array(r),s2='';for(var i=0;i<u.length;i+=8192)s2+=String.fromCharCode.apply(null,u.subarray(i,i+8192));info.glb=btoa(s2);window.INFO=info;window.DONE=1;},{binary:true});
+}catch(e){window.INFO={err:String(e)+e.stack};window.DONE=1;}});
+window.shot=function(){};
+</script></body></html>

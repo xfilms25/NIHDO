@@ -12,3 +12,6 @@ Standing rules for this project's characters:
 
 ## Clips between rigs
 In-game, clips made on one rig are retargeted onto another in world space against each rig's rest pose (`retarget()` in `limbo.js`), with a rest-direction correction for T-pose vs A-pose.
+
+## Auto-rig without Mixamo (`autorig.html` + `attachtex.mjs`)
+For an unrigged Meshy character in T-pose: the skeleton and skin weights of a similar rigged character (e.g. zuri.glb) are fitted to the new mesh (height match, arm bones moved to the new arms), each vertex takes the weights of the nearest reference vertices, and the original full-resolution textures are re-attached. Full mesh, no simplification. Run in a browser page: `autorig.html?src=new.glb&ref=rigged.glb&h=1.66`, then `node attachtex.mjs rig_notex.glb new.glb out.glb`.

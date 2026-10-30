@@ -1384,10 +1384,10 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.clown&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.clown);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb','seb.glb?v=2',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=2',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=2',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=2',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=2',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=2',[0.45,0.95],'own',1.0]].forEach(function(e){
+  [['seb','seb.glb?v=2',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=2',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=2',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=2',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=2',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=2',[0.45,0.95],'own',1.0],['yinyang','yinyang.glb?v=1',[-2.6,-1.2],'luna:samba',0.9]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
-      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
+      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
       /* make room for them in the crowd */
       GL.crowd.forEach(function(d){if(Math.hypot(d.userData.home.x-e[2][0],d.userData.home.z-e[2][1])<1.0){d.userData.home.x+=(d.userData.home.x-e[2][0]>0?1:-1)*0.9;d.position.copy(d.userData.home);}});
       GL.cast[e[0]]={g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();
@@ -1399,6 +1399,8 @@ function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if
     if(!C.rest||!G.dmn||!G.dmn.acts||!G.dmn.acts.idle)continue;if(!GL.dRest){damRest(function(){});continue;}
     try{var ic=retarget(restClone(GL.dRest,null),G.dmn.acts.idle.getClip(),C.rest);ic.tracks=ic.tracks.filter(function(t){return !/(ForeArm|Hand)/.test(t.name);});
       C.act=C.mixer.clipAction(ic);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
+  if(C.clip.indexOf('luna:')===0){/* one of Luna's clips, moved onto this rig */var ln=C.clip.slice(5);if(!GL.lunaClips||!GL.lunaClips[ln]||!GL.lunaRest||!C.rest||!T.SkeletonUtils){loadLuna2();continue;}
+    try{C.act=C.mixer.clipAction(retarget(restClone(GL.luna,GL.lunaRest),GL.lunaClips[ln],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*8;}catch(er){C.clip='-';}continue;}
   if(C.clip.indexOf('from:')===0){/* another guest's own animation, moved onto this rig */var S2=GL.cast[C.clip.slice(5)];if(!S2||!S2.rest||!S2.anims[0]||!C.rest)continue;
     try{C.act=C.mixer.clipAction(retarget(restClone(S2.rest,null),S2.anims[0],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
   if(C.clip==='own'){/* their own animation, made on their own rig */if(C.anims[0]){var oc=C.anims[0].clone();oc.tracks.forEach(function(t){if(/Hips\.position$/.test(t.name)){var x0=t.values[0],z0=t.values[2];for(var i=0;i<t.values.length;i+=3){t.values[i]=x0;t.values[i+2]=z0;}}});/* dance in place */C.act=C.mixer.clipAction(oc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*C.anims[0].duration;}else C.clip='-';continue;}
