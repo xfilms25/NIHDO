@@ -1,7 +1,7 @@
 import numpy as np,scipy.sparse as sp
 from scipy.sparse.csgraph import connected_components
 from tpose import rot,ss
-def arm_weights(v,faces,P=(0.165,1.28,0.0),Wr=(0.42,0.82,0.0)):
+def arm_weights(v,faces,P=(0.165,1.28,0.0),Wr=(0.42,0.82,0.0),hx=0.40,hy=0.9):
   e=np.vstack([faces[:,[0,1]],faces[:,[1,2]],faces[:,[2,0]]])
   W=np.zeros(len(v));info={}
   for side in (1,-1):
@@ -11,7 +11,7 @@ def arm_weights(v,faces,P=(0.165,1.28,0.0),Wr=(0.42,0.82,0.0)):
     ee=e[C[e[:,0]]&C[e[:,1]]]
     G=sp.coo_matrix((np.ones(len(ee)),(ee[:,0],ee[:,1])),shape=(len(v),len(v)))
     n,lab=connected_components(G,directed=False)
-    hand=np.where(C&(side*v[:,0]>0.40)&(v[:,1]<0.9))[0]
+    hand=np.where(C&(side*v[:,0]>hx)&(v[:,1]<hy))[0]
     labs=np.unique(lab[hand]);sel=np.isin(lab,labs)&C
     w=ss(-0.03,0.09,t)*sel
     W=np.maximum(W,w);info[side]=(p,d,sel.sum(),labs)
