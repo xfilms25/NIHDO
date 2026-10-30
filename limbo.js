@@ -1149,12 +1149,18 @@ function loadLuna2(){
     if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
     GL.luna=g;GL.lunaRest=boneRest(g);g.visible=false;scene.add(g);GL.lunaNew=true;GL.lunaCar=null;GL.lunaStand=null;
     if(gl.animations&&gl.animations[0]){GL.l2Mix=new T.AnimationMixer(g);GL.l2Act=GL.l2Mix.clipAction(gl.animations[0]);}
+    /* her own Mixamo clips (sad idle, samba, sitting), baked onto this rig */
+    fetch('luna_anims.json?v=1').then(function(r){return r.json();}).then(function(j){GL.lunaClips={};for(var n in j){try{GL.lunaClips[n]=T.AnimationClip.parse(j[n]);}catch(e){}}}).catch(function(){});
   },undefined,function(){});
 }
+/* play one of her own clips on her mixer, everything else faded out */
+function lunaPlay(name,dt){var c=GL.lunaClips&&GL.lunaClips[name];if(!c||!GL.l2Mix)return false;GL.l2X=GL.l2X||{};var a=GL.l2X[name]||(GL.l2X[name]=GL.l2Mix.clipAction(c));
+  if(!a.isRunning()){a.reset();a.play();}a.setEffectiveWeight(1);if(GL.l2Act)GL.l2Act.setEffectiveWeight(0);if(GL.l2Walk)GL.l2Walk.setEffectiveWeight(0);for(var k in GL.l2X)if(k!==name)GL.l2X[k].setEffectiveWeight(0);GL.l2Mix.update(dt);return true;}
+function lunaClipsOff(){if(GL.l2X)for(var k in GL.l2X){GL.l2X[k].stop();}}
 function lunaShow(v){if(!GL.luna)return;if(GL.lunaNew){GL.luna.visible=v;}else{G.lunaOp(v?1:0);if(G.luna.spr)G.luna.spr.visible=!v;}}
 /* standing: her drink at the party; still and watching in the hallway */
 function lunaAnim(dt,drink){
-  if(GL.lunaNew){if(!GL.l2Act)return;if(GL.l2Walk&&!S.ls)GL.l2Walk.setEffectiveWeight(0);GL.l2Act.setEffectiveWeight(1);if(drink){if(!GL.l2Act.isRunning()){GL.l2Act.reset();GL.l2Act.play();}GL.l2Mix.update(dt);}else{GL.l2Act.play();GL.l2Act.paused=true;GL.l2Act.time=0;GL.l2Mix.update(0);}return;}
+  if(GL.lunaNew){if(!GL.l2Act)return;lunaClipsOff();if(GL.l2Walk&&!S.ls)GL.l2Walk.setEffectiveWeight(0);GL.l2Act.setEffectiveWeight(1);if(drink){if(!GL.l2Act.isRunning()){GL.l2Act.reset();GL.l2Act.play();}GL.l2Mix.update(dt);}else{GL.l2Act.play();GL.l2Act.paused=true;GL.l2Act.time=0;GL.l2Mix.update(0);}return;}
   try{G.lunaIdle(time);}catch(e){}
 }
 function lunaSeat(on){
@@ -1172,6 +1178,7 @@ function lunaSeat(on){
     GL.lunaHand.traverse(function(o){if(o.isMesh)o.visible=true;});}
 }
 function lunaSitPose(){var L=GL.luna;if(!GL.lunaNew||!GL.lunaRest||!T.SkeletonUtils)return false;
+  if(!GL.lunaSitMix&&GL.lunaClips&&GL.lunaClips.sit){GL.lunaSitMix=new T.AnimationMixer(L);GL.lunaSitAct=GL.lunaSitMix.clipAction(GL.lunaClips.sit);GL.lunaSitAct.play();}
   if(!GL.lunaSitMix){if(GL.lunaSitFail)return false;var CD=GL.alt.clown;if(!CD||!CD.own||!CD.own.Sitting||!CD.rest){loadSuit();return false;}
     try{var c=retarget(restClone(CD.rest,null),CD.own.Sitting,restClone(L,GL.lunaRest));GL.lunaSitMix=new T.AnimationMixer(L);GL.lunaSitAct=GL.lunaSitMix.clipAction(c);GL.lunaSitAct.play();}catch(e){GL.lunaSitFail=true;console.warn('lunaSit',e);return false;}}
   L.traverse(function(o){if(o.isBone&&GL.lunaRest[o.name])o.quaternion.copy(GL.lunaRest[o.name]);});
@@ -1439,6 +1446,7 @@ function lunaSearchStart(){var sp=GL.lunaSpots[S.lunaI];S.ls={tx:sp[0],tz:sp[1],
 function lunaPick(){var L=GL.luna,b=GL.pBlocks,x,z,tries=0;do{x=(Math.random()*2-1)*(PW-1.0);z=(Math.random()*2-1)*(PD-1.0);tries++;}
   while(tries<20&&(Math.hypot(x-L.position.x,z-L.position.z)<1.6||b.some(function(q){return x>q[0]-0.4&&x<q[1]+0.4&&z>q[2]-0.4&&z<q[3]+0.4;})));S.ls.tx=x;S.ls.tz=z;}
 function lunaSearchTick(dt){var L=GL.luna,Q=S.ls;if(!Q)lunaSearchStart(),Q=S.ls;makeLunaWalk();
+  if(S.lunaI===0&&!Q.go){var dpl=Math.hypot(P.x-PO.x-L.position.x,P.z-PO.z-L.position.z);if(dpl>4.2){if(!lunaPlay('samba',dt)){lunaAnim(dt,true);return;}var ty0=Math.atan2(P.x-PO.x-L.position.x,P.z-PO.z-L.position.z)+Math.PI*0.8;L.rotation.y+=Math.atan2(Math.sin(ty0-L.rotation.y),Math.cos(ty0-L.rotation.y))*Math.min(1,dt*0.6);return;}Q.go=true;lunaClipsOff();Q.stop=1.2;}
   var dx=Q.tx-L.position.x,dz=Q.tz-L.position.z,d=Math.hypot(dx,dz),walking=Q.stop<=0&&d>0.15;
   if(walking){var sp=0.85*dt;L.position.x+=dx/d*Math.min(sp,d);L.position.z+=dz/d*Math.min(sp,d);var ty=Math.atan2(dx,dz);L.rotation.y+=Math.atan2(Math.sin(ty-L.rotation.y),Math.cos(ty-L.rotation.y))*Math.min(1,dt*4);
     if(d<=0.2){Q.stop=1.8+Math.random()*1.8;Q.look=0;}}
@@ -1554,7 +1562,7 @@ function kissTick(dt){
   /* he turns round */
   if(k>5.2){var tu=ss(5.2,6.6,k);P.yaw=Math.PI+tu*Math.PI;if(!S.lunaBack&&GL.luna){S.lunaBack=1;placeLunaParty(2);var L=GL.luna;L.position.set(0,0,-PD-HL+2.6);L.rotation.y=Math.PI;GL.lunaPL.position.set(0.2,2.0,-PD-HL+1.9);GL.lunaPL.intensity=1.6;
       if(AU.party)AU.party.g.gain.setTargetAtTime(0,ac.currentTime,0.08);sBoom(0.5);}}
-  if(k>6.6&&k<9.6&&GL.luna){lunaAnim(dt,false);GL.luna.rotation.y=Math.PI;}
+  if(k>6.6&&k<9.6&&GL.luna){if(!lunaPlay('sad',dt))lunaAnim(dt,false);GL.luna.rotation.y=Math.PI;}
   if(k>9.6&&!S.pEnd){S.pEnd=true;whiteout(function(){S.partyDone=true;S.dcLooked=false;if(GL.dcAct&&GL.dcMix){GL.dcMix.stopAllAction();GL.dcAct.reset();GL.dcAct.setEffectiveWeight(1);GL.dcAct.play();}S.lunaBack=0;S.pEnd=false;S.kiss=-1;S.lockInput=false;hideLunaParty();partyAudio(false);GL.kissRoom.visible=false;toHub(true);});}
 }
 /* ---------- areas and transitions ---------- */
@@ -1888,6 +1896,15 @@ function resetState(){
   after(3.4,function(){vo('lily',6500,5);});
   after(10.5,function(){hint(tx('find'),3000);});
 }
+/* for creator mode: the people in the scene, with the clips each one can play */
+L.characters=function(){var out=[],add=function(id,label,obj,clips){if(obj&&obj.isObject3D)out.push({id:id,label:label,obj:obj,clips:clips||{}});};
+  var D=GL.heroAlt;add('damian','Damian',GL.hero,D&&D.own?D.own:{});
+  var lc={};if(GL.l2Act)lc.drink=GL.l2Act.getClip();if(GL.l2Walk)lc.walk=GL.l2Walk.getClip();if(GL.lunaClips)for(var n in GL.lunaClips)lc[n]=GL.lunaClips[n];add('luna','Luna',GL.luna,lc);
+  add('hollow','Hollow',GL.hol,GL.hc||{});
+  if(GL.dClone&&GL.dClone.isObject3D)add('damianKiss','Damian (beso)',GL.dClone,D&&D.own?D.own:{});
+  if(GL.goth)add('goth','Chica gótica',GL.goth.g,{});if(GL.gothWatch)add('gothWatch','Chica gótica (mirando)',GL.gothWatch,{});
+  if(GL.cast)for(var k in GL.cast){var C=GL.cast[k],cc={};if(C.act)cc[C.clip==='own'?'propia':C.clip]=C.act.getClip();(C.anims||[]).forEach(function(a){cc[a.name]=a;});add(k,k.charAt(0).toUpperCase()+k.slice(1),C.g,cc);}
+  return out;};
 L._dbg=function(){return {handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
