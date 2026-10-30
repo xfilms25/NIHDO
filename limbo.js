@@ -921,6 +921,8 @@ function dressCar(m){
       var ang=Math.atan2(cw0.x-lw.x,cw0.z-lw.z);tl.scale.set(-ts,ts,ts);tl.rotation.y=ang;
       var off=new T.Vector3(2.9*ts,0,-0.42*ts).applyAxisAngle(new T.Vector3(0,1,0),ang);var ox=lw.x-off.x,oz=lw.z-off.z;
       tl.position.set(ox,2.95-4.88*ts-W.position.y,oz);W.add(tl);W.position.set(0,0,0);W.rotation.set(0,0,0);
+      /* placed by hand in creator mode: on the right verge, facing the car */
+      tl.position.set(-16.558,0.73,16.099);tl.rotation.set(0,42.3*Math.PI/180,0);tl.scale.set(-1.05,1.05,1.05);
       tl.traverse(function(o){if(o.isMesh){o.castShadow=true;}});
       /* move the glowing lenses onto the real housing */
       var TL=GL.tl;TL.visible=true;TL.children.forEach(function(o){o.visible=false;});
@@ -929,7 +931,9 @@ function dressCar(m){
       GL.tlGlow.position.set(-2.9,4.88,0.05);GL.tlGlow.scale.set(3.2,3.2,1);tl.add(GL.tlGlow);GL.tlGlow.visible=true;
       GL.tlLight.position.set(-2.9,3.2,2.6);tl.add(GL.tlLight);GL.tlLight.visible=true;GL.tlLight.distance=30;GL.tlLight.intensity=5.5;GL.tlLight.decay=1.2;GL.tlHeads={red:4.88,green:4.25};}
     /* street lights along the road, alternating sides, the closest ones casting light */
-    if(m.sl){GL.lamps.forEach(function(l){if(l.l)l.l.intensity=0;});GL.lamps=[];
+    /* no street lights on this road: only the headlights and the traffic light */
+    GL.lamps.forEach(function(l){if(l.l)l.l.intensity=0;if(l.g)l.g.visible=false;});GL.lamps=[];
+    if(m.sl&&false){
       [-16,3,22,40,58,-34].forEach(function(dd,i){var a2=at(dd),sd=i%2?1:-1,rt=new T.Vector3(-a2.t.z,0,a2.t.x).normalize();
         var lp=new T.Group(),bx=a2.p.x+rt.x*sd*3.6,bz=a2.p.z+rt.z*sd*3.6;lp.position.set(bx,gy(bx,bz)-0.05,bz);
         lp.rotation.y=Math.atan2(-rt.x*sd,-rt.z*sd);W.add(lp);
@@ -1042,7 +1046,9 @@ var _rrc=null;function roadYAt(x,z){if(!GL.asphalt)return 0;_rrc=_rrc||new T.Ray
 function carArms(dt){
   var f=fbInit();if(!f)return;var h=GL.hero;GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
   h.position.set(P.x,S.camDY,P.z+0.05);h.rotation.y=Math.PI;h.updateMatrixWorld(true);
-  if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroAlt&&GL.heroAlt.key==='clown'?0.03:GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
+  if(S.dmUse==='Driving'&&GL.heroAlt&&GL.heroAlt.key==='clown'){h.position.copy(cw(-0.313,0.201,-0.369));h.updateMatrixWorld(true);
+    /* the eyes go where his head is */var hb=f.Head||h.getObjectByName('mixamorigHead');if(hb){hb.getWorldPosition(_v1);P.x+=(_v1.x-P.x)*0.5;P.z+=((_v1.z-0.04)-P.z)*0.5;S.camDY+=((_v1.y+0.09-EYE)-S.camDY)*0.5;}}
+  else if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroAlt&&GL.heroAlt.key==='clown'?0.03:GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
   var w=CAR.wheel,br=Math.sin(time*1.6)*0.004;
   var hi=GL.heroAlt&&GL.heroAlt.key==='suit'?0.13:0.15,hu=GL.heroAlt&&GL.heroAlt.key==='suit'?0.1:0.07,L1=cw(w[0]-hi,w[1]+hu+br,w[2]+0.06),R1=cw(w[0]+hi,w[1]+hu+br,w[2]+0.06);
   /* the little walking figure: two fingers stepping across the dash toward her seat */

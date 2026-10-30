@@ -47,7 +47,7 @@ function buildUI(){if(ui)return ui;ui={};
   var b2=el('div');[['Padre [',function(){up();}],['Hijo ]',function(){down();}],['Local/Mundo (L)',function(){if(tc){tc.setSpace(tc.space==='local'?'world':'local');}}],['Restablecer',function(){resetSel();}]].forEach(function(x){var bt=el('button','',x[0]);bt.onclick=x[1];b2.appendChild(bt);});P.appendChild(b2);
   var b3=el('div');[['Copiar cambios',function(){copyEdits();}],['Descargar',function(){dlEdits();}],['Borrar todo',function(){if(confirmClear())clearAll();}]].forEach(function(x){var bt=el('button','',x[0]);bt.onclick=x[1];b3.appendChild(bt);});P.appendChild(b3);
   ui.count=el('div','font-size:11px;color:#aaa;margin-top:4px','');P.appendChild(ui.count);
-  P.appendChild(el('div','font-size:11px;color:#999;margin-top:6px;line-height:1.45','Clic: elegir · Clic derecho + arrastrar: mirar · WASD: volar · Q/E: bajar/subir · Shift: rápido · Rueda: escala ±5% · [ ]: padre/hijo · Supr: deseleccionar · F10 o Esc: salir'));
+  P.appendChild(el('div','font-size:11px;color:#999;margin-top:6px;line-height:1.45','Clic: elegir · Clic derecho + arrastrar: mirar · WASD: volar · Q/E: bajar/subir · Shift: rápido · Rueda: escala ±5% · [ ]: padre/hijo · Tab: siguiente objeto bajo el cursor · Supr: deseleccionar · F10 o Esc: salir'));
   ui.msg=el('div','font-size:11px;color:#6c6;margin-top:4px;min-height:14px','');P.appendChild(ui.msg);
   P.addEventListener('mousedown',function(e){e.stopPropagation();});P.addEventListener('wheel',function(e){e.stopPropagation();});
   document.body.appendChild(P);return ui;}
@@ -77,7 +77,10 @@ function select(o){sel=o;stack=[];if(o&&!o.userData.crOrig)o.userData.crOrig={p:
 function up(){if(sel&&sel.parent&&sel.parent!==scene){var st=stack.concat([sel]);select(sel.parent);stack=st;}}
 function down(){if(stack.length){var c=stack.pop(),st=stack.slice();select(c);stack=st;}else if(sel&&sel.children.length){select(sel.children[0]);}}
 function pick(e){var r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,cam);
-  var hits=ray.intersectObjects(scene.children,true).filter(function(h){var o=h.object;if(isHelper(o))return false;for(var q=o;q;q=q.parent)if(!q.visible)return false;return o.isMesh||o.isSkinnedMesh||o.isPoints||o.isSprite;});
+  var hits=ray.intersectObjects(scene.children,true).filter(function(h){var o=h.object;if(isHelper(o))return false;for(var q=o;q;q=q.parent)if(!q.visible)return false;if(o.isSprite||o.isPoints)return false;var mt=Array.isArray(o.material)?o.material[0]:o.material;if(mt&&mt.transparent&&mt.opacity<0.6)return false;/* glass, glows, rain */return o.isMesh||o.isSkinnedMesh;});
+  /* characters first: a click that passes over a person picks the person, even through a car */
+  var ch=hits.filter(function(h){for(var q=h.object;q;q=q.parent){if(q.isSkinnedMesh)return true;}return false;});if(ch.length)hits=ch.concat(hits.filter(function(h){return ch.indexOf(h)<0;}));
+  C.lastHits=hits;C.hitI=0;
   if(!hits.length){select(null);return;}var o=hits[0].object;
   /* clicking the same model again goes one level deeper toward the clicked part */
   if(sel&&sel!==o){var inside=false;for(var q=o;q;q=q.parent)if(q===sel){inside=true;break;}if(inside){var c=o;while(c.parent!==sel)c=c.parent;select(c);return;}}
@@ -99,6 +102,7 @@ function onKey(e){if(e.code==='F10'){e.preventDefault();e.stopImmediatePropagati
   keys[e.code]=true;
   if(e.code==='Digit1')setMode('translate');if(e.code==='Digit2')setMode('rotate');if(e.code==='Digit3')setMode('scale');
   if(e.code==='BracketLeft')up();if(e.code==='BracketRight')down();if(e.code==='Delete'||e.code==='Backspace')select(null);
+  if(e.code==='Tab'&&C.lastHits&&C.lastHits.length){C.hitI=(C.hitI+1)%C.lastHits.length;sel=null;select(modelRoot(C.lastHits[C.hitI].object));say('Siguiente objeto bajo el cursor ('+(C.hitI+1)+'/'+C.lastHits.length+')');}
   if(e.code==='KeyL'&&tc)tc.setSpace(tc.space==='local'?'world':'local');
   if(e.code==='KeyF'&&sel){var p=sel.getWorldPosition(new T.Vector3()),d=new T.Vector3(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch));cam.position.copy(p).addScaledVector(d,-2.5);}}
 function onKeyUp(e){if(!C.on)return;keys[e.code]=false;e.stopImmediatePropagation();}
