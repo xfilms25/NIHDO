@@ -719,8 +719,8 @@ function build(){
   /* things you can use */
   inter=[
     {id:'bedDoor',pos:function(){return GL.dBed.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.roomDone;},use:function(){goRoom(1);}},
-    {id:'carDoor',pos:function(){return GL.dCar.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.carDone;},use:function(){if(!S.roomDone){sClick(3);hint(tx('locked'),2200);return;}goCar(1);}},
-    {id:'partyDoor',pos:function(){return GL.dParty.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.partyDone;},use:function(){if(!S.carDone){sClick(3);hint(tx('locked'),2200);return;}goParty(1);}},
+    {id:'carDoor',pos:function(){return GL.dCar.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.carDone;},use:function(){goCar(1);}},
+    {id:'partyDoor',pos:function(){return GL.dParty.g.position.clone().setY(1.2);},r:2.3,area:'hub',label:'open',when:function(){return !S.partyDone;},use:function(){goParty(1);}},
     {id:'veil',pos:function(){return new T.Vector3(0,1.3,-5);},r:3.2,area:'hub',label:'veil',use:function(){if(!S.roomDone||!S.carDone||!S.partyDone){sClick(1);hint(tx('locked'),2200);return;}reveal();}},
     {id:'exit',pos:function(){return new T.Vector3(RO.x,1.2,RO.z+D);},r:2.0,area:'room',label:'open',use:function(){exitRoom();}},
     {id:'brush',pos:function(){return GL.brushPos;},r:1.7,area:'room',label:'take',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;GL.brush.visible=false;noiseBurst(0.12,1800,1,0.3,true);vo('v2',6000,1);after(1.2,function(){GL.drips.visible=true;sBoom(0.25);});unlockExit(3.5);}},
@@ -1619,9 +1619,11 @@ function takeNecklace(){
 function toHub(after2){
   setArea('hub');P.x=0;P.z=7;P.yaw=Math.PI;P.pitch=-0.02;GL.dBed.open=GL.dBed.want=0;GL.dCar.open=GL.dCar.want=0;GL.dParty.open=GL.dParty.want=0;
   S.hubT=0;S.hol.d=9;S.hol.on=false;S.hol.cool=after2?999:14;S.busy=false;
-  if(after2){GL.dBed.light.intensity=0;GL.dBed.strip.material.opacity=0;
-    if(S.carDone){GL.dCar.light.intensity=0;GL.dCar.strip.material.opacity=0;}
-    if(S.partyDone){GL.spot.intensity=6.5;if(GL.dParty.light)GL.dParty.strip.material.opacity=0;after(2.5,function(){hint(tx('veil'),3000);});}
+  /* the doors open in any order: each one goes dark once its memory is done; the veil wakes when all three are */
+  if(S.roomDone){GL.dBed.light.intensity=0;GL.dBed.strip.material.opacity=0;}
+  if(S.carDone){GL.dCar.light.intensity=0;GL.dCar.strip.material.opacity=0;}
+  if(S.partyDone&&GL.dParty.light){GL.dParty.light.intensity=0;GL.dParty.strip.material.opacity=0;}
+  if(after2){if(S.roomDone&&S.carDone&&S.partyDone){GL.spot.intensity=6.5;after(2.5,function(){hint(tx('veil'),3000);});}
     else after(2.5,function(){hint(tx('nextDoor'),3000);});}
 }
 function whiteout(cb){
@@ -1740,7 +1742,7 @@ L.frame=function(dt){
   /* doors swing */
   [GL.dBed,GL.dCar,GL.dParty,GL.pDoor,GL.dExit,GL.dBath].forEach(function(d){d.open+=(d.want-d.open)*Math.min(1,dt*2.5);d.piv.rotation.y=-d.open;});
   var fl=0.5+0.5*Math.sin(time*31)*Math.sin(time*7.3);
-  if(GL.dParty.light){GL.dParty.light.intensity=S.partyDone?0:S.carDone?(0.5+0.8*fl):0.3+0.5*fl;GL.dParty.strip.material.opacity=S.partyDone?0:S.carDone?0.7:0.4;}
+  if(GL.dParty.light){GL.dParty.light.intensity=S.partyDone?0:(0.5+0.8*fl);GL.dParty.strip.material.opacity=S.partyDone?0:0.7;}
   if(!S.revealing)GL.veil.rotation.y=Math.sin(time*0.3)*0.04;
   /* the area's own logic */
   if(!GL.hol)adoptHollow();
@@ -1782,7 +1784,7 @@ L.frame=function(dt){
 function hubTick(dt){
   S.hubT+=dt;
   GL.dBed.light.intensity=S.roomDone?0:0.5+0.15*Math.sin(time*1.7);
-  GL.dCar.light.intensity=S.carDone?0:S.roomDone?0.55+0.35*Math.sin(time*2.4):0.25;GL.dCar.strip.material.opacity=S.carDone?0:S.roomDone?0.6:0.3;
+  GL.dCar.light.intensity=S.carDone?0:0.55+0.35*Math.sin(time*2.4);GL.dCar.strip.material.opacity=S.carDone?0:0.6;
   if(S.revealing)return;
   /* Hollow stands behind you in the dark. Look at him and the ringing comes; each time he comes back closer. */
   var h=S.hol;if(!GL.hol)return;
