@@ -5,6 +5,9 @@
 'use strict';
 var L={ready:false};window.LIMBO=L;
 var G,T=window.THREE,R,scene,cam,ac,AU={},UI={},GL={};
+/* phones get light copies of the characters (fewer triangles, smaller textures); computers get the full-quality files */
+function isPhone(){try{if(/[?&#]full\b/.test(location.href))return false;if(/[?&#]lite\b/.test(location.href))return true;var t=(G&&G.touch&&G.touch())||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));var mem=navigator.deviceMemory||8;return !!(t||mem<=4);}catch(e){return false;}}
+function MQ(n,v){var m=isPhone();return n+(m?'_m':'')+'.glb?v='+v+(m?'m1':'');}
 var HOLS=0.235; /* Hollow at Damian's height in the Limbo */
 var RO={x:0,z:-60};            /* the bedroom lives here, far from the hub */
 var CO={x:80,z:0};             /* the car, stopped at the red light */
@@ -135,7 +138,7 @@ function loadAlt(key,file,cb,anims,cb2){if(GL.alt[key]||GL['altL_'+key]||!T.GLTF
       if(GL.heroAlt===D){GL.dmActs={};if(P.area==='car')dmUse('Driving');}if(key==='suit')kissMix();});
   },undefined,function(e){console.warn('damian '+key,e);});}
 /* Damian, painted face, white shirt and tie: his body behind every door of the Limbo (bathroom, car, party), with his own Mixamo clips */
-function loadSuit(){loadAlt('clown','damian_clown.glb?v=2',function(D){kissDamian(D);},'clown_anims.json?v=1',function(D){if(D.own.walk&&T.SkeletonUtils){GL.walkRig=D.rest;GL.walkSrc=D.own.walk;makeLunaWalk();}});}
+function loadSuit(){loadAlt('clown',MQ('damian_clown','2'),function(D){kissDamian(D);},'clown_anims.json?v=1',function(D){if(D.own.walk&&T.SkeletonUtils){GL.walkRig=D.rest;GL.walkSrc=D.own.walk;makeLunaWalk();}});}
 function loadDamianPP(){loadSuit();}
 function heroSync(){if(!GL.hero)return;var want=altFor(P.area)||null;if(want===(GL.heroAlt||null))return;
   var old=GL.hero,vis=old.visible,f=GL.fb;
@@ -1143,7 +1146,7 @@ function carTick(dt){
 /* Luna for the car and the party: the angel-costume model (with her own "stand and drink"), the forest Luna until it loads */
 function loadLuna2(){
   if(GL.luna2Loading||!T.GLTFLoader)return;GL.luna2Loading=true;
-  new T.GLTFLoader().load('luna2.glb?v=2',function(gl){
+  new T.GLTFLoader().load(MQ('luna2','2'),function(gl){
     if(GL.lunaCar&&GL.lunaCar.on)return;   /* don't swap her out from under the scene */
     var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
     if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
@@ -1337,7 +1340,7 @@ function partyMusicTick(){
 /* the other girl: the goth girl he cheats with (a real model, posed by aiming the bones) */
 function loadGoth(){
   if(GL.gothLoading||!T.GLTFLoader)return;GL.gothLoading=true;
-  new T.GLTFLoader().load('goth.glb?v=2',function(gl){
+  new T.GLTFLoader().load(MQ('goth','2'),function(gl){
     var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material){o.material.roughness=Math.max(0.45,o.material.roughness||0.5);if(o.material.map)o.material.map.anisotropy=4;}}});
     var b={};['Hips','Spine','Spine2','Neck','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].forEach(function(n){b[n]=g.getObjectByName('mixamorig'+n)||g.getObjectByName('mixamorig:'+n);});
     var q={};for(var n in b)if(b[n])q[n]=b[n].quaternion.clone();
@@ -1384,7 +1387,7 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.clown&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.clown);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb','seb.glb?v=2',[3.05,1.75],'idleD',0.9],['zuri','zuri.glb?v=2',[-2.35,1.85],'drink',0.9],['drinker','drinker.glb?v=2',[3.95,0.75],'own',0.9],['sheriff','sheriff.glb?v=2',[1.7,-1.5],'own',1.0],['kitty','kitty.glb?v=2',[-1.25,-0.55],'own',1.0],['maribeth','maribeth.glb?v=2',[0.45,0.95],'own',1.0],['yinyang','yinyang.glb?v=1',[-2.6,-1.2],'luna:samba',0.9],['vanguard','vanguard.glb?v=1',[-3.8,0.2],'drink',0.85],['bunny','bunny.glb?v=1',[2.6,-0.2],'luna:samba',1.05],['urban','urban.glb?v=1',[-0.9,2.3],'from:drinker',0.95],['crimson','crimson.glb?v=1',[1.5,2.5],'clown:idle',0.9]].forEach(function(e){
+  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
       m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
