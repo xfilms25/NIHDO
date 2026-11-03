@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
 <meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js"}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nothing I haven't Dreamed of</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -371,6 +372,14 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+/* GPU-compressed textures (KTX2 / Basis): every GLTFLoader picks up window.KTX2 once it is ready */
+(function(){var p=THREE.GLTFLoader.prototype.parse;THREE.GLTFLoader.prototype.parse=function(){if(!this.ktx2Loader&&window.KTX2)this.ktx2Loader=window.KTX2;return p.apply(this,arguments);};})();
+window.loadKTX2=function(renderer){if(window.KTX2P)return window.KTX2P;
+  window.KTX2P=import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/KTX2Loader.js').then(function(m){
+    window.KTX2=new m.KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/').detectSupport(renderer);return window.KTX2;
+  }).catch(function(e){console.warn('KTX2 not available, using JPEG textures',e);return null;});return window.KTX2P;};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
@@ -4415,7 +4424,7 @@ function enterLimbo(){
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
   var need=THREE.Reflector?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js');
-  need.then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=37');}).then(function(){
+  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=38');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();

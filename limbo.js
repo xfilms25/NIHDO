@@ -7,7 +7,10 @@ var L={ready:false};window.LIMBO=L;
 var G,T=window.THREE,R,scene,cam,ac,AU={},UI={},GL={};
 /* phones get light copies of the characters (fewer triangles, smaller textures); computers get the full-quality files */
 function isPhone(){try{if(/[?&#]full\b/.test(location.href))return false;if(/[?&#]lite\b/.test(location.href))return true;var t=(G&&G.touch&&G.touch())||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));var mem=navigator.deviceMemory||8;return !!(t||mem<=4);}catch(e){return false;}}
-function MQ(n,v){var m=isPhone();return n+(m?'_m':'')+'.glb?v='+v+(m?'m1':'');}
+/* KTX2 copies exist for everything except the full-size models whose textures are all 4096 (the encoder can't take them yet) */
+var NOKTX={luna2:1,seb:1,damian_clown:1};
+function MQ(n,v){var m=isPhone(),k=!!window.KTX2&&!/[?&#]jpg\b/.test(location.href)&&(m||!NOKTX[n]);if(!k&&!m&&!NOKTX[n])m=true;   /* no KTX2 in this browser: the light JPEG copy (the full one only ships as KTX2) */
+  return n+(m?'_m':'')+(k?'_k':'')+'.glb?v='+v+(m?'m1':'')+(k?'k1':'');}
 var HOLS=0.235; /* Hollow at Damian's height in the Limbo */
 var RO={x:0,z:-60};            /* the bedroom lives here, far from the hub */
 var CO={x:80,z:0};             /* the car, stopped at the red light */
