@@ -14,7 +14,7 @@ n=pa['count'];V=np.frombuffer(bytes(b[po:po+n*12]),dtype='<f4').reshape(-1,3).as
 idx=np.frombuffer(bytes(b[view(prim['indices'])[0]:view(prim['indices'])[0]+j['accessors'][prim['indices']]['count']*4]),dtype='<u4').reshape(-1,3)
 ymin=V[:,1].min();k=1.65/(V[:,1].max()-ymin);U=(V-[0,ymin,0])*k
 m=trimesh.Trimesh(U,idx,process=False);w=m.copy();w.merge_vertices();mx=np.abs(U[:,0]).max();hand=U[np.abs(U[:,0])>mx-0.06];Wr=(float(np.abs(hand[:,0]).mean()),float(hand[:,1].mean()),0.0);print('wrist',Wr)
-W,_=arm_weights(np.array(w.vertices),np.array(w.faces),Wr=Wr,hx=mx-0.1,hy=Wr[1]+0.15)
+W,_=arm_weights(np.array(w.vertices),np.array(w.faces),Wr=Wr,hx=mx-0.1,hy=Wr[1]+0.15,zmin=float(os.environ.get('TPOSE_ZMIN','-0.3')))
 from scipy.spatial import cKDTree;_,ix=cKDTree(w.vertices).query(U);Wv=W[ix]
 f=lambda X:palms_down2(apply_fast(X,Wv,Wr=Wr),Wv)
 U2=f(U);Un=f(U+N*0.002);N2=Un-U2;N2/=np.linalg.norm(N2,axis=1,keepdims=True)+1e-12
