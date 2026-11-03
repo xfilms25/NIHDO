@@ -1306,13 +1306,15 @@ function buildParty(){
   GL.pGlints=[];for(var j=0;j<26;j++){var gs=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:[0xff6ad0,0x7ae0ff,0xffd080][j%3],transparent:true,opacity:0.5,depthWrite:false,blending:T.AdditiveBlending}));gs.scale.set(0.35,0.35,1);Pg.add(gs);GL.pGlints.push({s:gs,a:Math.random()*6.3,e:-0.2-Math.random()*1.1});}
   GL.pStrobe=new T.PointLight(0xffffff,0,22,1.2);GL.pStrobe.position.set(0,PH-0.3,0);Pg.add(GL.pStrobe);
   GL.pAmb=new T.HemisphereLight(0x3a2a48,0x0a0608,0.35);Pg.add(GL.pAmb);
+  /* a cold blue-cyan wash that lives with the strobe */
+  GL.pCyan=new T.HemisphereLight(0x3fd8ff,0x062a3a,0);Pg.add(GL.pCyan);
   GL.pHall=new T.PointLight(0xff3050,0,6,1.4);GL.pHall.position.set(0,0.3,-PD-HL+0.6);Pg.add(GL.pHall);
   /* one bare bulb halfway down the hallway */
   GL.pBulb=new T.PointLight(0xffc890,0.3,6,1.6);GL.pBulb.position.set(0,PH-0.25,-PD-HL/2);Pg.add(GL.pBulb);var hb=new T.Mesh(new T.SphereGeometry(0.04,8,6),new T.MeshBasicMaterial({color:0xffe0b0}));hb.position.copy(GL.pBulb.position);Pg.add(hb);
   /* the crowd */
   GL.crowd=[];var spots=[];
   for(var di=0;di<16;di++){var a=di*2.39996,rr=0.9+Math.sqrt(di)*0.95;spots.push([Math.cos(a)*rr*1.15,Math.sin(a)*rr*0.75-0.3]);}
-  spots.forEach(function(sp,di){var d=makeDancer(di);d.position.set(sp[0],0,sp[1]);d.userData.home.set(sp[0],0,sp[1]);d.rotation.y=d.userData.yaw;Pg.add(d);GL.crowd.push(d);});
+  /* the mannequins are gone: the guests are real people now (see loadPartyCast) */
   /* the other girl: masked, a red dress */
   GL.girl=makeDancer(41,0x8a0c18);K.add(GL.girl);GL.girl.position.set(0.18,0,-1.55);GL.girl.rotation.y=-Math.PI/2+0.25;
   /* the other Damian: a copy of his own body */
@@ -1387,13 +1389,13 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.clown&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.clown);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9]].forEach(function(e){
+  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].forEach(function(e){
     new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
-      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
+      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78,catrina:1.64,apron:1.78,denim:1.8}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=e[0]==='apron'?Math.PI:Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
       /* make room for them in the crowd */
       GL.crowd.forEach(function(d){if(Math.hypot(d.userData.home.x-e[2][0],d.userData.home.z-e[2][1])<1.0){d.userData.home.x+=(d.userData.home.x-e[2][0]>0?1:-1)*0.9;d.position.copy(d.userData.home);}});
-      GL.cast[e[0]]={g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();
+      GL.cast[e[0]]={home:new T.Vector3(e[2][0],0,e[2][1]),g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,yaw0:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();
     },undefined,function(err){console.warn(e[0],err);});});
 }
 /* the drunk idles, fitted to each guest's hips */
@@ -1419,7 +1421,7 @@ function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if
 function castTick(dt){if(!GL.cast)return;var px=P.x-PO.x,pz=P.z-PO.z,watch=S.loop===2?ss(0,2.5,4-(S.muteT||0)):0;
   if(!GL._caT||(GL._caT-=dt)<0){GL._caT=1;castAnim();}
   for(var k in GL.cast){var C=GL.cast[k];if(!C.g.visible)continue;C.mixer.update(dt);
-    var ty=watch>0?Math.atan2(px-C.g.position.x,pz-C.g.position.z):C.yaw;C.g.rotation.y+=Math.atan2(Math.sin(ty-C.g.rotation.y),Math.cos(ty-C.g.rotation.y))*Math.min(1,dt*1.5);}}
+    var ty=(watch>0||k==='denim')?Math.atan2(px-C.g.position.x,pz-C.g.position.z):C.yaw;C.g.rotation.y+=Math.atan2(Math.sin(ty-C.g.rotation.y),Math.cos(ty-C.g.rotation.y))*Math.min(1,dt*1.5);}}
 /* the Damian behind the door wears the suit too */
 function kissDamian(D){if(!T.SkeletonUtils||!GL.kissRoom)return;try{var dm=T.SkeletonUtils.clone(D.g);dm.traverse(function(o){o.frustumCulled=false;});
   var hd=dm.getObjectByName('mixamorigHead');if(hd)hd.scale.setScalar(1);dm.visible=true;dm.scale.setScalar(D.sc);dm.userData.suit=true;
@@ -1481,7 +1483,7 @@ function enterParty(loop){
   partyAudio(true);if(AU.party){AU.party.f.frequency.setTargetAtTime(loop===1?16000:loop===2?16000:180,ac.currentTime,0.1);AU.party.g.gain.setTargetAtTime(loop===1||loop===2?0.9:loop===3?0.5:0.15,ac.currentTime,0.3);}
   /* Luna in the crowd (first visit) */
   if(loop===1)placeLunaParty(0);else hideLunaParty();
-  enterPartyGoth();loadPartyCast();if(GL.cast)for(var ck in GL.cast)GL.cast[ck].g.visible=loop<=3;
+  enterPartyGoth();loadPartyCast();if(GL.cast)for(var ck in GL.cast){var C0=GL.cast[ck];C0.g.visible=loop<=3;C0.g.position.copy(C0.home);C0.g.rotation.y=C0.yaw=C0.yaw0;}
   if(loop===1)after(2,function(){hint(tx('findHer'),2600);});
   if(loop===2){S.muteT=4;after(2,function(){hint(tx('hall'),2600);});}
   if(loop===3)after(1.5,function(){hint(tx('dontLook'),3000);});
@@ -1527,12 +1529,14 @@ function partyTick(dt){
     if(!S.trig&&pz<-PD-HL+1.6){S.trig=true;sClick(3);after(0.6,function(){girlLaugh();});after(1.4,function(){hint(tx('someone'),2400);vo('p2',5000,1);});nextPartyLoop(6);}}
   else S.muted=false;
   /* 3: strobe. Each flash he is closer. Don't look at him. Get to the hallway. */
+  if(GL.pCyan)GL.pCyan.intensity=L===3?0.38+0.5*(GL.pStrobe.intensity/9):0;
   if(L===3&&GL.hol){S.strobeT-=dt;GL.pStrobe.intensity=Math.max(0,GL.pStrobe.intensity-dt*90);
     if(!S.hp){S.hp=new T.Vector3(-3.2,0,-2.6);}
     if(S.strobeT<=0&&!S.trig){S.strobeT=0.7+Math.random()*0.6;GL.pStrobe.intensity=9;noiseBurst(0.05,3000,0.7,0.25,true);
       var dx=px-S.hp.x,dz=pz-S.hp.z,dl=Math.hypot(dx,dz)||1,step=Math.min(dl-0.6,0.6);S.hp.x+=dx/dl*step;S.hp.z+=dz/dl*step;
       GL.hol.visible=true;holUse(step>0.3?'walk':'idleA');GL.hol.position.set(PO.x+S.hp.x,0,PO.z+S.hp.z);GL.hol.rotation.y=Math.atan2(dx,dz);
       GL.crowd.forEach(function(d){var u=d.userData;d.position.set(u.home.x+(Math.random()-0.5)*1.2,0,u.home.z+(Math.random()-0.5)*1.2);d.rotation.y=Math.random()*6.3;});
+      if(GL.cast)for(var ck in GL.cast){var CC=GL.cast[ck];if(!CC.g.visible)continue;CC.g.position.set(CC.home.x+(Math.random()-0.5)*0.9,0,CC.home.z+(Math.random()-0.5)*0.9);CC.g.rotation.y=CC.yaw=Math.random()*6.3;}
       if(dl<1.25){S.ring=1.1;}}
     var lk=lookingAt(_pv.set(GL.hol.position.x,1.6,GL.hol.position.z),12,0.75);if(lk&&GL.pStrobe.intensity>0.5){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*1.4);}
     if(!S.trig&&pz<-PD-0.5){S.trig=true;GL.hol.visible=false;vo('p3',4500,2);nextPartyLoop(5);}}
