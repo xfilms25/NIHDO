@@ -1152,8 +1152,11 @@ function loadLuna2(){
   new T.GLTFLoader().load(MQ('luna2','2'),function(gl){
     if(GL.lunaCar&&GL.lunaCar.on)return;   /* don't swap her out from under the scene */
     var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
+    var wasParty=!!(GL.luna&&GL.luna.parent===GL.party&&GL.luna.visible);
     if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
     GL.luna=g;GL.lunaRest=boneRest(g);g.visible=false;scene.add(g);GL.lunaNew=true;GL.lunaCar=null;GL.lunaStand=null;
+    /* she arrived late, while the forest Luna was already standing in the party: put her in that spot */
+    if(wasParty&&P.area==='party'){lunaShow(false);placeLunaParty(S.lunaI||0);}
     if(gl.animations&&gl.animations[0]){GL.l2Mix=new T.AnimationMixer(g);GL.l2Act=GL.l2Mix.clipAction(gl.animations[0]);}
     /* her own Mixamo clips (sad idle, samba, sitting), baked onto this rig */
     fetch('luna_anims.json?v=1').then(function(r){return r.json();}).then(function(j){GL.lunaClips={};for(var n in j){try{GL.lunaClips[n]=T.AnimationClip.parse(j[n]);}catch(e){}}}).catch(function(){});

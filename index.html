@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <meta charset="utf-8">
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nothing I haven't Dreamed of</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -370,26 +370,8 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 
 <div class="veil" id="vFin"><video id="finVid" playsinline webkit-playsinline preload="none"></video><div id="finTap" data-i18n="tapPlay">Toca para reproducir</div><button id="finSkip" type="button" data-i18n="skip">Saltar</button></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-/* GPU-compressed textures (KTX2 / Basis): every GLTFLoader picks up window.KTX2 once it is ready */
-(function(){var p=THREE.GLTFLoader.prototype.parse;THREE.GLTFLoader.prototype.parse=function(){if(!this.ktx2Loader&&window.KTX2)this.ktx2Loader=window.KTX2;return p.apply(this,arguments);};})();
-window.loadKTX2=function(renderer){if(window.KTX2P)return window.KTX2P;
-  window.KTX2P=import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/KTX2Loader.js').then(function(m){
-    window.KTX2=new m.KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/').detectSupport(renderer);return window.KTX2;
-  }).catch(function(e){console.warn('KTX2 not available, using JPEG textures',e);return null;});return window.KTX2P;};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script>
-(function(){
+window.__startGame=function(){
 'use strict';
 var THREE=window.THREE;
 var $=function(id){return document.getElementById(id);};
@@ -1763,7 +1745,7 @@ function buildMap(root){
   });
   /* scanned forest-floor litter (leaves, twigs, moss) blended onto the ground near the river and on its dry banks */
   /* pine-needle carpet under the trees (texture from the reference frame): a mask of where trunks stand, painted once */
-  var NEEDT=new THREE.TextureLoader().load('needles_tile.jpg');NEEDT.wrapS=NEEDT.wrapT=THREE.MirroredRepeatWrapping;NEEDT.encoding=THREE.sRGBEncoding;
+  var NEEDT=new THREE.TextureLoader().load('needles_tile.jpg');NEEDT.wrapS=NEEDT.wrapT=THREE.MirroredRepeatWrapping;/* sampled raw in the floor shader, as in r128 */NEEDT.colorSpace=THREE.NoColorSpace;
   try{NEEDT.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());}catch(e){}
   var TMC=document.createElement('canvas');TMC.width=TMC.height=512;var tg=TMC.getContext('2d');
   tg.fillStyle='#000';tg.fillRect(0,0,512,512);
@@ -1772,7 +1754,7 @@ function buildMap(root){
     var gr=tg.createRadialGradient(cx,cz,0,cx,cz,r);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.45,'rgba(255,255,255,0.85)');gr.addColorStop(1,'rgba(255,255,255,0)');
     tg.fillStyle=gr;tg.beginPath();tg.arc(cx,cz,r,0,6.2832);tg.fill();});
   var TMASK=new THREE.CanvasTexture(TMC);TMASK.flipY=false;TMASK.wrapS=TMASK.wrapT=THREE.ClampToEdgeWrapping;
-  var FLOORT=new THREE.TextureLoader().load('floor_tile.jpg');FLOORT.wrapS=FLOORT.wrapT=THREE.RepeatWrapping;FLOORT.encoding=THREE.sRGBEncoding;
+  var FLOORT=new THREE.TextureLoader().load('floor_tile.jpg');FLOORT.wrapS=FLOORT.wrapT=THREE.RepeatWrapping;FLOORT.colorSpace=THREE.NoColorSpace;
   try{FLOORT.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());}catch(e){}
   var seamA=(RIVERP.s.gz-M0[1])*MAPS,seamB=(RIVERP.n.gz-M0[1])*MAPS;
   var floorPatch=function(sh,isBank){
@@ -4423,8 +4405,8 @@ function enterLimbo(){
   var L=$('vLoad');L.style.display='flex';L.classList.remove('out');$('lStat').classList.remove('ready');$('lStat').textContent=tr('limboLoading');$('lBarI').style.width='30%';
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
-  var need=THREE.Reflector?Promise.resolve():loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js');
-  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=38');}).then(function(){
+  var need=Promise.resolve();
+  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=39');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();
@@ -4446,7 +4428,7 @@ var GAME={THREE:THREE,$:$,renderer:renderer,camera:camera,scene:scene,hero:hero,
   pause:pauseGame,uiKey:uiKey};
 window.GAME=GAME;
 /* creator mode (F10): free camera, click to move / rotate / scale anything */
-loadScript('creator.js?v=4').catch(function(){});
+loadScript('creator.js?v=5').catch(function(){});
 /* best time on the menu */
 function menuBest(){var b=boardLoad(),el=$('bestChip');if(!el)return;if(!b.length){el.hidden=true;return;}var m=Math.min.apply(null,b.map(function(r){return r.t;}));el.textContent=tr('bestRun')+' · '+fmtTime(m);el.hidden=false;}
 menuBest();
@@ -5309,5 +5291,36 @@ function frame(){
   if(state!=='title'||++titleFrames<150)renderFrame(dt);
 }
 frame();
-})();
+};
 </script>
+<script type="module">
+/* three.js r160, loaded as ES modules and exposed as the classic global THREE the game is written against */
+import * as NS from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
+import {MaskPass,ClearMaskPass} from 'three/addons/postprocessing/MaskPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {CopyShader} from 'three/addons/shaders/CopyShader.js';
+import {LuminosityHighPassShader} from 'three/addons/shaders/LuminosityHighPassShader.js';
+import {Reflector} from 'three/addons/objects/Reflector.js';
+import {TransformControls} from 'three/addons/controls/TransformControls.js';
+const T=Object.assign({},NS);
+/* keep r128's look: colours as authored (no automatic sRGB conversion of hex colours) and the old light falloff */
+T.ColorManagement.enabled=false;
+class PointLight extends NS.PointLight{constructor(c,i,d,decay){super(c,i,d,decay===undefined?1:decay);}}
+class SpotLight extends NS.SpotLight{constructor(c,i,d,a,p,decay){super(c,i,d,a,p,decay===undefined?1:decay);}}
+/* r128's bloom worked on 8-bit targets: bright lights clipped at 1 before blurring. Keep that, or every lamp blooms twice as hard */
+class UnrealBloomPass8 extends UnrealBloomPass{constructor(a,b,c,d){super(a,b,c,d);[this.renderTargetBright].concat(this.renderTargetsHorizontal,this.renderTargetsVertical).forEach(function(rt){rt.texture.type=NS.UnsignedByteType;rt.dispose();});}}
+class WebGLRenderer extends NS.WebGLRenderer{constructor(o){super(o);this.useLegacyLights=true;}}
+Object.assign(T,{PointLight,SpotLight,WebGLRenderer,GLTFLoader,KTX2Loader,SkeletonUtils,EffectComposer,RenderPass,ShaderPass,MaskPass,ClearMaskPass,UnrealBloomPass:UnrealBloomPass8,CopyShader,LuminosityHighPassShader,Reflector,TransformControls});
+/* GPU-compressed textures (KTX2 / Basis): every GLTFLoader picks up window.KTX2 */
+const parse=GLTFLoader.prototype.parse;GLTFLoader.prototype.parse=function(){if(!this.ktx2Loader&&window.KTX2)this.ktx2Loader=window.KTX2;return parse.apply(this,arguments);};
+window.loadKTX2=function(renderer){if(!window.KTX2){try{window.KTX2=new KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/').detectSupport(renderer);}catch(e){console.warn('KTX2 not available, using JPEG textures',e);}}return Promise.resolve(window.KTX2||null);};
+window.THREE=T;
+window.__startGame();
+</script>
+
