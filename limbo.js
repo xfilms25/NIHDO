@@ -1151,7 +1151,7 @@ function loadLuna2(){
   if(GL.luna2Loading||!T.GLTFLoader)return;GL.luna2Loading=true;
   new T.GLTFLoader().load(MQ('luna2','2'),function(gl){
     if(GL.lunaCar&&GL.lunaCar.on)return;   /* don't swap her out from under the scene */
-    var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
+    var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;if(o.material&&o.material.map)o.material.map.anisotropy=4;}});
     var wasParty=!!(GL.luna&&GL.luna.parent===GL.party&&GL.luna.visible);
     if(GL.luna&&GL.luna.parent&&GL.luna!==g){GL.luna.parent.remove(GL.luna);}if(G.luna&&G.luna.g)G.luna.g.visible=false;
     GL.luna=g;GL.lunaRest=boneRest(g);g.visible=false;scene.add(g);GL.lunaNew=true;GL.lunaCar=null;GL.lunaStand=null;
@@ -1286,7 +1286,7 @@ function buildParty(){
   var wall=std({map:texWall(false),color:0x6a5a78,roughness:0.9}),fl=std({map:texWood(),roughness:0.5,metalness:0.1}),ceil=std({color:0x0d0b10,roughness:1});
   function pl(w,h,x,y,z,ry,m){var me=new T.Mesh(new T.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=ry;me.receiveShadow=true;Pg.add(me);return me;}
   /* the room */
-  var f=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(-Math.PI/2),fl);f.position.set(0,0,-HL/2);Pg.add(f);
+  var f=GL.pFloor=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(-Math.PI/2),fl);f.position.set(0,0,-HL/2);Pg.add(f);
   var c=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(Math.PI/2),ceil);c.position.set(0,PH,-HL/2);Pg.add(c);
   pl(PW*2,PH,0,PH/2,PD,Math.PI,wall);pl(PD*2,PH,-PW,PH/2,0,Math.PI/2,wall);pl(PD*2,PH,PW,PH/2,0,-Math.PI/2,wall);
   /* north wall with the hallway opening, the hallway, the door at its end */
@@ -1349,7 +1349,7 @@ function partyMusicTick(){
 function loadGoth(){
   if(GL.gothLoading||!T.GLTFLoader)return;GL.gothLoading=true;
   new T.GLTFLoader().load(MQ('goth','2'),function(gl){
-    var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;if(o.material){o.material.roughness=Math.max(0.45,o.material.roughness||0.5);if(o.material.map)o.material.map.anisotropy=4;}}});
+    var g=gl.scene;g.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;if(o.material){o.material.roughness=Math.max(0.45,o.material.roughness||0.5);if(o.material.map)o.material.map.anisotropy=4;}}});
     var b={};['Hips','Spine','Spine2','Neck','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].forEach(function(n){b[n]=g.getObjectByName('mixamorig'+n)||g.getObjectByName('mixamorig:'+n);});
     var q={};for(var n in b)if(b[n])q[n]=b[n].quaternion.clone();
     GL.goth={g:g,b:b,q:q};
@@ -1395,8 +1395,8 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.clown&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.clown);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].forEach(function(e){
-    new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
+  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].filter(function(e,i){return !/[?&]fewcast\b/.test(location.href)||i<4;}).forEach(function(e){
+    new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
       m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
       m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78,catrina:1.64,apron:1.78,denim:1.8}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=e[0]==='apron'?Math.PI:Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
       /* make room for them in the crowd */
@@ -1584,7 +1584,53 @@ function kissTick(dt){
 }
 /* ---------- areas and transitions ---------- */
 function fadeTo(v,dur,cb){S.fadeFrom=S.fade;S.fadeTo=v;S.fadeT=0;S.fadeDur=dur||0.6;S.fadeCb=cb||null;}
-function setArea(a){if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
+/* ===== the look: an environment light for each room, soft character shadows, ambient occlusion and a film LUT =====
+   phones keep the environment light and the LUT (cheap); computers get the shadows and the SSAO too */
+var HQ=false,FX={};
+function makeLUT(){var N=32,d=new Uint8Array(N*N*N*4),i=0;
+  function sc(c){var t=c*c*(3-2*c);return c+(t-c)*0.38;}
+  for(var b=0;b<N;b++)for(var g=0;g<N;g++)for(var r=0;r<N;r++){var R0=r/(N-1),G0=g/(N-1),B0=b/(N-1);
+    var cr=sc(R0),cg=sc(G0),cb=sc(B0),l=0.2126*cr+0.7152*cg+0.0722*cb;
+    /* a little less colour, cold in the shadows, warm in the highlights */
+    cr=l+(cr-l)*0.9;cg=l+(cg-l)*0.9;cb=l+(cb-l)*0.9;var sh=(1-l)*(1-l)*0.22,hi=l*l*0.16;
+    cr*=1-sh*0.18+hi*0.07;cg*=1+sh*0.02+hi*0.01;cb*=1+sh*0.16-hi*0.1;
+    d[i++]=Math.max(0,Math.min(255,cr*255));d[i++]=Math.max(0,Math.min(255,cg*255));d[i++]=Math.max(0,Math.min(255,cb*255));d[i++]=255;}
+  var t=new T.Data3DTexture(d,N,N,N);t.format=T.RGBAFormat;t.type=T.UnsignedByteType;t.minFilter=t.magFilter=T.LinearFilter;t.wrapS=t.wrapT=t.wrapR=T.ClampToEdgeWrapping;t.unpackAlignment=1;t.needsUpdate=true;return t;}
+/* a tiny room of glowing panels, blurred into the light every surface picks up (an HDR environment, built here instead of downloaded) */
+function envFor(kind){var E=new T.Scene(),P={
+    hub:{base:0x0a0a0d,p:[[[0,6,0],[6,6],[1.4,1.35,1.3]],[[0,0,-6],[5,3],[0.12,0.12,0.14]]]},
+    room:{base:0x070505,p:[[[0,1.2,-5],[2.2,1.2],[1.5,1.05,0.7]],[[-5,1.5,1],[1.4,1.8],[0.32,0.42,0.85]],[[0,6,0],[3,3],[0.25,0.2,0.16]]]},
+    car:{base:0x040303,p:[[[0,0.4,-6],[5,1.2],[0.55,0.5,0.42]],[[0,-3,-2],[3,2],[0.28,0.13,0.05]],[[0,3,-6],[1.2,1.2],[0.5,0.05,0.04]]]},
+    party:{base:0x0b0610,p:[[[-6,2,0],[3,3],[1.1,0.22,0.65]],[[6,2,0],[3,3],[0.22,0.85,1.1]],[[0,2,6],[4,2],[0.9,0.55,0.15]],[[0,6,0],[4,4],[0.22,0.16,0.3]]]}}[kind];
+  var box=new T.Mesh(new T.BoxGeometry(14,14,14),new T.MeshBasicMaterial({color:P.base,side:T.BackSide}));E.add(box);
+  P.p.forEach(function(q){var m=new T.Mesh(new T.PlaneGeometry(q[1][0],q[1][1]),new T.MeshBasicMaterial({color:new T.Color(q[2][0],q[2][1],q[2][2]),side:T.DoubleSide}));m.position.set(q[0][0],q[0][1],q[0][2]);m.lookAt(0,0,0);E.add(m);});
+  var rt=FX.pm.fromScene(E,0.04);E.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});return rt.texture;}
+function fxInit(){var U=location.href;HQ=!isPhone()||/[?&]hq\b/.test(U);
+  if(!/noenv/.test(U))try{FX.pm=new T.PMREMGenerator(R);FX.env=HQ?{hub:envFor('hub'),room:envFor('room'),car:envFor('car')}:{};}catch(e){console.warn('env',e);FX.env={};}
+  var comp=G.comp();if(!comp||!comp.passes)return;
+  try{if(HQ&&T.SSAOPass&&!/nossao/.test(U)){var w=window.innerWidth,h=window.innerHeight,so=FX.ssao=new T.SSAOPass(scene,cam,w,h);so.kernelRadius=0.4;so.minDistance=0.0012;so.maxDistance=0.05;comp.insertPass(so,1);
+    /* mirrors re-render the scene from inside the normal pass: keep them out of it */
+    var ro=so.renderOverride;so.renderOverride=function(){var hid=[];scene.traverse(function(x){if(x.isReflector&&x.visible){x.visible=false;hid.push(x);}});try{ro.apply(so,arguments);}finally{hid.forEach(function(x){x.visible=true;});}};}}catch(e){console.warn('ssao',e);FX.ssao=null;}
+  try{if(T.LUTPass&&!/nolut/.test(U)){var lp=FX.lut=new T.LUTPass({lut:makeLUT(),intensity:0.8});comp.insertPass(lp,comp.passes.length-1);}}catch(e){console.warn('lut',e);FX.lut=null;}
+  window.LIMBO_FX=[FX.ssao,FX.lut].filter(Boolean);}
+/* the room's light goes on the people (skinned meshes), where it shows most; set once per room and on newcomers */
+function fxEnv(){if(!FX.env||/noenvapply/.test(location.href))return;
+  /* the room's light goes on the people only (skinned meshes): the sets keep their hand-tuned look.
+     computers only, and not in the party, where fourteen people make it the one room it costs too much */
+  var e=HQ&&FX.area!=='party'?(FX.env[FX.area]||null):null;
+  scene.traverse(function(o){if(!o.isSkinnedMesh)return;(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){if(!m||!m.isMeshStandardMaterial)return;if(m.envMap!==e){var had=!!m.envMap;m.envMap=e;m.envMapIntensity=0.7;if(had!==!!e)m.needsUpdate=true;}});});}
+function fxOn(){FX.envT=(FX.envT||0)+1;if(FX.envT%45===1)fxEnv();   /* newcomers (models that load later) */
+  if(window.LIMBO_FX)window.LIMBO_FX.forEach(function(p){p.enabled=true;});if(FX.ssao){FX.ssao.scene=scene;FX.ssao.camera=cam;}}
+/* characters throw shadows (computers) */
+function fxShadowLights(){if(!HQ)return;
+  /* the party: the orange spot behind the dance floor throws everyone's shadow across the floor */
+  if(GL.pSpots&&GL.pSpots[2]){var sp=GL.pSpots[2].l;sp.castShadow=true;sp.shadow.mapSize.set(1024,1024);sp.shadow.bias=-0.0006;sp.shadow.normalBias=0.02;sp.shadow.camera.near=0.5;sp.shadow.camera.far=14;}
+  if(GL.pFloor)GL.pFloor.receiveShadow=true;
+  /* the car: the headlights on the road and on whoever walks into them */
+  if(GL.heads)GL.heads.forEach(function(h,i){if(i)return;h.castShadow=true;h.shadow.mapSize.set(1024,1024);h.shadow.bias=-0.0008;h.shadow.camera.near=0.5;h.shadow.camera.far=36;});
+  if(GL.hol)castShadows(GL.hol);}
+function castShadows(o){if(!HQ||!o)return;o.traverse(function(m){if(m.isMesh)m.castShadow=true;});}
+function setArea(a){FX.area=a;fxEnv(true);if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
   P.area=a;heroSync();GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
@@ -1792,6 +1838,7 @@ L.frame=function(dt){
   var comp=G.comp(),gp=G.grade();
   if(gp){gp.uniforms.time.value=time;gp.uniforms.danger.value=Math.max(0,rv*0.7);gp.uniforms.focus.value.set(0.5,0.5);gp.uniforms.dofAmt.value=0.25+(S.lidBlur||0)*1.6;gp.uniforms.lens.value=1+rv*1.4;}
   if(window.__noRender)return;
+  fxOn();
   if(comp){comp.render(dt);}else R.render(scene,cam);
 };
 function hubTick(dt){
@@ -1935,7 +1982,7 @@ L.init=function(api,done){
     window.addEventListener('resize',function(){cam.aspect=window.innerWidth/window.innerHeight;cam.updateProjectionMatrix();});
     /* the forest is gone: free what it held on the graphics card */
     setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(GL.alt.pp&&GL.alt.pp.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(GL.alt.clown&&GL.alt.clown.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
-    resetState();L.ready=true;
+    fxInit();fxShadowLights();resetState();L.ready=true;
     /* compile shaders once, behind the black */
     try{R.compile(scene,cam);}catch(e){}
   }catch(e){console.error('limbo init',e);}

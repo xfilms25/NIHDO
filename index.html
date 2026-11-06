@@ -448,7 +448,7 @@ canvas.addEventListener('webglcontextlost',function(e){
   d=document.createElement('div');d.id='glLost';
   d.style.cssText='position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(0,0,0,.85);color:#e2dccd;font:600 15px system-ui;text-align:center;padding:24px';
   d.innerHTML='<div>'+(LANG==='es'?'El navegador reinici\u00f3 los gr\u00e1ficos.':'The browser reset the graphics.')+'</div><button type="button" style="padding:10px 22px;font:600 13px system-ui;letter-spacing:.12em;text-transform:uppercase;background:#e2dccd;color:#111;border:0;cursor:pointer">'+(LANG==='es'?'Recargar':'Reload')+'</button>';
-  d.querySelector('button').onclick=function(){location.reload();};
+  d.querySelector('button').onclick=function(){/* the graphics card gave up: come back with the light version */if(!/[?&]lite\b/.test(location.search)){location.href=location.pathname+(location.search?location.search+'&':'?')+'lite'+location.hash;}else location.reload();};
   document.body.appendChild(d);
 },false);
 
@@ -3084,6 +3084,8 @@ function initPost(){
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
     var w=window.innerWidth,h=window.innerHeight,pr=renderer.getPixelRatio();
     var rt=new THREE.WebGLRenderTarget(w*pr,h*pr,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,type:THREE.HalfFloatType});
+    /* real antialiasing through the post chain (the canvas MSAA is lost once a composer is used); computers only */
+    try{if(renderer.capabilities.isWebGL2&&!touch&&!/[?&#]lite\b/.test(location.href))rt.samples=4;}catch(e){}
     comp=new THREE.EffectComposer(renderer,rt);comp.setPixelRatio(pr);comp.setSize(w,h);
     comp.addPass(new THREE.RenderPass(scene,camera));
     bloomP=new THREE.UnrealBloomPass(new THREE.Vector2(w/2,h/2),0.7,0.85,0.62);comp.addPass(bloomP);
@@ -3094,6 +3096,7 @@ function initPost(){
 }
 initPost();
 function renderFrame(dt){
+  if(window.LIMBO_FX)window.LIMBO_FX.forEach(function(p){p.enabled=false;});   /* the Limbo's own passes stay off in the forest */
   if(postOn&&comp){
     gradeP.uniforms.time.value=time;gradeP.uniforms.danger.value=postDanger;
     gradeP.uniforms.focus.value.copy(CIN.focus);gradeP.uniforms.dofAmt.value=CIN.dof;gradeP.uniforms.lens.value=CIN.lens;
@@ -4406,7 +4409,7 @@ function enterLimbo(){
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
   var need=Promise.resolve();
-  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=39');}).then(function(){
+  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=40');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();
@@ -5308,6 +5311,8 @@ import {CopyShader} from 'three/addons/shaders/CopyShader.js';
 import {LuminosityHighPassShader} from 'three/addons/shaders/LuminosityHighPassShader.js';
 import {Reflector} from 'three/addons/objects/Reflector.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
+import {SSAOPass} from 'three/addons/postprocessing/SSAOPass.js';
+import {LUTPass} from 'three/addons/postprocessing/LUTPass.js';
 const T=Object.assign({},NS);
 /* keep r128's look: colours as authored (no automatic sRGB conversion of hex colours) and the old light falloff */
 T.ColorManagement.enabled=false;
@@ -5316,7 +5321,7 @@ class SpotLight extends NS.SpotLight{constructor(c,i,d,a,p,decay){super(c,i,d,a,
 /* r128's bloom worked on 8-bit targets: bright lights clipped at 1 before blurring. Keep that, or every lamp blooms twice as hard */
 class UnrealBloomPass8 extends UnrealBloomPass{constructor(a,b,c,d){super(a,b,c,d);[this.renderTargetBright].concat(this.renderTargetsHorizontal,this.renderTargetsVertical).forEach(function(rt){rt.texture.type=NS.UnsignedByteType;rt.dispose();});}}
 class WebGLRenderer extends NS.WebGLRenderer{constructor(o){super(o);this.useLegacyLights=true;}}
-Object.assign(T,{PointLight,SpotLight,WebGLRenderer,GLTFLoader,KTX2Loader,SkeletonUtils,EffectComposer,RenderPass,ShaderPass,MaskPass,ClearMaskPass,UnrealBloomPass:UnrealBloomPass8,CopyShader,LuminosityHighPassShader,Reflector,TransformControls});
+Object.assign(T,{PointLight,SpotLight,WebGLRenderer,GLTFLoader,KTX2Loader,SkeletonUtils,EffectComposer,RenderPass,ShaderPass,MaskPass,ClearMaskPass,UnrealBloomPass:UnrealBloomPass8,CopyShader,LuminosityHighPassShader,Reflector,TransformControls,SSAOPass,LUTPass});
 /* GPU-compressed textures (KTX2 / Basis): every GLTFLoader picks up window.KTX2 */
 const parse=GLTFLoader.prototype.parse;GLTFLoader.prototype.parse=function(){if(!this.ktx2Loader&&window.KTX2)this.ktx2Loader=window.KTX2;return parse.apply(this,arguments);};
 window.loadKTX2=function(renderer){if(!window.KTX2){try{window.KTX2=new KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/').detectSupport(renderer);}catch(e){console.warn('KTX2 not available, using JPEG textures',e);}}return Promise.resolve(window.KTX2||null);};
