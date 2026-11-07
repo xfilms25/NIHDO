@@ -413,7 +413,7 @@ function makeCone(h,r,col,op){return makeBeam(h,0.0001,r,col,op);}
 var _bv1=new T.Vector3(),_bv2=new T.Vector3(),_bq=new T.Quaternion(),_bd=new T.Vector3(),_bup=new T.Vector3(0,-1,0);
 function aimBeam(m,from,to,spread){m.position.copy(from);_bd.copy(to).sub(from);var L=_bd.length()||1;_bd.divideScalar(L);m.quaternion.setFromUnitVectors(_bup,_bd);
   var h=m.material.uniforms.hh.value;m.scale.set(spread||1,L/h,spread||1);}
-function beamsTick(){lmTick();for(var i=0;i<BEAMS.length;i++){var b=BEAMS[i];b.material.uniforms.t.value=time;if(b.userData.upd)b.userData.upd(b);}}
+function beamsTick(){lmTick();if(GL.doors)for(var j=0;j<GL.doors.length;j++){var sd=GL.doors[j].strip;if(sd&&sd.userData.gap){var gp=sd.userData.gap;gp.material.opacity=Math.min(1,sd.material.opacity*1.7);gp.visible=gp.material.opacity>0.01;}}for(var i=0;i<BEAMS.length;i++){var b=BEAMS[i];b.material.uniforms.t.value=time;if(b.userData.upd)b.userData.upd(b);}}
 function makeVeil(){
   var pts=[],H=1.78;
   [[0.0,1.78],[0.12,1.76],[0.17,1.66],[0.15,1.55],[0.12,1.5],[0.36,1.42],[0.42,1.2],[0.44,0.9],[0.5,0.5],[0.6,0.12],[0.66,0.0]].forEach(function(p){pts.push(new T.Vector2(p[0],p[1]));});
@@ -442,20 +442,23 @@ function dressDoor(d){
   d.stub.forEach(function(m){m.visible=false;});
   P2.frame.forEach(function(e){var m=new T.Mesh(e.g,e.m);m.castShadow=m.receiveShadow=true;d.g.add(m);});
   /* the leaf hangs from its hinge edge, which sits on the pivot */
-  P2.door.forEach(function(e){var m=new T.Mesh(e.g,e.m);m.position.x=0.44;m.castShadow=m.receiveShadow=true;d.piv.add(m);});
+  P2.door.forEach(function(e){var m=new T.Mesh(e.g,e.m);m.position.x=0.44;m.position.y=0.018;m.castShadow=m.receiveShadow=true;d.piv.add(m);});
 }
 function makeDoor(col,par,style){
   var g=new T.Group(),wood=std({color:0x2a1d16,roughness:0.75}),frameM=std({color:0x1a120d,roughness:0.8});
   var stub=[box(0.1,2.2,0.16,frameM,-0.5,1.1,0,g),box(0.1,2.2,0.16,frameM,0.5,1.1,0,g),box(1.1,0.1,0.16,frameM,0,2.2,0,g)];
   var piv=new T.Group();piv.position.set(-0.44,0,0);g.add(piv);
-  var slab=box(0.88,2.08,0.05,wood,0.44,1.04,0,piv);
+  var slab=box(0.88,2.06,0.05,wood,0.44,1.05,0,piv);   /* a finger's gap under the leaf, where the light comes through */
   var vd=new T.Mesh(new T.PlaneGeometry(0.9,2.12),new T.MeshBasicMaterial({map:GL.voidTex,color:col!==null&&col!==undefined?col:0x7a7f88,fog:false}));vd.rotation.y=Math.PI;vd.position.set(0,1.06,-0.035);vd.renderOrder=-1;g.add(vd);GL.lastVoid=vd;
   stub.push(slab,box(0.06,0.06,0.07,std({color:0x9a8a6a,metalness:0.6,roughness:0.4}),0.8,1.0,0.04,piv));
   var strip=null,light=null;
   if(col!==null&&col!==undefined){
-    strip=new T.Mesh(new T.PlaneGeometry(0.86,0.5).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:col,transparent:true,opacity:0.55,depthWrite:false,blending:T.AdditiveBlending,map:GL.stripTex}));
-    strip.position.set(0,0.012,0.27);g.add(strip);
-    light=new T.PointLight(col,0.5,3.2,2);light.position.set(0,0.12,0.4);g.add(light);
+    strip=new T.Mesh(new T.PlaneGeometry(1.5,1.0).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:col,transparent:true,opacity:0.55,depthWrite:false,blending:T.AdditiveBlending,map:GL.stripTex,fog:false}));
+    strip.position.set(0,0.006,0.53);g.add(strip);
+    /* the glowing line in the gap itself; it follows the spill's strength */
+    var gap=new T.Mesh(new T.PlaneGeometry(0.86,0.02),new T.MeshBasicMaterial({color:new T.Color(col).multiplyScalar(1.6),transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false}));
+    gap.position.set(0,0.011,-0.03);g.add(gap);strip.userData.gap=gap;
+    light=new T.PointLight(col,0.5,2.6,2);light.position.set(0,0.06,0.2);g.add(light);
   }
   (par||scene).add(g);
   var d={g:g,piv:piv,slab:slab,strip:strip,light:light,open:0,want:0,stub:stub,style:style||'D1'};(GL.doors=GL.doors||[]).push(d);if(GL.doorParts)dressDoor(d);return d;
@@ -605,7 +608,11 @@ function eyesKey(){return G.GP.on?tx('eyesP'):G.touch()?tx('eyesT'):tx('eyesK');
 function build(){
   GL.glow=texGlow();
   GL.voidTex=canvasTex(64,128,function(g,w,h){g.fillStyle='#000';g.fillRect(0,0,w,h);var gr=g.createLinearGradient(0,h,0,h*0.55);gr.addColorStop(0,'rgba(255,255,255,0.16)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);var r2=g.createRadialGradient(w/2,h*0.62,0,w/2,h*0.62,w*0.5);r2.addColorStop(0,'rgba(255,255,255,0.05)');r2.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r2;g.fillRect(0,0,w,h);});
-  GL.stripTex=canvasTex(64,64,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(0.6,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,1)');g.fillStyle=gr;g.fillRect(0,0,w,h);});
+  /* the light under a door: bright right at the gap, then a soft fan on the floor that widens and fades */
+  GL.stripTex=canvasTex(128,128,function(g,w,h){var im=g.createImageData(w,h),d=im.data,r=rnd(11);
+    for(var y=0;y<h;y++){var t=(y+0.5)/h;for(var x=0;x<w;x++){var xn=Math.abs((x+0.5)/w-0.5)*1.5,hw=0.42+0.42*t,sf=0.05+0.32*t,
+      side=1-ss(hw-sf,hw+sf,xn),v=(Math.exp(-t*4.6)*0.85+Math.exp(-t*30)*0.9)*side*(0.93+0.07*r());v=Math.min(1,v);var c=Math.round(255*v),i=(y*w+x)*4;d[i]=d[i+1]=d[i+2]=c;d[i+3]=255;}}
+    g.putImageData(im,0,0);});
   scene=new T.Scene();scene.background=new T.Color(0x000000);
   cam=new T.PerspectiveCamera(57,window.innerWidth/window.innerHeight,0.05,90);cam.rotation.order='YXZ';
   scene.add(new T.HemisphereLight(0x1a2028,0x050505,0.12));
@@ -668,7 +675,7 @@ function build(){
   box(0.38,0.47,0.02,mf,0.3,1.6,-D+0.005,B);
   /* doors: the way in/out (south), the bathroom (north) */
   GL.dExit=makeDoor(null,B);GL.dExit.g.position.set(0,0,D-0.02);GL.dExit.g.rotation.y=Math.PI;
-  GL.dBath=makeDoor(0x7fa8ff,B,'D2');GL.dBath.g.remove(GL.lastVoid);GL.dBath.g.position.set(1.0,0,-D+0.02);GL.dBath.strip.position.z=0.27;GL.dBath.light.position.set(0,0.12,0.35);
+  GL.dBath=makeDoor(0x7fa8ff,B,'D2');GL.dBath.g.remove(GL.lastVoid);GL.dBath.g.position.set(1.0,0,-D+0.02);
   GL.dBath.strip.material.opacity=0;GL.dBath.light.intensity=0;
   /* the bathroom behind it: a long black-tiled room, warm bulb over the red sink, moonlight through the window over the tub.
      Everything is placed from the model's own coordinates (ML), so the shell, the fixtures and the collisions stay together at any scale. */
