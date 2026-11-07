@@ -1024,7 +1024,10 @@ function dressCar(m){
   GL.roadReady=true;
 }
 /* quantized vertex data reads raw on the CPU in this three.js: expand it so raycasts see real positions */
+/* unpack quantized positions to floats. Newer three.js (r144+) already returns normalized values from getX; older returned the raw
+   integers. Check which one this is, so the geometry is never divided twice (that collapsed the whole forest to a point). */
 function dequant(g){var a=g.attributes.position;if(!a||!a.normalized)return;var arr=a.isInterleavedBufferAttribute?a.data.array:a.array,d=arr instanceof Int16Array?32767:arr instanceof Uint16Array?65535:arr instanceof Int8Array?127:arr instanceof Uint8Array?255:1,f=new Float32Array(a.count*3);
+  var st=a.isInterleavedBufferAttribute?a.data.stride:a.itemSize,o0=a.isInterleavedBufferAttribute?a.offset:0;for(var r0=0;r0<a.count;r0++){var raw=arr[r0*st+o0];if(raw!==0){if(Math.abs(a.getX(r0)-raw)>1e-6)d=1;break;}}
   for(var i=0;i<a.count;i++){f[i*3]=Math.max(a.getX(i)/d,-1);f[i*3+1]=Math.max(a.getY(i)/d,-1);f[i*3+2]=Math.max(a.getZ(i)/d,-1);}g.setAttribute('position',new T.BufferAttribute(f,3));g.computeBoundingSphere();g.computeBoundingBox();}
 /* wet asphalt: dark, worn, a broken yellow centre line and white edges */
 function texAsphalt(){return canvasTex(256,512,function(g,w,h){var r=rnd(41);g.fillStyle='#1a1b1d';g.fillRect(0,0,w,h);
