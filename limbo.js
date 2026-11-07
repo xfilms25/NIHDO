@@ -539,8 +539,10 @@ function stepTile(){
 }
 function thud(t,f0,f1,v){try{var o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+0.1);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.13);o.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(t);o.stop(t+0.15);}catch(e){}}
 /* rings spreading where he steps */
-function ripple(x,z,big){if(!GL.rip)return;var R=GL.rip[GL.ripI];GL.ripI=(GL.ripI+1)%GL.rip.length;R.t=0;R.big=big?2.2:1;R.m.position.set(x+(Math.random()-0.5)*0.15,0.006,z+(Math.random()-0.5)*0.15);R.m.visible=true;}
-function rippleTick(dt){if(!GL.rip)return;GL.rip.forEach(function(R){if(!R.m.visible)return;R.t+=dt;var u=R.t/1.5;if(u>=1){R.m.visible=false;return;}R.m.scale.setScalar((0.06+u*0.6)*R.big);R.m.material.opacity=0.28*(1-u)*(1-u);});}
+function ripple(x,z,big){if(!GL.rip)return;var R=GL.rip[GL.ripI];GL.ripI=(GL.ripI+1)%GL.rip.length;R.t=0;R.big=big?2.0:1;
+  /* under the foot that just landed: left, right, left... a little ahead of the eye */
+  GL.ripSide=-(GL.ripSide||1);var sd=big?0:GL.ripSide*0.12,fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);R.m.position.set(x-fz*sd-fx*0.18+(Math.random()-0.5)*0.04,0.006,z+fx*sd-fz*0.18+(Math.random()-0.5)*0.04);R.m.rotation.y=Math.random()*6.28;R.m.visible=true;}
+function rippleTick(dt){if(!GL.rip)return;GL.rip.forEach(function(R){if(!R.m.visible)return;R.t+=dt;var u=R.t/(R.big>1?2.2:1.7);if(u>=1){R.m.visible=false;return;}R.m.scale.setScalar(0.62*R.big);var U=R.m.material.uniforms;U.u.value=u;U.k.value=0.16*(1-u)*(1-u)*(R.big>1?1.3:1);});}
 function sCreak(){if(!ac)return;try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*1.3),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*(0.6+0.4*Math.sin(i/len*40));
   var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=9;bp.frequency.setValueAtTime(380,t);bp.frequency.linearRampToValueAtTime(1500,t+0.6);bp.frequency.linearRampToValueAtTime(700,t+1.3);
   var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.08);g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);s.connect(bp);bp.connect(g);g.connect(AU.sfx);g.connect(AU.send);s.start(t);}catch(e){}}
@@ -618,7 +620,15 @@ function build(){
   scene.add(new T.HemisphereLight(0x1a2028,0x050505,0.12));
   /* the player carries no light; a faint presence keeps the nearest few metres readable */
   GL.near=new T.PointLight(0x8090a0,0.35,4.5,2);scene.add(GL.near);
-  GL.rip=[];GL.ripI=0;for(var ri=0;ri<10;ri++){var rm=new T.Mesh(new T.RingGeometry(0.9,1.0,48).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0xc8d4e0,transparent:true,opacity:0,depthWrite:false,fog:false}));rm.visible=false;scene.add(rm);GL.rip.push({m:rm,t:9,big:1});}
+  /* ripples from each step: a few soft concentric waves on the water, opening fast then slowing, thinning as they fade */
+  GL.rip=[];GL.ripI=0;var ripG=new T.PlaneGeometry(2,2).rotateX(-Math.PI/2);
+  for(var ri=0;ri<10;ri++){var rm=new T.Mesh(ripG,new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,
+      uniforms:{u:{value:0},k:{value:0},c:{value:new T.Color(0x9fb0c4)}},
+      vertexShader:'varying vec2 vP;void main(){vP=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader:'uniform float u;uniform float k;uniform vec3 c;varying vec2 vP;void main(){float r=length(vP);float R=0.08+0.92*(1.0-(1.0-u)*(1.0-u));float w=0.035+0.05*u;float a=0.0;'+
+        'for(int i=0;i<3;i++){float fi=float(i);float d=(r-(R-fi*0.16*(0.4+u)))/w;a+=exp(-d*d)*(1.0-fi*0.38)*step(0.0,R-fi*0.16*(0.4+u));}'+
+        'a*=k*(1.0-smoothstep(0.75,1.0,r));gl_FragColor=vec4(c,a);}'}));
+    rm.visible=false;rm.renderOrder=2;scene.add(rm);GL.rip.push({m:rm,t:9,big:1});}
   loadHandModel();loadVeilModels();makeFPHands();loadKitModels();loadDoorModels();loadDamianClips();loadDamianPP();
 
   /* === HUB: endless dark, one light from above === */
