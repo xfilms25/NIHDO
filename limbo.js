@@ -409,6 +409,19 @@ function makeBeam(h,r0,r1,col,op){
   m.renderOrder=5;m.frustumCulled=false;BEAMS.push(m);return m;
 }
 function makeCone(h,r,col,op){return makeBeam(h,0.0001,r,col,op);}
+/* a light shaft through an opening: the 4 corners of the aperture pushed along the light's rays until they reach the floor (or maxL) */
+function makeShaft(src,corners,floorY,maxL,col){
+  var S=new T.Vector3().copy(src),C=corners.map(function(c){return new T.Vector3(c[0],c[1],c[2]);}),F=C.map(function(c){var d=c.clone().sub(S).normalize(),t=d.y<-1e-4?(floorY-c.y)/d.y:maxL;return c.clone().addScaledVector(d,Math.min(t,maxL));});
+  var pos=[],nor=[],lt=[],idx=[],NS=6,cen=new T.Vector3();C.concat(F).forEach(function(v){cen.add(v);});cen.multiplyScalar(1/8);
+  for(var e=0;e<4;e++){var a0=C[e],a1=C[(e+1)%4],b0=F[e],b1=F[(e+1)%4],n=new T.Vector3().subVectors(a1,a0).cross(new T.Vector3().subVectors(b0,a0)).normalize();
+    if(n.dot(new T.Vector3().subVectors(a0,cen))<0)n.negate();var base=pos.length/3;
+    for(var i=0;i<=NS;i++){var u=i/NS,p0=a0.clone().lerp(b0,u),p1=a1.clone().lerp(b1,u);pos.push(p0.x,p0.y,p0.z,p1.x,p1.y,p1.z);nor.push(n.x,n.y,n.z,n.x,n.y,n.z);lt.push(u,u);}
+    for(var j=0;j<NS;j++){var q=base+j*2;idx.push(q,q+1,q+2,q+1,q+3,q+2);}}
+  var g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('normal',new T.Float32BufferAttribute(nor,3));g.setAttribute('lt',new T.Float32BufferAttribute(lt,1));g.setIndex(idx);
+  var bm=makeBeam(1,0.1,0.1,col,1),m=bm.material;BEAMS.splice(BEAMS.indexOf(bm),1);
+  m.vertexShader=m.vertexShader.replace('uniform float hh;','uniform float hh;attribute float lt;').replace('vT=clamp(-position.y/hh,0.0,1.0);','vT=lt;');
+  var M=new T.Mesh(g,m);M.renderOrder=5;M.frustumCulled=false;BEAMS.push(M);return M;
+}
 /* aim a beam from its own position at a world point, stretching it to reach (length and far radius follow) */
 var _bv1=new T.Vector3(),_bv2=new T.Vector3(),_bq=new T.Quaternion(),_bd=new T.Vector3(),_bup=new T.Vector3(0,-1,0);
 function aimBeam(m,from,to,spread){m.position.copy(from);_bd.copy(to).sub(from);var L=_bd.length()||1;_bd.divideScalar(L);m.quaternion.setFromUnitVectors(_bup,_bd);
@@ -724,13 +737,14 @@ function build(){
   /* moonlight: a cold spot outside the window, the frame casts its cross on the floor and the tub */
   GL.moon=new T.SpotLight(0xa9c2ff,0,9,0.5,0.35,1);GL.moon.position.set(BX0-1.45,WY1+0.75,WZC+0.08);GL.moon.target.position.set(TUBC[0],0.1,TUBC[1]+0.15);BA.add(GL.moon);BA.add(GL.moon.target);
   /* the moonlight in the air: a pale shaft from the window down to the tub */
-  var mb=GL.moonBeam=makeBeam(1,0.42,0.75,0xa9c2ff,1);BA.add(mb);mb.userData.upd=function(b){b.visible=GL.moon.intensity>0.05&&GL.bath.visible;b.material.uniforms.k.value=0.9*Math.min(1,GL.moon.intensity/2.2);
-    aimBeam(b,_bv1.set(BX0-0.05,WYC+0.15,WZC),_bv2.set(TUBC[0],0.1,TUBC[1]+0.15));};
+  /* the moonlight in the air: the window's own opening pushed away from the moon down to the floor, so the shaft is exactly the frame's shape */
+  var mb=GL.moonBeam=makeShaft(GL.moon.position,[[BX0,WY1,WZ0],[BX0,WY1,WZ1],[BX0,WY0,WZ1],[BX0,WY0,WZ0]],0.02,3.4,0xa9c2ff);BA.add(mb);
+  mb.userData.upd=function(b){b.visible=GL.moon.intensity>0.05&&GL.bath.visible;b.material.uniforms.k.value=0.8*Math.min(1,GL.moon.intensity/2.2);};
   GL.moon.castShadow=true;GL.moon.shadow.mapSize.set(1024,1024);GL.moon.shadow.bias=-0.0015;GL.moon.shadow.camera.near=0.4;GL.moon.shadow.camera.far=8;
   /* a soft shaft of light in the air */
   var shM=new T.MeshBasicMaterial({map:texShaft(),color:0x9fb8ff,transparent:true,opacity:0.16,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,fog:false});
   var shG=new T.CylinderGeometry(0.55,0.95,2.4,4,1,true);shG.rotateY(Math.PI/4);shG.translate(0,-1.2,0);
-  GL.shaft=new T.Mesh(shG,shM);GL.shaft.position.set(BX0-0.05,WYC,WZC);GL.shaft.lookAt(TUBC[0],0.1,TUBC[1]+0.15);GL.shaft.rotateX(-Math.PI/2);GL.shaft.scale.set(1,1,0.75);BA.add(GL.shaft);
+  GL.shaft=new T.Mesh(shG,shM);GL.shaft.position.set(BX0-0.05,WYC,WZC);GL.shaft.lookAt(TUBC[0],0.1,TUBC[1]+0.15);GL.shaft.rotateX(-Math.PI/2);GL.shaft.scale.set(1,1,0.75);GL.shaft.visible=false;   /* replaced by the window-shaped shaft below */
   /* the mirror over the sink (model coords) */
   var MP=ML(5.335,5.0,-14.70),MX=MP[0],MY=MP[1],MZ=MP[2],MRW=0.4,MRH=0.24;
   /* warm light: a bulb over the sink mirror */
@@ -766,7 +780,7 @@ function build(){
   box(0.012,MRH*2+0.02,MRW*2+0.02,std({color:0x050505,roughness:0.6}),MX+0.012,MY,MZ,BA);
   if(T.Reflector){
     var pr=Math.min(1.5,R.getPixelRatio());
-    var mir=GL.mirror=new T.Reflector(oval(),{clipBias:0.003,textureWidth:Math.round(380*pr),textureHeight:Math.round(620*pr),color:0xc4c4c4});
+    var mtw=Math.round((isPhone()?720:1280)*pr);var mir=GL.mirror=new T.Reflector(oval(),{clipBias:0.003,textureWidth:mtw,textureHeight:Math.round(mtw*MRH/MRW),color:0xc4c4c4,multisample:isPhone()?0:4});
     mir.position.set(MX,MY,MZ);mir.rotation.y=-Math.PI/2;BA.add(mir);
     var ob=mir.onBeforeRender;
     mir.onBeforeRender=function(){var hv=GL.hero.visible,hl=GL.hol?GL.hol.visible:false;GL.hero.visible=P.area==='room';if(GL.hol)GL.hol.visible=hl||S.holMirror;try{ob.apply(this,arguments);}finally{GL.hero.visible=hv;if(GL.hol)GL.hol.visible=hl;}};
