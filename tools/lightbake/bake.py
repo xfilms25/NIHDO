@@ -1,7 +1,7 @@
 """Bathroom light bake: one bounce of indirect light per light + ambient occlusion.
 
 Input : a scene dump from the game (dump.js run in the page): world triangles, albedo, the shell planes and the lights.
-Output: <out>_lm.png  atlas for the shell planes   R = ambient occlusion, G = sqrt(bulb bounce / MB), B = sqrt(moon bounce / MM)
+Output: <out>_lm.png  atlas for the shell planes   R = ambient occlusion, G = sqrt(light A bounce / MB), B = sqrt(light B bounce / MM)
         <out>_lmv.bin per-vertex values for the fixture model, same channels, uint8, in model traverse order
         <out>_lm.json  atlas rects (one per shell plane, in creation order), scales MB / MM, vertex table
 The lights are baked at intensity 1 with the game's own falloff (legacy lights), so the game scales each channel by the
@@ -39,7 +39,8 @@ def first_hit(o, dv):
     T[ri] = np.einsum('ij,ij->i', loc - o[ri], dv[ri]); TI[ri] = tri
     return T, TI
 
-lights = {l['name']: l for l in d['lights']}
+LA, LB = d['lights'][0], d['lights'][1]
+JIT = [float(x) for x in (sys.argv[5].split(',') if len(sys.argv) > 5 else ['0.02', '0.05'])]
 
 def direct(L, p, n, jitter):
     """irradiance (game units, intensity 1) at points p with normals n, shadowed"""
@@ -86,8 +87,8 @@ def bake(p, n):
         hn = TN[TI[hit]]; flip = np.einsum('ij,ij->i', hn, D[hit]) > 0; hn[flip] *= -1
         alb = ALB[TI[hit]].mean(1)
         res = []
-        for nm, jit in (('bulb', 0.02), ('moon', 0.05)):
-            e = np.zeros(len(O)); e[hit] = alb * direct(lights[nm], H, hn, jit)
+        for Lx, jit in ((LA, JIT[0]), (LB, JIT[1])):
+            e = np.zeros(len(O)); e[hit] = alb * direct(Lx, H, hn, jit)
             res.append(e.reshape(k, SPP).mean(1))
         out_[s:s + k] = np.stack([ao, res[0], res[1]], 1)
         print(f'  {s + k}/{N}', flush=True)

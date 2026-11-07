@@ -311,7 +311,7 @@ function loadBedModel(B){
   new T.GLTFLoader().load('bedroom.glb?v=1',function(gl){
     var m=gl.scene;m.scale.setScalar(0.78);m.rotation.y=Math.PI/2;m.position.set(-0.86,0,-0.97);
     m.traverse(function(o){if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;var mt=o.material;if(mt){mt.side=T.FrontSide;if(mt.map)mt.map.anisotropy=4;mt.color.setHex(0xd8d2c6);GL.sheetM=mt;}});
-    B.add(m);GL.bedModel=m;if(GL.bedStub){B.remove(GL.bedStub);GL.bedStub=null;}
+    B.add(m);GL.bedModel=m;lmModel('room',m);if(GL.bedStub){B.remove(GL.bedStub);GL.bedStub=null;}
   },undefined,function(){});
 }
 /* the bathroom model: restyled on load (black, white tub, red sink, brass) */
@@ -334,7 +334,7 @@ function loadBathModel(BA){
     var pp=GL.part,pane=new T.Mesh(new T.PlaneGeometry(pp.zb-pp.za,pp.h),glass);pane.position.set(pp.x,pp.h/2+0.03,(pp.za+pp.zb)/2);pane.rotation.y=Math.PI/2;BA.add(pane);
     if(GL.tubBox)BA.remove(GL.tubBox);if(oldW&&oldW!==GL.water)BA.remove(oldW);
     BA.add(m);GL.bathModel=m;
-    lmModel(m);
+    lmModel('bath',m);
     /* compile now so opening the door doesn't hitch */
     try{var v=BA.visible;BA.visible=true;R.compile(scene,cam);BA.visible=v;}catch(e){}
   },undefined,function(){});
@@ -359,40 +359,47 @@ function texGlow(){return canvasTex(64,64,function(g,w,h){var gr=g.createRadialG
 /* ---------- builders ---------- */
 /* volumetric light: a soft shaft of lit air with dust drifting through it. An open tube, top radius r0 at its origin, r1 at length h,
    pointing down -y; brightest along the core and near the source, fading at the edges and the far end */
-/* === baked light (tools/lightbake): one bounce from the bulb and the moon + ambient occlusion, kept per light so the
-   live intensity and colour drive it (flicker, the blue third visit, the moon going out). Shell planes use an atlas
-   (R ao, G bulb, B moon, sqrt-encoded); the fixtures carry the same three values per vertex. === */
-var LMU={lmB:{value:new T.Color(0,0,0)},lmM:{value:new T.Color(0,0,0)},lmS:{value:new T.Vector2(1,1)},lmAO:{value:0.55}},LM={meta:null,bin:null,model:null,done:false};
-var LM_GAIN=1.6;
-function lmPatch(mat,vert){if(mat.userData.lm)return;mat.userData.lm=1;
-  mat.onBeforeCompile=function(sh){sh.uniforms.lmB=LMU.lmB;sh.uniforms.lmM=LMU.lmM;sh.uniforms.lmS=LMU.lmS;sh.uniforms.lmAO=LMU.lmAO;
+/* === baked light (tools/lightbake): one bounce per light + ambient occlusion, kept per light so the live intensity and
+   colour drive it (flicker, the blue third visit, lights going out). Shell planes read an atlas (R ao, G light A,
+   B light B, sqrt-encoded); the furniture models carry the same three values per vertex. One set per scene. === */
+var LM_GAIN=4.5,LMS={};
+function lmScene(name){return LMS[name]=LMS[name]||{name:name,U:{lmB:{value:new T.Color(0,0,0)},lmM:{value:new T.Color(0,0,0)},lmS:{value:new T.Vector2(1,1)},lmAO:{value:0.65}},meta:null,bin:null,model:null,done:false,la:null,lb:null};}
+function lmPatch(mat,vert,U){if(mat.userData.lm)return;mat.userData.lm=1;
+  mat.onBeforeCompile=function(sh){sh.uniforms.lmB=U.lmB;sh.uniforms.lmM=U.lmM;sh.uniforms.lmS=U.lmS;sh.uniforms.lmAO=U.lmAO;
     sh.fragmentShader='uniform vec3 lmB;uniform vec3 lmM;uniform vec2 lmS;uniform float lmAO;\n'+(vert?'varying vec3 vLmv;\n':'')+sh.fragmentShader;
     if(vert){sh.vertexShader='attribute vec3 lmv;varying vec3 vLmv;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvLmv=lmv;');
       sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>','#include <lights_fragment_maps>\nirradiance+=(lmB*(vLmv.g*vLmv.g*lmS.x)+lmM*(vLmv.b*vLmv.b*lmS.y))*3.14159265;')
         .replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse*=vLmv.r;reflectedLight.directDiffuse*=mix(1.0,vLmv.r,lmAO);');}
-    else{sh.fragmentShader=sh.fragmentShader.replace('vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;','vec3 lightMapIrradiance = (lmB*(lightMapTexel.g*lightMapTexel.g*lmS.x)+lmM*(lightMapTexel.b*lightMapTexel.b*lmS.y)) * lightMapIntensity;')
+    else{/* the include is still unexpanded here: expand it ourselves, then swap the plain lightmap term for the per-light one */
+      var ch=T.ShaderChunk.lights_fragment_maps,want='vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;';
+      if(ch.indexOf(want)<0)console.warn('lightmap chunk changed');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>',ch.replace(want,'vec3 lightMapIrradiance = (lmB*(lightMapTexel.g*lightMapTexel.g*lmS.x)+lmM*(lightMapTexel.b*lightMapTexel.b*lmS.y)) * lightMapIntensity;'))
         .replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.directDiffuse*=mix(1.0,ambientOcclusion,lmAO);');}};
   mat.customProgramCacheKey=function(){return vert?'lmv':'lmt';};mat.needsUpdate=true;}
-function bathLM(shell,mats){
+/* load a scene's bake: <file>_lm.json / _lm.png / _lmv.bin; la, lb = the two lights its channels follow */
+function sceneLM(name,file,shell,mats,la,lb,ver){
+  var L=lmScene(name);L.la=la;L.lb=lb;
   if(!window.fetch||/[?&]nolm/.test(location.search))return;
-  fetch('bath_lm.json?v=1').then(function(r){return r.json();}).then(function(meta){LM.meta=meta;LMU.lmS.value.set(meta.MB,meta.MM);
-    new T.TextureLoader().load('bath_lm.png?v=1',function(tx){tx.channel=1;tx.colorSpace=T.NoColorSpace;tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;
+  fetch(file+'_lm.json?v='+ver).then(function(r){return r.json();}).then(function(meta){L.meta=meta;L.U.lmS.value.set(meta.MB,meta.MM);
+    new T.TextureLoader().load(file+'_lm.png?v='+ver,function(tx){tx.channel=1;tx.colorSpace=T.NoColorSpace;tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;
       meta.rects.forEach(function(rc){var m=shell[rc[0]];if(!m)return;var g=m.geometry,uv=g.attributes.uv,a=new Float32Array(uv.count*2),U=[0,1,0,1],V=[1,1,0,0];
         for(var i=0;i<uv.count;i++){a[i*2]=rc[1]+U[i]*rc[3];a[i*2+1]=rc[2]+V[i]*rc[4];}g.setAttribute('uv1',new T.BufferAttribute(a,2));});
-      mats.forEach(function(mt){mt.lightMap=tx;mt.lightMapIntensity=1;mt.aoMap=tx;mt.aoMapIntensity=1;lmPatch(mt,false);});});
-    return fetch('bath_lmv.bin?v=1');}).then(function(r){return r&&r.arrayBuffer();}).then(function(b){if(b){LM.bin=new Uint8Array(b);lmModel();}}).catch(function(){});
+      mats.forEach(function(mt){mt.lightMap=tx;mt.lightMapIntensity=1;mt.aoMap=tx;mt.aoMapIntensity=1;lmPatch(mt,false,L.U);});});
+    return fetch(file+'_lmv.bin?v='+ver);}).then(function(r){return r&&r.ok&&r.arrayBuffer();}).then(function(b){if(b){L.bin=new Uint8Array(b);lmModel(name);}}).catch(function(){});
 }
-function lmModel(m){if(m)LM.model=m;m=LM.model;if(!m||!LM.bin||!LM.meta||LM.done)return;LM.done=true;
-  var q={},off=0;LM.meta.verts.forEach(function(v){(q[v[0]+'|'+v[1]]=q[v[0]+'|'+v[1]]||[]).push(off);off+=v[1]*3;});
+function bathLM(shell,mats){sceneLM('bath','bath',shell,mats,function(){return GL.bathL;},function(){return GL.moon;},1);}
+function lmModel(name,m){var L=lmScene(name);if(m)L.model=m;m=L.model;if(!m||!L.bin||!L.meta||L.done)return;L.done=true;
+  var q={},off=0;L.meta.verts.forEach(function(v){(q[v[0]+'|'+v[1]]=q[v[0]+'|'+v[1]]||[]).push(off);off+=v[1]*3;});
   var mats=[],plain=[];
   m.traverse(function(o){if(!o.isMesh)return;var g=o.geometry,n=g.attributes.position.count,k=o.name+'|'+n,l=q[k];
     if(l&&l.length&&o.material&&!o.material.transparent){var st=l.shift();if(g.attributes.lmv){g=o.geometry=g.clone();}
-      g.setAttribute('lmv',new T.Uint8BufferAttribute(LM.bin.subarray(st,st+n*3),3,true));if(mats.indexOf(o.material)<0)mats.push(o.material);}
+      g.setAttribute('lmv',new T.Uint8BufferAttribute(L.bin.subarray(st,st+n*3),3,true));if(mats.indexOf(o.material)<0)mats.push(o.material);}
     else plain.push(o);});
   plain.forEach(function(o){if(mats.indexOf(o.material)<0)return;var n=o.geometry.attributes.position.count,a=new Uint8Array(n*3);for(var i=0;i<n;i++)a[i*3]=255;o.geometry.setAttribute('lmv',new T.Uint8BufferAttribute(a,3,true));});
-  mats.forEach(function(mt){lmPatch(mt,true);});
+  mats.forEach(function(mt){lmPatch(mt,true,L.U);});
 }
-function lmTick(){if(!GL.bathL||!GL.moon)return;LMU.lmB.value.copy(GL.bathL.color).multiplyScalar(GL.bathL.intensity*LM_GAIN);LMU.lmM.value.copy(GL.moon.color).multiplyScalar(GL.moon.intensity*LM_GAIN);}
+function lmTick(){for(var nm in LMS){var L=LMS[nm],a=L.la&&L.la(),b=L.lb&&L.lb();
+  if(a)L.U.lmB.value.copy(a.color).multiplyScalar(a.intensity*LM_GAIN);if(b)L.U.lmM.value.copy(b.color).multiplyScalar(b.intensity*LM_GAIN);}}
 var BEAMS=[];
 function makeBeam(h,r0,r1,col,op){
   var geo=new T.CylinderGeometry(r0,r1,h,40,1,true);geo.translate(0,-h/2,0);
@@ -669,7 +676,8 @@ function build(){
   GL.wallTex=texWall(false);GL.wallTex2=texWall(true);
   var wallM=GL.wallM=std({map:GL.wallTex,roughness:0.92,color:0xffffff});
   var W=2,D=2.5,HH=2.7;
-  function wall(w,h,x,y,z,ry){var m=new T.Mesh(new T.PlaneGeometry(w,h),wallM);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;B.add(m);return m;}
+  var RSH=GL.roomShell=[];
+  function wall(w,h,x,y,z,ry){var m=new T.Mesh(new T.PlaneGeometry(w,h),wallM);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;B.add(m);RSH.push(m);return m;}
   /* north wall: built around the bathroom doorway */
   wall(2.5,HH,-0.75,HH/2,-D,0);wall(0.5,HH,1.75,HH/2,-D,0);wall(1.0,HH-2.2,1.0,2.2+(HH-2.2)/2,-D,0);
   /* south wall: built around the way out */
@@ -677,6 +685,7 @@ function build(){
   wall(D*2,HH,-W,HH/2,0,Math.PI/2);wall(D*2,HH,W,HH/2,0,-Math.PI/2);
   var fl=new T.Mesh(new T.PlaneGeometry(W*2,D*2).rotateX(-Math.PI/2),std({map:texWood(),roughness:0.7}));fl.receiveShadow=true;B.add(fl);
   var ce=new T.Mesh(new T.PlaneGeometry(W*2,D*2).rotateX(Math.PI/2),std({color:0x1b1918,roughness:1}));ce.position.y=HH;B.add(ce);
+  RSH.push(fl,ce);sceneLM('room','room',RSH,[wallM,fl.material,ce.material],function(){return GL.lamp;},function(){return GL.roomFill;},1);
   var base=std({color:0x140e0b,roughness:0.8});box(W*2,0.12,0.03,base,0,0.06,-D+0.015,B);box(W-0.5,0.12,0.03,base,-(W+0.5)/2,0.06,D-0.015,B);box(W-0.5,0.12,0.03,base,(W+0.5)/2,0.06,D-0.015,B);box(0.03,0.12,D*2,base,-W+0.015,0.06,0,B);box(0.03,0.12,D*2,base,W-0.015,0.06,0,B);
   /* the bed, the desk and the chair (one model, loaded in the background; plain stand-ins until then) */
   var bedW=std({color:0x2a1c14,roughness:0.7}),sheet=GL.sheetM=std({color:0xd8d2c6,roughness:0.95});
@@ -2097,7 +2106,7 @@ L.characters=function(){var out=[],add=function(id,label,obj,clips){if(obj&&obj.
   if(GL.goth)add('goth','Chica gótica',GL.goth.g,{});if(GL.gothWatch)add('gothWatch','Chica gótica (mirando)',GL.gothWatch,{});
   if(GL.cast)for(var k in GL.cast){var C=GL.cast[k],cc={};if(C.act)cc[C.clip==='own'?'propia':C.clip]=C.act.getClip();(C.anims||[]).forEach(function(a){cc[a.name]=a;});add(k,k.charAt(0).toUpperCase()+k.slice(1),C.g,cc);}
   return out;};
-L._dbg=function(){return {BEAMS:BEAMS,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {BEAMS:BEAMS,LMS:LMS,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;

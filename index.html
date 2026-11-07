@@ -4436,7 +4436,7 @@ function enterLimbo(){
   state='limboLoad';
   var base=(document.currentScript&&document.currentScript.src)||'';
   var need=Promise.resolve();
-  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=50');}).then(function(){
+  need.then(function(){return window.loadKTX2(renderer);}).then(function(){$('lBarI').style.width='60%';return loadScript('limbo.js?v=51');}).then(function(){
     $('lBarI').style.width='100%';
     window.LIMBO.init(GAME,function(){
       state='limbo';clock.getDelta();
