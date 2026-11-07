@@ -27,7 +27,7 @@ body{position:relative}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #vig{position:absolute;inset:0;pointer-events:none;opacity:.55;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(0,0,0,.85) 100%)}
 #grade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(110,140,170,.16),rgba(20,18,20,.14));mix-blend-mode:multiply}
-#grain{position:absolute;inset:0;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#grain{display:none;position:absolute;inset:0;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
 #trapUI{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);z-index:6;display:none;text-align:center;pointer-events:none}
 #trapTxt{font-family:'Cinzel',serif;font-size:clamp(15px,2.4vw,24px);letter-spacing:.06em;color:#efe6d6;text-shadow:0 2px 14px rgba(0,0,0,.95);margin-bottom:10px;animation:trapP .5s ease-in-out infinite alternate}
 @keyframes trapP{from{transform:scale(1)}to{transform:scale(1.06)}}
@@ -156,7 +156,7 @@ button.go:hover{background:#fff}
 #vTitle .tfog.f2{opacity:.22;animation:fogA 55s linear infinite reverse;top:18%;filter:blur(2px)}
 @keyframes fogA{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 body.onTitle #hud,body.onTitle #compass,body.onTitle #pauseBtn{opacity:0!important;pointer-events:none!important;transition:opacity .4s}
-#vTitle .tgrain{position:absolute;inset:0;pointer-events:none;opacity:.16;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#vTitle .tgrain{display:none;position:absolute;inset:0;pointer-events:none;opacity:.16;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
 .menuWrap{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:18px;box-sizing:border-box;width:min(660px,100%);height:100%;overflow-y:auto;padding-block:32px;padding-left:max(7vw,env(safe-area-inset-left,0px));padding-right:16px}
 .menuWrap>:first-child{margin-top:auto}.menuWrap>:last-child{margin-bottom:auto}
 .menuWrap .eyebrow{font-weight:600;letter-spacing:.24em;text-transform:uppercase;font-size:14px;color:var(--gold)}
