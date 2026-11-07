@@ -1387,15 +1387,17 @@ function buildParty(){
   /* the lights: three coloured spots that sweep, a mirror ball, a strobe */
   GL.pSpots=[];[[0xff2a9a,-3.5,-2.5],[0x2ad0ff,3.5,-2.5],[0xffa020,0,3]].forEach(function(e,i){var sp=new T.SpotLight(e[0],4.2,16,0.55,0.6,1.2);sp.position.set(e[1],PH-0.1,e[2]);var tg=new T.Object3D();Pg.add(tg);sp.target=tg;Pg.add(sp);
     /* the beam in the haze, sweeping with the light */
-    var bm=makeBeam(1,0.06,1.0,e[0],1);Pg.add(bm);bm.userData.upd=function(b){b.visible=sp.intensity>0.1&&GL.party.visible;b.material.uniforms.c.value.copy(sp.color);b.material.uniforms.k.value=0.8*Math.min(1.6,sp.intensity/4.2);
+    var bm=makeBeam(1,0.06,1.0,e[0],1);Pg.add(bm);bm.userData.upd=function(b){b.visible=sp.intensity>0.1&&GL.party.visible;b.material.uniforms.c.value.copy(sp.color);b.material.uniforms.k.value=0.8*Math.min(1.6,sp.intensity/4.2)*(1+0.3*(b.userData.fl||0));
       var L=sp.position.distanceTo(tg.position);aimBeam(b,sp.position,tg.position,Math.tan(sp.angle)*L*0.75);};
     GL.pSpots.push({l:sp,t:tg,ph:i*2.1,base:e[0],b:bm});});
   var ball=GL.pBall=new T.Mesh(new T.SphereGeometry(0.22,16,12),std({color:0xd8d8e0,metalness:1,roughness:0.15,flatShading:true}));ball.position.set(0,PH-0.45,0);Pg.add(ball);
   GL.pGlints=[];for(var j=0;j<26;j++){var gs=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:[0xff6ad0,0x7ae0ff,0xffd080][j%3],transparent:true,opacity:0.5,depthWrite:false,blending:T.AdditiveBlending}));gs.scale.set(0.35,0.35,1);Pg.add(gs);GL.pGlints.push({s:gs,a:Math.random()*6.3,e:-0.2-Math.random()*1.1});}
-  GL.pStrobe=new T.PointLight(0xffffff,0,22,1.2);GL.pStrobe.position.set(0,PH-0.3,0);Pg.add(GL.pStrobe);
+  GL.pStrobe=new T.PointLight(0xcfeeff,0,22,1.2);GL.pStrobe.position.set(0,PH-0.3,0);Pg.add(GL.pStrobe);
   GL.pAmb=new T.HemisphereLight(0x3a2a48,0x0a0608,0.35);Pg.add(GL.pAmb);
   /* a cold blue-cyan wash that lives with the strobe */
   GL.pCyan=new T.HemisphereLight(0x3fd8ff,0x062a3a,0);Pg.add(GL.pCyan);
+  /* the room's haze: a thin blue fog; each flash lights it cyan and it thickens by 30% */
+  GL.partyFog=new T.FogExp2(0x070b14,0.045);GL.pFogBase=new T.Color(0x070b14);GL.pFogFlash=new T.Color(0x1f5a78);
   GL.pHall=new T.PointLight(0xff3050,0,6,1.4);GL.pHall.position.set(0,0.3,-PD-HL+0.6);Pg.add(GL.pHall);
   /* one bare bulb halfway down the hallway */
   GL.pBulb=new T.PointLight(0xffc890,0.3,6,1.6);GL.pBulb.position.set(0,PH-0.25,-PD-HL/2);Pg.add(GL.pBulb);
@@ -1641,7 +1643,11 @@ function partyTick(dt){
     if(!S.trig&&pz<-PD-HL+1.6){S.trig=true;sClick(3);after(0.6,function(){girlLaugh();});after(1.4,function(){hint(tx('someone'),2400);vo('p2',5000,1);});nextPartyLoop(6);}}
   else S.muted=false;
   /* 3: strobe. Each flash he is closer. Don't look at him. Get to the hallway. */
-  if(GL.pCyan)GL.pCyan.intensity=L===3?0.38+0.5*(GL.pStrobe.intensity/9):0;
+  /* the flash: the cold wash floods the room, the haze glows cyan and gets 30% thicker, then all of it falls back */
+  var fl=L===3?Math.min(1,GL.pStrobe.intensity/9):0;
+  if(GL.pCyan)GL.pCyan.intensity=L===3?0.45+1.0*fl:0;
+  if(GL.partyFog){GL.partyFog.density=0.045*(1+0.3*fl);GL.partyFog.color.copy(GL.pFogBase).lerp(GL.pFogFlash,fl);}
+  GL.pSpots.forEach(function(sp){if(sp.b)sp.b.userData.fl=fl;});
   if(L===3&&GL.hol){S.strobeT-=dt;GL.pStrobe.intensity=Math.max(0,GL.pStrobe.intensity-dt*90);
     if(!S.hp){S.hp=new T.Vector3(-3.2,0,-2.6);}
     if(S.strobeT<=0&&!S.trig){S.strobeT=0.7+Math.random()*0.6;GL.pStrobe.intensity=9;noiseBurst(0.05,3000,0.7,0.25,true);
@@ -1737,7 +1743,7 @@ function fxShadowLights(){if(!HQ)return;
   if(GL.hol)castShadows(GL.hol);}
 function castShadows(o){if(!HQ||!o)return;o.traverse(function(m){if(m.isMesh)m.castShadow=true;});}
 function setArea(a){FX.area=a;fxEnv(true);if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
-  P.area=a;heroSync();GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
+  P.area=a;heroSync();GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:a==='party'&&GL.partyFog?GL.partyFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
