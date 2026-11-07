@@ -334,6 +334,7 @@ function loadBathModel(BA){
     var pp=GL.part,pane=new T.Mesh(new T.PlaneGeometry(pp.zb-pp.za,pp.h),glass);pane.position.set(pp.x,pp.h/2+0.03,(pp.za+pp.zb)/2);pane.rotation.y=Math.PI/2;BA.add(pane);
     if(GL.tubBox)BA.remove(GL.tubBox);if(oldW&&oldW!==GL.water)BA.remove(oldW);
     BA.add(m);GL.bathModel=m;
+    lmModel(m);
     /* compile now so opening the door doesn't hitch */
     try{var v=BA.visible;BA.visible=true;R.compile(scene,cam);BA.visible=v;}catch(e){}
   },undefined,function(){});
@@ -358,6 +359,40 @@ function texGlow(){return canvasTex(64,64,function(g,w,h){var gr=g.createRadialG
 /* ---------- builders ---------- */
 /* volumetric light: a soft shaft of lit air with dust drifting through it. An open tube, top radius r0 at its origin, r1 at length h,
    pointing down -y; brightest along the core and near the source, fading at the edges and the far end */
+/* === baked light (tools/lightbake): one bounce from the bulb and the moon + ambient occlusion, kept per light so the
+   live intensity and colour drive it (flicker, the blue third visit, the moon going out). Shell planes use an atlas
+   (R ao, G bulb, B moon, sqrt-encoded); the fixtures carry the same three values per vertex. === */
+var LMU={lmB:{value:new T.Color(0,0,0)},lmM:{value:new T.Color(0,0,0)},lmS:{value:new T.Vector2(1,1)},lmAO:{value:0.55}},LM={meta:null,bin:null,model:null,done:false};
+var LM_GAIN=1.6;
+function lmPatch(mat,vert){if(mat.userData.lm)return;mat.userData.lm=1;
+  mat.onBeforeCompile=function(sh){sh.uniforms.lmB=LMU.lmB;sh.uniforms.lmM=LMU.lmM;sh.uniforms.lmS=LMU.lmS;sh.uniforms.lmAO=LMU.lmAO;
+    sh.fragmentShader='uniform vec3 lmB;uniform vec3 lmM;uniform vec2 lmS;uniform float lmAO;\n'+(vert?'varying vec3 vLmv;\n':'')+sh.fragmentShader;
+    if(vert){sh.vertexShader='attribute vec3 lmv;varying vec3 vLmv;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvLmv=lmv;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_maps>','#include <lights_fragment_maps>\nirradiance+=(lmB*(vLmv.g*vLmv.g*lmS.x)+lmM*(vLmv.b*vLmv.b*lmS.y))*3.14159265;')
+        .replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.indirectDiffuse*=vLmv.r;reflectedLight.directDiffuse*=mix(1.0,vLmv.r,lmAO);');}
+    else{sh.fragmentShader=sh.fragmentShader.replace('vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;','vec3 lightMapIrradiance = (lmB*(lightMapTexel.g*lightMapTexel.g*lmS.x)+lmM*(lightMapTexel.b*lightMapTexel.b*lmS.y)) * lightMapIntensity;')
+        .replace('#include <aomap_fragment>','#include <aomap_fragment>\nreflectedLight.directDiffuse*=mix(1.0,ambientOcclusion,lmAO);');}};
+  mat.customProgramCacheKey=function(){return vert?'lmv':'lmt';};mat.needsUpdate=true;}
+function bathLM(shell,mats){
+  if(!window.fetch||/[?&]nolm/.test(location.search))return;
+  fetch('bath_lm.json?v=1').then(function(r){return r.json();}).then(function(meta){LM.meta=meta;LMU.lmS.value.set(meta.MB,meta.MM);
+    new T.TextureLoader().load('bath_lm.png?v=1',function(tx){tx.channel=1;tx.colorSpace=T.NoColorSpace;tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;
+      meta.rects.forEach(function(rc){var m=shell[rc[0]];if(!m)return;var g=m.geometry,uv=g.attributes.uv,a=new Float32Array(uv.count*2),U=[0,1,0,1],V=[1,1,0,0];
+        for(var i=0;i<uv.count;i++){a[i*2]=rc[1]+U[i]*rc[3];a[i*2+1]=rc[2]+V[i]*rc[4];}g.setAttribute('uv1',new T.BufferAttribute(a,2));});
+      mats.forEach(function(mt){mt.lightMap=tx;mt.lightMapIntensity=1;mt.aoMap=tx;mt.aoMapIntensity=1;lmPatch(mt,false);});});
+    return fetch('bath_lmv.bin?v=1');}).then(function(r){return r&&r.arrayBuffer();}).then(function(b){if(b){LM.bin=new Uint8Array(b);lmModel();}}).catch(function(){});
+}
+function lmModel(m){if(m)LM.model=m;m=LM.model;if(!m||!LM.bin||!LM.meta||LM.done)return;LM.done=true;
+  var q={},off=0;LM.meta.verts.forEach(function(v){(q[v[0]+'|'+v[1]]=q[v[0]+'|'+v[1]]||[]).push(off);off+=v[1]*3;});
+  var mats=[],plain=[];
+  m.traverse(function(o){if(!o.isMesh)return;var g=o.geometry,n=g.attributes.position.count,k=o.name+'|'+n,l=q[k];
+    if(l&&l.length&&o.material&&!o.material.transparent){var st=l.shift();if(g.attributes.lmv){g=o.geometry=g.clone();}
+      g.setAttribute('lmv',new T.Uint8BufferAttribute(LM.bin.subarray(st,st+n*3),3,true));if(mats.indexOf(o.material)<0)mats.push(o.material);}
+    else plain.push(o);});
+  plain.forEach(function(o){if(mats.indexOf(o.material)<0)return;var n=o.geometry.attributes.position.count,a=new Uint8Array(n*3);for(var i=0;i<n;i++)a[i*3]=255;o.geometry.setAttribute('lmv',new T.Uint8BufferAttribute(a,3,true));});
+  mats.forEach(function(mt){lmPatch(mt,true);});
+}
+function lmTick(){if(!GL.bathL||!GL.moon)return;LMU.lmB.value.copy(GL.bathL.color).multiplyScalar(GL.bathL.intensity*LM_GAIN);LMU.lmM.value.copy(GL.moon.color).multiplyScalar(GL.moon.intensity*LM_GAIN);}
 var BEAMS=[];
 function makeBeam(h,r0,r1,col,op){
   var geo=new T.CylinderGeometry(r0,r1,h,40,1,true);geo.translate(0,-h/2,0);
@@ -378,7 +413,7 @@ function makeCone(h,r,col,op){return makeBeam(h,0.0001,r,col,op);}
 var _bv1=new T.Vector3(),_bv2=new T.Vector3(),_bq=new T.Quaternion(),_bd=new T.Vector3(),_bup=new T.Vector3(0,-1,0);
 function aimBeam(m,from,to,spread){m.position.copy(from);_bd.copy(to).sub(from);var L=_bd.length()||1;_bd.divideScalar(L);m.quaternion.setFromUnitVectors(_bup,_bd);
   var h=m.material.uniforms.hh.value;m.scale.set(spread||1,L/h,spread||1);}
-function beamsTick(){for(var i=0;i<BEAMS.length;i++){var b=BEAMS[i];b.material.uniforms.t.value=time;if(b.userData.upd)b.userData.upd(b);}}
+function beamsTick(){lmTick();for(var i=0;i<BEAMS.length;i++){var b=BEAMS[i];b.material.uniforms.t.value=time;if(b.userData.upd)b.userData.upd(b);}}
 function makeVeil(){
   var pts=[],H=1.78;
   [[0.0,1.78],[0.12,1.76],[0.17,1.66],[0.15,1.55],[0.12,1.5],[0.36,1.42],[0.42,1.2],[0.44,0.9],[0.5,0.5],[0.6,0.12],[0.66,0.0]].forEach(function(p){pts.push(new T.Vector2(p[0],p[1]));});
@@ -644,8 +679,8 @@ function build(){
   var tWall=texBlackTile(false),tFloor=texBlackTile(true);
   var tileM=std({map:tWall,roughness:0.22,metalness:0.1,color:0xffffff}),floorM=std({map:tFloor,roughness:0.3,metalness:0.1,color:0xffffff});
   function bp(w,h,x,y,z,ry,mat,ts){var g=new T.PlaneGeometry(w,h),uv=g.attributes.uv;for(var i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/ts,uv.getY(i)*h/ts);
-    var m=new T.Mesh(g,mat);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;m.castShadow=true;BA.add(m);return m;}
-  var WT=0.5;
+    var m=new T.Mesh(g,mat);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;m.castShadow=true;BA.add(m);SHELL.push(m);return m;}
+  var WT=0.5,SHELL=GL.bathShell=[];
   /* south wall (bathroom side), around the doorway x 0.5..1.5 */
   bp(0.5-BX0,BH,(BX0+0.5)/2,BH/2,BZ1-0.003,Math.PI,tileM,WT);bp(BX1-1.5,BH,(1.5+BX1)/2,BH/2,BZ1-0.003,Math.PI,tileM,WT);bp(1.0,BH-2.2,1.0,2.2+(BH-2.2)/2,BZ1-0.003,Math.PI,tileM,WT);
   /* north wall, with the niche behind the tub */
@@ -663,8 +698,8 @@ function build(){
   /* floor + ceiling */
   var bfl=new T.Mesh(new T.PlaneGeometry(BX1-BX0,BZ1-NZ).rotateX(-Math.PI/2),floorM);
   (function(g,w,h){var uv=g.attributes.uv;for(var i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/0.8,uv.getY(i)*h/0.8);})(bfl.geometry,BX1-BX0,BZ1-NZ);
-  bfl.position.set((BX0+BX1)/2,0.002,(NZ+BZ1)/2);bfl.receiveShadow=true;BA.add(bfl);
-  var bce=new T.Mesh(new T.PlaneGeometry(BX1-BX0,BZ1-NZ).rotateX(Math.PI/2),std({color:0x101010,roughness:0.9}));bce.position.set((BX0+BX1)/2,BH,(NZ+BZ1)/2);BA.add(bce);
+  bfl.position.set((BX0+BX1)/2,0.002,(NZ+BZ1)/2);bfl.receiveShadow=true;BA.add(bfl);SHELL.push(bfl);
+  var bce=new T.Mesh(new T.PlaneGeometry(BX1-BX0,BZ1-NZ).rotateX(Math.PI/2),std({color:0x101010,roughness:0.9}));bce.position.set((BX0+BX1)/2,BH,(NZ+BZ1)/2);BA.add(bce);SHELL.push(bce);bathLM(SHELL,[tileM,floorM,bce.material]);
   /* the tub (model coords), where the moon falls and the necklace waits */
   var TUB=[ML(0,0,2.57)[0],ML(0,0,-2.53)[0],ML(0,0,0)[2],ML(2.51,0,0)[2]],TUBY=ML(0,0.65,0)[1],TUBC=[(TUB[0]+TUB[1])/2,(TUB[2]+TUB[3])/2];
   /* the night outside: sky, moon, a few branches */
