@@ -132,9 +132,12 @@ for m in d['meshes']:
     P = np.array(m['P'], np.float64).reshape(-1, 3); Nn = np.array(m['N'], np.float64).reshape(-1, 3)
     l = np.linalg.norm(Nn, axis=1); Nn[l < 1e-6] = [0, 1, 0]; Nn /= np.linalg.norm(Nn, axis=1)[:, None]
     vtab.append([m['name'], len(P)]); vp.append(P); vn.append(Nn)
-vp = np.concatenate(vp); vn = np.concatenate(vn)
-print('vertex samples', len(vp))
-Vb = bake(vp, vn)
+if vp:
+    vp = np.concatenate(vp); vn = np.concatenate(vn)
+    print('vertex samples', len(vp))
+    Vb = bake(vp, vn)
+else:
+    Vb = np.zeros((0, 3))
 
 MB = float(max(np.percentile(np.concatenate([S[:, 1], Vb[:, 1]]), 99.7), 1e-6))
 MM = float(max(np.percentile(np.concatenate([S[:, 2], Vb[:, 2]]), 99.7), 1e-6))
@@ -151,4 +154,4 @@ open(out + '_lmv.bin', 'wb').write((enc(Vb) * 255 + 0.5).astype(np.uint8).tobyte
 meta = dict(A=A, MB=MB, MM=MM, verts=vtab,
             rects=[[r['si'], (r['x'] + PAD) / A, (r['y'] + PAD) / A, r['nw'] / A, r['nh'] / A] for r in rects])
 json.dump(meta, open(out + '_lm.json', 'w'))
-print('MB', MB, 'MM', MM, 'ao mean', S[:, 0].mean(), Vb[:, 0].mean())
+print('MB', MB, 'MM', MM, 'ao mean', S[:, 0].mean())

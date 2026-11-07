@@ -4,7 +4,10 @@ function avg(tex){if(!tex||!tex.image)return [1,1,1];if(avgCache.has(tex))return
 var shell=GL[C.shell],model=GL[C.model],out={meshes:[],lights:[]};
 var v=new T.Vector3(),nm=new T.Matrix3();
 function fixed(a){return Array.from(a,function(x){return Math.round(x*10000)/10000;});}
-BA.traverse(function(o){if(!o.isMesh||o.isSkinnedMesh)return;var p=o,vis=true;while(p&&p!==BA){vis=vis&&p.visible;p=p.parent;}if(!vis)return;
+var EX=(C.exclude||[]).map(function(k){return GL[k];}).reduce(function(a,b){return a.concat(b||[]);},[]);
+/* characters (anything holding a skinned mesh) move: never bake them in */
+BA.children.forEach(function(ch){var sk=false;ch.traverse(function(q){if(q.isSkinnedMesh||q.isBone)sk=true;});if(sk)EX.push(ch);});
+BA.traverse(function(o){if(!o.isMesh||o.isSkinnedMesh)return;var p=o,vis=true;while(p&&p!==BA){vis=vis&&p.visible;if(EX.indexOf(p)>=0)vis=false;p=p.parent;}if(!vis)return;
   var m=o.material;if(!m||!m.isMeshStandardMaterial||m.transparent)return;
   var g=o.geometry,pos=g.attributes.position,nor=g.attributes.normal,idx=g.index;
   var P=new Float32Array(pos.count*3),N=new Float32Array(pos.count*3);nm.getNormalMatrix(o.matrixWorld);

@@ -1385,14 +1385,16 @@ function buildParty(){
   var Pg=GL.party=new T.Group();Pg.position.set(PO.x,0,PO.z);scene.add(Pg);Pg.visible=false;
   GL.masks=[texMask(0),texMask(1),texMask(2),texMask(3)];
   var wall=std({map:texWall(false),color:0x6a5a78,roughness:0.9}),fl=std({map:texWood(),roughness:0.5,metalness:0.1}),ceil=std({color:0x0d0b10,roughness:1});
-  function pl(w,h,x,y,z,ry,m){var me=new T.Mesh(new T.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=ry;me.receiveShadow=true;Pg.add(me);return me;}
+  var PSH=GL.partyShell=[];
+  function pl(w,h,x,y,z,ry,m){var me=new T.Mesh(new T.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=ry;me.receiveShadow=true;Pg.add(me);PSH.push(me);return me;}
   /* the room */
   var f=GL.pFloor=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(-Math.PI/2),fl);f.position.set(0,0,-HL/2);Pg.add(f);
-  var c=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(Math.PI/2),ceil);c.position.set(0,PH,-HL/2);Pg.add(c);
+  var c=new T.Mesh(new T.PlaneGeometry(PW*2,PD*2+HL).rotateX(Math.PI/2),ceil);c.position.set(0,PH,-HL/2);Pg.add(c);PSH.push(f,c);
   pl(PW*2,PH,0,PH/2,PD,Math.PI,wall);pl(PD*2,PH,-PW,PH/2,0,Math.PI/2,wall);pl(PD*2,PH,PW,PH/2,0,-Math.PI/2,wall);
   /* north wall with the hallway opening, the hallway, the door at its end */
   pl(PW-HW,PH,-(PW+HW)/2,PH/2,-PD,0,wall);pl(PW-HW,PH,(PW+HW)/2,PH/2,-PD,0,wall);
   pl(HL,PH,-HW,PH/2,-PD-HL/2,Math.PI/2,wall);pl(HL,PH,HW,PH/2,-PD-HL/2,-Math.PI/2,wall);pl(HW-0.52,PH,-(HW+0.52)/2,PH/2,-PD-HL+0.01,0,wall);pl(HW-0.52,PH,(HW+0.52)/2,PH/2,-PD-HL+0.01,0,wall);pl(1.04,PH-2.2,0,2.2+(PH-2.2)/2,-PD-HL+0.01,0,wall);
+  sceneLM('party','party',PSH,[wall,fl,ceil],function(){return GL.pBulb;},function(){return GL.pStrobe;},1);
   GL.pDoor=makeDoor(0xff2a4a,Pg,'D2');GL.pDoor.g.remove(GL.lastVoid);GL.pDoor.g.position.set(0,0,-PD-HL+0.06);
   GL.pDoorPos=new T.Vector3(PO.x,1.2,PO.z-PD-HL+0.1);
   /* behind the door: a small room, red light, the two of them */
