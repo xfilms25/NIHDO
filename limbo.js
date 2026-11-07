@@ -1117,7 +1117,7 @@ function carArms(dt){
   var f=fbInit();if(!f)return;var h=GL.hero;GL.fpOn=true;h.visible=true;if(f.Head)f.Head.scale.setScalar(0.001);
   h.position.set(P.x,S.camDY,P.z+0.05);h.rotation.y=Math.PI;h.updateMatrixWorld(true);
   if(S.dmUse==='Driving'&&GL.heroAlt&&GL.heroAlt.key==='clown'){h.position.copy(cw(-0.313,0.201,-0.369));h.updateMatrixWorld(true);
-    /* the eyes go where his head is */var hb=f.Head||h.getObjectByName('mixamorigHead');if(hb){hb.getWorldPosition(_v1);P.x+=(_v1.x-P.x)*0.5;P.z+=((_v1.z-0.04)-P.z)*0.5;S.camDY+=((_v1.y+0.09-EYE)-S.camDY)*0.5;}}
+    /* the eyes go where his head is */var hb=f.Head||h.getObjectByName('mixamorigHead');if(hb){hb.getWorldPosition(_v1);var ek=1-Math.exp(-dt*2.5);P.x+=(_v1.x-P.x)*ek;P.z+=((_v1.z-0.04)-P.z)*ek;S.camDY+=((_v1.y+0.09-EYE)-S.camDY)*ek;}}   /* follow the head's slow sway only, not every twitch of the clip */
   else if(S.dmUse==='Driving'){var hp=h.getObjectByName('mixamorigHips');if(hp){var hw=hp.getWorldPosition(new T.Vector3()),want=cw(CAR.eye[0],CAR.eye[1]-0.66,CAR.eye[2]+(GL.heroAlt&&GL.heroAlt.key==='clown'?0.03:GL.heroPP?0.03:0.14));h.position.x+=want.x-hw.x;h.position.y+=want.y-hw.y;h.position.z+=want.z-hw.z;h.updateMatrixWorld(true);}}
   var w=CAR.wheel,br=Math.sin(time*1.6)*0.004;
   var hi=GL.heroAlt&&GL.heroAlt.key==='suit'?0.13:0.15,hu=GL.heroAlt&&GL.heroAlt.key==='suit'?0.1:0.07,L1=cw(w[0]-hi,w[1]+hu+br,w[2]+0.06),R1=cw(w[0]+hi,w[1]+hu+br,w[2]+0.06);
@@ -1133,7 +1133,8 @@ function carArms(dt){
 function carTick(dt){
   var L4=S.loop===4;
   /* the cabin breathes: engine shudder, rain on the glass, the wipers now and then, the traffic light ticking */
-  GL.carBody.position.y=Math.sin(time*31)*0.0009+(S.drive>0?Math.sin(time*13)*0.002:0);
+  /* still at the red light; once moving, only a slow, soft give of the suspension (no fast shudder: it read as shaking) */
+  var dv=S.drive>0?ss(0,3,S.drive):0;GL.carBody.position.y=dv*(Math.sin(time*1.6)*0.0022+Math.sin(time*2.7+1.3)*0.0011);
   GL.rainTex.offset.y+=dt*(0.012+(S.drive>0?ss(0,3,S.drive)*0.25:0));
   /* rain only shows where there is light: fewer lamps and dead headlights, fainter rain and glass */
   var lit=0;GL.lamps.forEach(function(l){if(l.on)lit++;});var hl=GL.heads&&GL.heads[0]?GL.heads[0].intensity/2.6:1,lv=clamp(0.25+0.45*lit/Math.max(1,GL.lamps.length)+0.3*Math.min(1,hl),0.06,1);
