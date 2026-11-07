@@ -356,14 +356,29 @@ function texDrips(){return canvasTex(128,192,function(g,w,h){g.clearRect(0,0,w,h
 function texGlow(){return canvasTex(64,64,function(g,w,h){var gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.35,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});}
 
 /* ---------- builders ---------- */
-function makeCone(h,r,col,op){
-  var geo=new T.ConeGeometry(r,h,32,1,true);geo.translate(0,-h/2,0);
-  var m=new T.Mesh(geo,new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,
-    uniforms:{k:{value:op||1},c:{value:new T.Color(col)}},
-    vertexShader:'varying vec3 vN;varying vec3 vV;varying float vT;uniform float hh;void main(){vT=-position.y/'+h.toFixed(2)+';vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.0);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
-    fragmentShader:'uniform float k;uniform vec3 c;varying vec3 vN;varying vec3 vV;varying float vT;void main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.5);float a=((1.0-vT*0.55)*f*0.16+0.012)*k;gl_FragColor=vec4(c,a);}'}));
-  m.renderOrder=5;m.frustumCulled=false;return m;
+/* volumetric light: a soft shaft of lit air with dust drifting through it. An open tube, top radius r0 at its origin, r1 at length h,
+   pointing down -y; brightest along the core and near the source, fading at the edges and the far end */
+var BEAMS=[];
+function makeBeam(h,r0,r1,col,op){
+  var geo=new T.CylinderGeometry(r0,r1,h,40,1,true);geo.translate(0,-h/2,0);
+  var m=new T.Mesh(geo,new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,fog:false,
+    uniforms:{k:{value:op||1},c:{value:new T.Color(col)},t:{value:0},hh:{value:h}},
+    vertexShader:'uniform float hh;varying vec3 vN;varying vec3 vV;varying float vT;varying vec3 vW;void main(){vT=clamp(-position.y/hh,0.0,1.0);vN=normalize(normalMatrix*normal);vec4 w=modelMatrix*vec4(position,1.0);vW=w.xyz;vec4 mv=viewMatrix*w;vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:['uniform float k;uniform vec3 c;uniform float t;varying vec3 vN;varying vec3 vV;varying float vT;varying vec3 vW;',
+      'float h3(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}',
+      'float n3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}',
+      'void main(){float f=pow(abs(dot(normalize(vN),normalize(vV))),1.6);',
+      ' vec3 q=vW*2.2+vec3(t*0.07,-t*0.05,t*0.04);float dust=0.55+0.45*n3(q)+0.35*n3(q*3.1+7.0)-0.2;',
+      ' float sparkle=smoothstep(0.86,0.98,n3(vW*9.0+vec3(0.0,-t*0.15,t*0.05)))*0.9;',
+      ' float a=((1.0-vT)*(1.0-vT*0.4)*f*0.17*dust+sparkle*f*0.06*(1.0-vT)+0.008*(1.0-vT))*k;gl_FragColor=vec4(c,a);}'].join('\n')}));
+  m.renderOrder=5;m.frustumCulled=false;BEAMS.push(m);return m;
 }
+function makeCone(h,r,col,op){return makeBeam(h,0.0001,r,col,op);}
+/* aim a beam from its own position at a world point, stretching it to reach (length and far radius follow) */
+var _bv1=new T.Vector3(),_bv2=new T.Vector3(),_bq=new T.Quaternion(),_bd=new T.Vector3(),_bup=new T.Vector3(0,-1,0);
+function aimBeam(m,from,to,spread){m.position.copy(from);_bd.copy(to).sub(from);var L=_bd.length()||1;_bd.divideScalar(L);m.quaternion.setFromUnitVectors(_bup,_bd);
+  var h=m.material.uniforms.hh.value;m.scale.set(spread||1,L/h,spread||1);}
+function beamsTick(){for(var i=0;i<BEAMS.length;i++){var b=BEAMS[i];b.material.uniforms.t.value=time;if(b.userData.upd)b.userData.upd(b);}}
 function makeVeil(){
   var pts=[],H=1.78;
   [[0.0,1.78],[0.12,1.76],[0.17,1.66],[0.15,1.55],[0.12,1.5],[0.36,1.42],[0.42,1.2],[0.44,0.9],[0.5,0.5],[0.6,0.12],[0.66,0.0]].forEach(function(p){pts.push(new T.Vector2(p[0],p[1]));});
@@ -656,6 +671,9 @@ function build(){
   var sky=new T.Mesh(new T.PlaneGeometry(3.6,2.9),new T.MeshBasicMaterial({map:texNight(),fog:false}));sky.position.set(BX0-1.3,WYC+0.1,WZC);sky.rotation.y=Math.PI/2;BA.add(sky);
   /* moonlight: a cold spot outside the window, the frame casts its cross on the floor and the tub */
   GL.moon=new T.SpotLight(0xa9c2ff,0,9,0.5,0.35,1);GL.moon.position.set(BX0-1.45,WY1+0.75,WZC+0.08);GL.moon.target.position.set(TUBC[0],0.1,TUBC[1]+0.15);BA.add(GL.moon);BA.add(GL.moon.target);
+  /* the moonlight in the air: a pale shaft from the window down to the tub */
+  var mb=GL.moonBeam=makeBeam(1,0.42,0.75,0xa9c2ff,1);BA.add(mb);mb.userData.upd=function(b){b.visible=GL.moon.intensity>0.05&&GL.bath.visible;b.material.uniforms.k.value=0.9*Math.min(1,GL.moon.intensity/2.2);
+    aimBeam(b,_bv1.set(BX0-0.05,WYC+0.15,WZC),_bv2.set(TUBC[0],0.1,TUBC[1]+0.15));};
   GL.moon.castShadow=true;GL.moon.shadow.mapSize.set(1024,1024);GL.moon.shadow.bias=-0.0015;GL.moon.shadow.camera.near=0.4;GL.moon.shadow.camera.far=8;
   /* a soft shaft of light in the air */
   var shM=new T.MeshBasicMaterial({map:texShaft(),color:0x9fb8ff,transparent:true,opacity:0.16,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide,fog:false});
@@ -952,7 +970,9 @@ function dressCar(m){
         GL.lamps.push({g:lp,m:lensM,s:spr,l:pl,z:dd,on:1});});
       GL.lamps.sort(function(x,y){return Math.abs(x.z)-Math.abs(y.z);});}
     /* the headlights: the only thing that shows the road */
-    GL.heads=[];[-0.55,0.55].forEach(function(x){var h=new T.SpotLight(0xffe8c0,2.6,34,0.42,0.55,1.2);h.position.set(x,0.75,-1.9);var tg=new T.Object3D();tg.position.set(x*1.5,0,-16);GL.car.add(tg);h.target=tg;GL.car.add(h);GL.heads.push(h);});
+    GL.heads=[];[-0.55,0.55].forEach(function(x){var h=new T.SpotLight(0xffe8c0,2.6,34,0.42,0.55,1.2);h.position.set(x,0.75,-1.9);var tg=new T.Object3D();tg.position.set(x*1.5,0,-16);GL.car.add(tg);h.target=tg;GL.car.add(h);GL.heads.push(h);
+    /* the headlight beams through the rain */
+    var bm=makeBeam(1,0.09,2.2,0xffe8c0,1);GL.car.add(bm);var far=new T.Vector3(x*1.3,0.15,-13);bm.userData.upd=function(b){b.visible=h.intensity>0.05&&GL.car.visible;b.material.uniforms.k.value=0.6*Math.min(1.3,h.intensity/2.6);aimBeam(b,h.position,far,1);};});
     GL.roadAmb=new T.HemisphereLight(0x22324e,0x070809,0.24);GL.car.add(GL.roadAmb);
     GL.moonL=new T.DirectionalLight(0x6f86b8,0.22);GL.moonL.position.set(-20,40,10);GL.car.add(GL.moonL);
     GL.carFog=new T.FogExp2(0x04070d,0.055);
@@ -1309,7 +1329,11 @@ function buildParty(){
   box(0.5,1.1,0.45,std({color:0x0a0a0a,roughness:0.5}),4.4,0.55,-3.4,Pg);
   GL.pBlocks=[[-4.85,-2.35,2.3,3.4],[2.75,4.45,2.15,3.05],[4.1,4.7,-3.7,-3.1]];
   /* the lights: three coloured spots that sweep, a mirror ball, a strobe */
-  GL.pSpots=[];[[0xff2a9a,-3.5,-2.5],[0x2ad0ff,3.5,-2.5],[0xffa020,0,3]].forEach(function(e,i){var sp=new T.SpotLight(e[0],4.2,16,0.55,0.6,1.2);sp.position.set(e[1],PH-0.1,e[2]);var tg=new T.Object3D();Pg.add(tg);sp.target=tg;Pg.add(sp);GL.pSpots.push({l:sp,t:tg,ph:i*2.1,base:e[0]});});
+  GL.pSpots=[];[[0xff2a9a,-3.5,-2.5],[0x2ad0ff,3.5,-2.5],[0xffa020,0,3]].forEach(function(e,i){var sp=new T.SpotLight(e[0],4.2,16,0.55,0.6,1.2);sp.position.set(e[1],PH-0.1,e[2]);var tg=new T.Object3D();Pg.add(tg);sp.target=tg;Pg.add(sp);
+    /* the beam in the haze, sweeping with the light */
+    var bm=makeBeam(1,0.06,1.0,e[0],1);Pg.add(bm);bm.userData.upd=function(b){b.visible=sp.intensity>0.1&&GL.party.visible;b.material.uniforms.c.value.copy(sp.color);b.material.uniforms.k.value=0.8*Math.min(1.6,sp.intensity/4.2);
+      var L=sp.position.distanceTo(tg.position);aimBeam(b,sp.position,tg.position,Math.tan(sp.angle)*L*0.75);};
+    GL.pSpots.push({l:sp,t:tg,ph:i*2.1,base:e[0],b:bm});});
   var ball=GL.pBall=new T.Mesh(new T.SphereGeometry(0.22,16,12),std({color:0xd8d8e0,metalness:1,roughness:0.15,flatShading:true}));ball.position.set(0,PH-0.45,0);Pg.add(ball);
   GL.pGlints=[];for(var j=0;j<26;j++){var gs=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:[0xff6ad0,0x7ae0ff,0xffd080][j%3],transparent:true,opacity:0.5,depthWrite:false,blending:T.AdditiveBlending}));gs.scale.set(0.35,0.35,1);Pg.add(gs);GL.pGlints.push({s:gs,a:Math.random()*6.3,e:-0.2-Math.random()*1.1});}
   GL.pStrobe=new T.PointLight(0xffffff,0,22,1.2);GL.pStrobe.position.set(0,PH-0.3,0);Pg.add(GL.pStrobe);
@@ -1318,7 +1342,8 @@ function buildParty(){
   GL.pCyan=new T.HemisphereLight(0x3fd8ff,0x062a3a,0);Pg.add(GL.pCyan);
   GL.pHall=new T.PointLight(0xff3050,0,6,1.4);GL.pHall.position.set(0,0.3,-PD-HL+0.6);Pg.add(GL.pHall);
   /* one bare bulb halfway down the hallway */
-  GL.pBulb=new T.PointLight(0xffc890,0.3,6,1.6);GL.pBulb.position.set(0,PH-0.25,-PD-HL/2);Pg.add(GL.pBulb);var hb=new T.Mesh(new T.SphereGeometry(0.04,8,6),new T.MeshBasicMaterial({color:0xffe0b0}));hb.position.copy(GL.pBulb.position);Pg.add(hb);
+  GL.pBulb=new T.PointLight(0xffc890,0.3,6,1.6);GL.pBulb.position.set(0,PH-0.25,-PD-HL/2);Pg.add(GL.pBulb);
+  var hbm=makeBeam(PH-0.3,0.04,0.75,0xffc890,1);hbm.position.set(0,PH-0.28,-PD-HL/2);Pg.add(hbm);hbm.userData.upd=function(b){b.visible=GL.party.visible;b.material.uniforms.k.value=0.7*Math.min(1.5,GL.pBulb.intensity/0.6);};var hb=new T.Mesh(new T.SphereGeometry(0.04,8,6),new T.MeshBasicMaterial({color:0xffe0b0}));hb.position.copy(GL.pBulb.position);Pg.add(hb);
   /* the crowd */
   GL.crowd=[];var spots=[];
   for(var di=0;di<16;di++){var a=di*2.39996,rr=0.9+Math.sqrt(di)*0.95;spots.push([Math.cos(a)*rr*1.15,Math.sin(a)*rr*0.75-0.3]);}
@@ -1863,7 +1888,7 @@ L.frame=function(dt){
   var comp=G.comp(),gp=G.grade();
   if(gp){gp.uniforms.time.value=time;gp.uniforms.danger.value=Math.max(0,rv*0.7);gp.uniforms.focus.value.set(0.5,0.5);gp.uniforms.dofAmt.value=0.25+(S.lidBlur||0)*1.6;gp.uniforms.lens.value=1+rv*1.4;}
   if(window.__noRender)return;
-  fxOn();
+  beamsTick();fxOn();
   if(comp){comp.render(dt);}else R.render(scene,cam);
 };
 function hubTick(dt){
@@ -1996,7 +2021,7 @@ L.characters=function(){var out=[],add=function(id,label,obj,clips){if(obj&&obj.
   if(GL.goth)add('goth','Chica gótica',GL.goth.g,{});if(GL.gothWatch)add('gothWatch','Chica gótica (mirando)',GL.gothWatch,{});
   if(GL.cast)for(var k in GL.cast){var C=GL.cast[k],cc={};if(C.act)cc[C.clip==='own'?'propia':C.clip]=C.act.getClip();(C.anims||[]).forEach(function(a){cc[a.name]=a;});add(k,k.charAt(0).toUpperCase()+k.slice(1),C.g,cc);}
   return out;};
-L._dbg=function(){return {handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {BEAMS:BEAMS,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
