@@ -1399,46 +1399,59 @@ function loadPartyCast(){
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
   var list=[['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].filter(function(e,i){return !/[?&]fewcast\b/.test(location.href)||i<4;});
   /* every guest arrives at once in its light copy (a few MB), so the party is full the moment you walk in;
-     on computers the full-quality copy then streams in one guest at a time and takes its place */
-  var full=[];
+     on computers the full-quality copy streams in only for the guests near you (guestLOD) */
   list.forEach(function(e){var light=MQL(e[0],(e[1].match(/\?v=(\d+)/)||[0,'1'])[1]),best=e[1];
-    new T.GLTFLoader().load(light,function(g){placeGuest(e,g);if(best!==light){full.push(e);if(full.length===1)nextFull();}},undefined,function(err){console.warn(e[0],err);if(best!==light)new T.GLTFLoader().load(best,function(g){placeGuest(e,g);});});});
-  function nextFull(){var e=full[0];if(!e)return;new T.GLTFLoader().load(e[1],function(g){placeGuest(e,g);full.shift();nextFull();},undefined,function(err){console.warn(e[0]+' full',err);full.shift();nextFull();});}
+    new T.GLTFLoader().load(light,function(g){placeGuest(e,g);if(GL.cast[e[0]])GL.cast[e[0]].best=best!==light?best:null;},undefined,function(err){console.warn(e[0],err);});});
 }
 function placeGuest(e,g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
   m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
   m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78,catrina:1.64,apron:1.78,denim:1.8}[e[0]]||1.7)/Math.max(0.01,h));
   var old=GL.cast[e[0]];
-  if(old){/* the full-quality copy takes the light one's place, pose and all */
-    m.position.copy(old.g.position);m.rotation.y=old.g.rotation.y;m.visible=old.g.visible;GL.party.add(m);
-    if(old.g.parent)old.g.parent.remove(old.g);old.mixer.stopAllAction();
-    old.g.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(function(x){['map','normalMap','roughnessMap','metalnessMap','aoMap','emissiveMap'].forEach(function(k){if(x[k])x[k].dispose();});x.dispose();});});
-    var t=old.act?old.act.time:0;old.g=m;old.mixer=new T.AnimationMixer(m);old.act=null;old.anims=g.animations&&g.animations.length?g.animations:old.anims;old.rest=T.SkeletonUtils?restClone(m,null):null;old.t0=t;castAnim();if(old.act)old.act.time=t;return;}
+  if(old){/* the full-quality twin: shown instead of the light copy while you are close (see guestLOD) */
+    m.visible=false;GL.party.add(m);old.F={g:m,mixer:new T.AnimationMixer(m),clip:old.clip,ts:old.ts,act:null,anims:g.animations&&g.animations.length?g.animations:old.anims,rest:T.SkeletonUtils?restClone(m,null):null};old.Fload=false;buildAct(old.F);return;}
   m.position.set(e[2][0],0,e[2][1]);m.rotation.y=e[0]==='apron'?Math.PI:Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
-  GL.cast[e[0]]={home:new T.Vector3(e[2][0],0,e[2][1]),g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,yaw0:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();}
+  var lm=[];m.traverse(function(o){if(o.isMesh)lm.push(o);});
+  GL.cast[e[0]]={e:e,lm:lm,home:new T.Vector3(e[2][0],0,e[2][1]),g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,yaw0:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();}
 /* the drunk idles, fitted to each guest's hips */
-function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if(C.act)continue;
+function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if(!C.act)buildAct(C);if(C.F&&!C.F.act)buildAct(C.F);}}
+function buildAct(C){(function(){
   if(C.clip==='idleD'){/* Damian's own standing idle; this rig's elbows fold badly, so they stay straight */
-    if(!C.rest||!G.dmn||!G.dmn.acts||!G.dmn.acts.idle)continue;if(!GL.dRest){damRest(function(){});continue;}
+    if(!C.rest||!G.dmn||!G.dmn.acts||!G.dmn.acts.idle)return;if(!GL.dRest){damRest(function(){});return;}
     try{var ic=retarget(restClone(GL.dRest,null),G.dmn.acts.idle.getClip(),C.rest);ic.tracks=ic.tracks.filter(function(t){return !/(ForeArm|Hand)/.test(t.name);});
-      C.act=C.mixer.clipAction(ic);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
-  if(C.clip.indexOf('clown:')===0){/* one of Damian's own clips, moved onto this rig */var cn=C.clip.slice(6),CD=GL.alt.clown;if(!CD||!CD.own||!CD.own[cn]||!CD.rest||!C.rest){loadSuit();continue;}
-    try{C.act=C.mixer.clipAction(retarget(restClone(CD.rest,null),CD.own[cn],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*8;}catch(er){C.clip='-';}continue;}
-  if(C.clip.indexOf('luna:')===0){/* one of Luna's clips, moved onto this rig */var ln=C.clip.slice(5);if(!GL.lunaClips||!GL.lunaClips[ln]||!GL.lunaRest||!C.rest||!T.SkeletonUtils){loadLuna2();continue;}
-    try{C.act=C.mixer.clipAction(retarget(restClone(GL.luna,GL.lunaRest),GL.lunaClips[ln],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*8;}catch(er){C.clip='-';}continue;}
-  if(C.clip.indexOf('from:')===0){/* another guest's own animation, moved onto this rig */var S2=GL.cast[C.clip.slice(5)];if(!S2||!S2.rest||!S2.anims[0]||!C.rest)continue;
-    try{C.act=C.mixer.clipAction(retarget(restClone(S2.rest,null),S2.anims[0],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}continue;}
-  if(C.clip==='own'){/* their own animation, made on their own rig */if(C.anims[0]){var oc=C.anims[0].clone();oc.tracks.forEach(function(t){if(/Hips\.position$/.test(t.name)){var x0=t.values[0],z0=t.values[2];for(var i=0;i<t.values.length;i+=3){t.values[i]=x0;t.values[i+2]=z0;}}});/* dance in place */C.act=C.mixer.clipAction(oc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*C.anims[0].duration;}else C.clip='-';continue;}
+      C.act=C.mixer.clipAction(ic);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}return;}
+  if(C.clip.indexOf('clown:')===0){/* one of Damian's own clips, moved onto this rig */var cn=C.clip.slice(6),CD=GL.alt.clown;if(!CD||!CD.own||!CD.own[cn]||!CD.rest||!C.rest){loadSuit();return;}
+    try{C.act=C.mixer.clipAction(retarget(restClone(CD.rest,null),CD.own[cn],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*8;}catch(er){C.clip='-';}return;}
+  if(C.clip.indexOf('luna:')===0){/* one of Luna's clips, moved onto this rig */var ln=C.clip.slice(5);if(!GL.lunaClips||!GL.lunaClips[ln]||!GL.lunaRest||!C.rest||!T.SkeletonUtils){loadLuna2();return;}
+    try{C.act=C.mixer.clipAction(retarget(restClone(GL.luna,GL.lunaRest),GL.lunaClips[ln],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*8;}catch(er){C.clip='-';}return;}
+  if(C.clip.indexOf('from:')===0){/* another guest's own animation, moved onto this rig */var S2=GL.cast[C.clip.slice(5)];if(!S2||!S2.rest||!S2.anims[0]||!C.rest)return;
+    try{C.act=C.mixer.clipAction(retarget(restClone(S2.rest,null),S2.anims[0],C.rest));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){C.clip='-';}return;}
+  if(C.clip==='own'){/* their own animation, made on their own rig */if(C.anims[0]){var oc=C.anims[0].clone();oc.tracks.forEach(function(t){if(/Hips\.position$/.test(t.name)){var x0=t.values[0],z0=t.values[2];for(var i=0;i<t.values.length;i+=3){t.values[i]=x0;t.values[i+2]=z0;}}});/* dance in place */C.act=C.mixer.clipAction(oc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*C.anims[0].duration;}else C.clip='-';return;}
   if(C.clip==='drink'){/* Luna's "stand and drink", fitted to her hips */
-    if(!GL.l2Act||!GL.lunaRest||!T.SkeletonUtils){loadLuna2();continue;}var dc;try{dc=retarget(restClone(GL.luna,GL.lunaRest),GL.l2Act.getClip(),restClone(C.g,null));}catch(er){C.clip='-';continue;}
-    C.act=C.mixer.clipAction(dc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*2;continue;}
-  if(!GL.drunkRaw)continue;var raw=GL.drunkRaw[C.clip];if(!raw)continue;
+    if(!GL.l2Act||!GL.lunaRest||!T.SkeletonUtils){loadLuna2();return;}var dc;try{dc=retarget(restClone(GL.luna,GL.lunaRest),GL.l2Act.getClip(),restClone(C.g,null));}catch(er){C.clip='-';return;}
+    C.act=C.mixer.clipAction(dc);C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*2;return;}
+  if(!GL.drunkRaw)return;var raw=GL.drunkRaw[C.clip];if(!raw)return;
   var f=1,c=JSON.parse(JSON.stringify(raw));   /* baked offline onto this guest's own rig */
   c.tracks.forEach(function(t){if(t.name==='mixamorigHips.position'){for(var i=0;i<t.values.length;i++)t.values[i]*=f;}});
-  try{C.act=C.mixer.clipAction(T.AnimationClip.parse(c));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){}}}
+  try{C.act=C.mixer.clipAction(T.AnimationClip.parse(c));C.act.timeScale=C.ts;C.act.play();C.act.time=Math.random()*3;}catch(er){}})();}
+/* level of detail by distance: within NEAR metres a guest swaps to the full-quality twin (downloaded when you approach,
+   at most FMAX kept at once, the farthest let go); farther away the light copy is drawn */
+var LOD_NEAR=4.2,LOD_LOAD=6.5,LOD_DROP=10,LOD_FMAX=5;
+function guestLOD(dt){if(!GL.cast)return;var cx=cam.position.x,cz=cam.position.z,list=[],loading=0;
+  for(var k in GL.cast){var C=GL.cast[k];C.d=Math.hypot(C.g.position.x+PO.x-cx,C.g.position.z+PO.z-cz);list.push(C);if(C.Fload)loading++;}
+  list.sort(function(a,b){return a.d-b.d;});var have=list.filter(function(C){return C.F;}).length;
+  list.forEach(function(C,i){
+    if(C.best&&!C.F&&!C.Fload&&C.g.visible&&C.d<LOD_LOAD&&loading<1&&have<LOD_FMAX){C.Fload=true;loading++;new T.GLTFLoader().load(C.best,function(g){placeGuest(C.e,g);},undefined,function(err){console.warn('lod',err);C.Fload=false;C.best=null;});}
+    if(C.F&&(C.d>LOD_DROP||(have>LOD_FMAX&&i>=LOD_FMAX))){dropFull(C);have--;}
+    var near=!!(C.F&&C.F.act&&C.g.visible&&C.d<LOD_NEAR);
+    C.lm.forEach(function(m){m.visible=!near;});
+    if(C.F){var F=C.F;F.g.visible=near;if(near){F.g.position.copy(C.g.position);F.g.rotation.y=C.g.rotation.y;if(C.act&&F.act){F.act.timeScale=C.act.timeScale;F.act.time=C.act.time;}F.mixer.update(0);}}});}
+function dropFull(C){var F=C.F;if(!F)return;C.F=null;F.mixer.stopAllAction();if(F.g.parent)F.g.parent.remove(F.g);
+  F.g.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(function(x){['map','normalMap','roughnessMap','metalnessMap','aoMap','emissiveMap'].forEach(function(k){if(x[k])x[k].dispose();});x.dispose();});});
+  C.lm.forEach(function(m){m.visible=true;});}
 function castTick(dt){if(!GL.cast)return;var px=P.x-PO.x,pz=P.z-PO.z,watch=S.loop===2?ss(0,2.5,4-(S.muteT||0)):0;
   if(!GL._caT||(GL._caT-=dt)<0){GL._caT=1;castAnim();}
-  for(var k in GL.cast){var C=GL.cast[k];if(!C.g.visible)continue;C.mixer.update(dt);
+  guestLOD(dt);
+  for(var k in GL.cast){var C=GL.cast[k];if(!C.g.visible){if(C.F)C.F.g.visible=false;continue;}C.mixer.update(dt);
     var ty=(watch>0||k==='denim')?Math.atan2(px-C.g.position.x,pz-C.g.position.z):C.yaw;C.g.rotation.y+=Math.atan2(Math.sin(ty-C.g.rotation.y),Math.cos(ty-C.g.rotation.y))*Math.min(1,dt*1.5);}}
 /* the Damian behind the door wears the suit too */
 function kissDamian(D){if(!T.SkeletonUtils||!GL.kissRoom)return;try{var dm=T.SkeletonUtils.clone(D.g);dm.traverse(function(o){o.frustumCulled=false;});
