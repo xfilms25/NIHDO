@@ -9,6 +9,8 @@ var G,T=window.THREE,R,scene,cam,ac,AU={},UI={},GL={};
 function isPhone(){try{if(/[?&#]full\b/.test(location.href))return false;if(/[?&#]lite\b/.test(location.href))return true;var t=(G&&G.touch&&G.touch())||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));var mem=navigator.deviceMemory||8;return !!(t||mem<=4);}catch(e){return false;}}
 /* KTX2 copies exist for everything except the full-size models whose textures are all 4096 (the encoder can't take them yet) */
 var NOKTX={luna2:1,seb:1,damian_clown:1};
+/* the light copy of a character, whatever the device */
+function MQL(n,v){var k=!!window.KTX2&&!/[?&#]jpg\b/.test(location.href);return n+'_m'+(k?'_k':'')+'.glb?v='+v+'m1'+(k?'k1':'');}
 function MQ(n,v){var m=isPhone(),k=!!window.KTX2&&!/[?&#]jpg\b/.test(location.href)&&(m||!NOKTX[n]);if(!k&&!m&&!NOKTX[n])m=true;   /* no KTX2 in this browser: the light JPEG copy (the full one only ships as KTX2) */
   return n+(m?'_m':'')+(k?'_k':'')+'.glb?v='+v+(m?'m1':'')+(k?'k1':'');}
 var HOLS=0.235; /* Hollow at Damian's height in the Limbo */
@@ -1395,15 +1397,25 @@ function loadPartyCast(){
   loadSuit();if(GL.alt.clown&&!(GL.dClone&&GL.dClone.userData&&GL.dClone.userData.suit))kissDamian(GL.alt.clown);
   if(GL.castLoading||!T.GLTFLoader)return;GL.castLoading=true;GL.cast={};
   fetch('hollow_anims.json?v=3').then(function(r){return r.json();}).then(function(j){GL.drunkRaw=j;castAnim();}).catch(function(){});
-  [['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].filter(function(e,i){return !/[?&]fewcast\b/.test(location.href)||i<4;}).forEach(function(e){
-    new T.GLTFLoader().load(e[1],function(g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
-      m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
-      m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78,catrina:1.64,apron:1.78,denim:1.8}[e[0]]||1.7)/Math.max(0.01,h));m.position.set(e[2][0],0,e[2][1]);m.rotation.y=e[0]==='apron'?Math.PI:Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
-      /* make room for them in the crowd */
-      GL.crowd.forEach(function(d){if(Math.hypot(d.userData.home.x-e[2][0],d.userData.home.z-e[2][1])<1.0){d.userData.home.x+=(d.userData.home.x-e[2][0]>0?1:-1)*0.9;d.position.copy(d.userData.home);}});
-      GL.cast[e[0]]={home:new T.Vector3(e[2][0],0,e[2][1]),g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,yaw0:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();
-    },undefined,function(err){console.warn(e[0],err);});});
+  var list=[['seb',MQ('seb','2'),[3.05,1.75],'idleD',0.9],['zuri',MQ('zuri','2'),[-2.35,1.85],'drink',0.9],['drinker',MQ('drinker','2'),[3.95,0.75],'own',0.9],['sheriff',MQ('sheriff','2'),[1.7,-1.5],'own',1.0],['kitty',MQ('kitty','2'),[-1.25,-0.55],'own',1.0],['maribeth',MQ('maribeth','2'),[0.45,0.95],'own',1.0],['yinyang',MQ('yinyang','1'),[-2.6,-1.2],'luna:samba',0.9],['vanguard',MQ('vanguard','1'),[-3.8,0.2],'drink',0.85],['bunny',MQ('bunny','1'),[2.6,-0.2],'luna:samba',1.05],['urban',MQ('urban','1'),[-0.9,2.3],'from:drinker',0.95],['crimson',MQ('crimson','1'),[1.5,2.5],'clown:idle',0.9],['catrina',MQ('catrina','2'),[-1.4,-2.4],'from:kitty',0.9],['apron',MQ('apron','1'),[3.6,3.55],'clown:idle',0.85],['denim',MQ('denim','1'),[-4.3,-3.3],'clown:idle',0.6]].filter(function(e,i){return !/[?&]fewcast\b/.test(location.href)||i<4;});
+  /* every guest arrives at once in its light copy (a few MB), so the party is full the moment you walk in;
+     on computers the full-quality copy then streams in one guest at a time and takes its place */
+  var full=[];
+  list.forEach(function(e){var light=MQL(e[0],(e[1].match(/\?v=(\d+)/)||[0,'1'])[1]),best=e[1];
+    new T.GLTFLoader().load(light,function(g){placeGuest(e,g);if(best!==light){full.push(e);if(full.length===1)nextFull();}},undefined,function(err){console.warn(e[0],err);if(best!==light)new T.GLTFLoader().load(best,function(g){placeGuest(e,g);});});});
+  function nextFull(){var e=full[0];if(!e)return;new T.GLTFLoader().load(e[1],function(g){placeGuest(e,g);full.shift();nextFull();},undefined,function(err){console.warn(e[0]+' full',err);full.shift();nextFull();});}
 }
+function placeGuest(e,g){var m=g.scene;m.traverse(function(o){if(o.isMesh){o.frustumCulled=false;o.castShadow=HQ;o.receiveShadow=true;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(x){x.skinning=true;x.metalness=0;x.roughness=Math.max(0.55,x.roughness||0.8);});}});
+  m.updateMatrixWorld(true);var ht=m.getObjectByName('mixamorigHeadTop_End')||m.getObjectByName('mixamorigHead'),h=ht?ht.getWorldPosition(new T.Vector3()).y:1.7;
+  m.scale.setScalar(({seb:1.76,zuri:1.64,drinker:1.74,sheriff:1.68,kitty:1.62,maribeth:1.63,yinyang:1.62,vanguard:1.64,bunny:1.6,urban:1.76,crimson:1.78,catrina:1.64,apron:1.78,denim:1.8}[e[0]]||1.7)/Math.max(0.01,h));
+  var old=GL.cast[e[0]];
+  if(old){/* the full-quality copy takes the light one's place, pose and all */
+    m.position.copy(old.g.position);m.rotation.y=old.g.rotation.y;m.visible=old.g.visible;GL.party.add(m);
+    if(old.g.parent)old.g.parent.remove(old.g);old.mixer.stopAllAction();
+    old.g.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(function(x){['map','normalMap','roughnessMap','metalnessMap','aoMap','emissiveMap'].forEach(function(k){if(x[k])x[k].dispose();});x.dispose();});});
+    var t=old.act?old.act.time:0;old.g=m;old.mixer=new T.AnimationMixer(m);old.act=null;old.anims=g.animations&&g.animations.length?g.animations:old.anims;old.rest=T.SkeletonUtils?restClone(m,null):null;old.t0=t;castAnim();if(old.act)old.act.time=t;return;}
+  m.position.set(e[2][0],0,e[2][1]);m.rotation.y=e[0]==='apron'?Math.PI:Math.atan2(-e[2][0]*0.6,-e[2][1]);GL.party.add(m);
+  GL.cast[e[0]]={home:new T.Vector3(e[2][0],0,e[2][1]),g:m,mixer:new T.AnimationMixer(m),clip:e[3],ts:e[4],yaw:m.rotation.y,yaw0:m.rotation.y,anims:g.animations||[],rest:T.SkeletonUtils?restClone(m,null):null};m.visible=P.area==='party'&&S.loop<=3;castAnim();}
 /* the drunk idles, fitted to each guest's hips */
 function castAnim(){if(!GL.cast)return;for(var k in GL.cast){var C=GL.cast[k];if(C.act)continue;
   if(C.clip==='idleD'){/* Damian's own standing idle; this rig's elbows fold badly, so they stay straight */
@@ -1983,6 +1995,8 @@ L.init=function(api,done){
     /* the forest is gone: free what it held on the graphics card */
     setTimeout(function(){try{G.scene.traverse(function(o){var keep=false;for(var q=o;q;q=q.parent){if(q===(G.hol&&G.hol.g)||q===G.hero||q===(GL.alt.pp&&GL.alt.pp.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(GL.alt.clown&&GL.alt.clown.g)||q===(GL.alt.suit&&GL.alt.suit.g)||q===(G.luna&&G.luna.g)){keep=true;break;}}if(keep)return;if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){['map','normalMap','roughnessMap','emissiveMap','alphaMap','aoMap'].forEach(function(k){if(m[k]&&m[k].dispose)m[k].dispose();});m.dispose();});}});}catch(e){console.warn('free forest',e);}},1500);
     fxInit();fxShadowLights();resetState();L.ready=true;
+    /* the party guests start arriving in the background, so they are there whichever door you take */
+    setTimeout(function(){try{loadGoth();loadPartyCast();}catch(e){}},9000);
     /* compile shaders once, behind the black */
     try{R.compile(scene,cam);}catch(e){}
   }catch(e){console.error('limbo init',e);}
