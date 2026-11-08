@@ -398,6 +398,11 @@ button.go:focus-visible,#btnE:focus-visible{outline:2px solid var(--gold);outlin
 
 <script>
 window.__startGame=function(){
+/* a model's box from its geometry as authored. three.js r151+ measures skinned meshes through their bones, which are not
+   posed yet right after loading, so the box came out tiny and the models got scaled up into giants. */
+function rawBox(obj){var bb=new THREE.Box3(),b=new THREE.Box3();obj.updateMatrixWorld(true);
+  obj.traverse(function(o){if(!o.geometry)return;if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();b.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);bb.union(b);});
+  return bb;}
 'use strict';
 var THREE=window.THREE;
 var $=function(id){return document.getElementById(id);};
@@ -1239,7 +1244,7 @@ function loadLunaModel(){
     new THREE.GLTFLoader().parse(b64buf(txt),'',function(gltf){
       try{
         var m=gltf.scene,mats=[];
-        var bb=new THREE.Box3().setFromObject(m),h=Math.max(0.5,bb.max.y-bb.min.y);m.scale.setScalar(1.62/h);
+        var bb=rawBox(m),h=Math.max(0.5,bb.max.y-bb.min.y);m.scale.setScalar(1.62/h);
         m.traverse(function(o){
           if(!o.isMesh)return;
           o.frustumCulled=false;o.castShadow=false;
@@ -2353,7 +2358,7 @@ function loadShadowRig(){
   new THREE.GLTFLoader().load('shadow_rig.glb',function(gltf){
     try{
       var sc=gltf.scene;sc.updateMatrixWorld(true);
-      var bb=new THREE.Box3().setFromObject(sc);
+      var bb=rawBox(sc);
       SHADOW_RIG={scene:sc,clips:{},h:Math.max(0.1,bb.max.y-bb.min.y),minY:bb.min.y};
       gltf.animations.forEach(function(c){SHADOW_RIG.clips[c.name]=c;});
       if(!SHADOW_RIG.clips.run)throw new Error('clips missing');
@@ -2540,7 +2545,7 @@ function loadHollow(){
     new THREE.GLTFLoader().parse(b64buf(txt),'',function(gltf){
       try{
         var m=gltf.scene;m.updateMatrixWorld(true);
-        var bb=new THREE.Box3().setFromObject(m),h=Math.max(0.5,bb.max.y-bb.min.y),s=7.2/h;
+        var bb=rawBox(m),h=Math.max(0.5,bb.max.y-bb.min.y),s=7.2/h;
         m.scale.setScalar(s);hol.sc=s;
         m.traverse(function(o){
           if(!o.isMesh)return;
@@ -4725,7 +4730,7 @@ var PUDS={list:[],mud:null,stepT:0,env:null,mat:null};
   PUDS.mat.normalScale.set(0.8,0.8);
   /* mud puddle models removed (they rendered as dark blobs); only the scanned water puddles remain */
   if(false&&THREE.GLTFLoader)new THREE.GLTFLoader().load('mudpuddle.glb',function(gl){
-    var m=gl.scene;var bb=new THREE.Box3().setFromObject(m);m.position.y=-bb.min.y*0.55;
+    var m=gl.scene;var bb=rawBox(m);m.position.y=-bb.min.y*0.55;
     m.traverse(function(o){if(o.isMesh){o.receiveShadow=true;o.castShadow=false;if(o.material&&!o.material.isMeshStandardMaterial){var om=o.material;o.material=new THREE.MeshStandardMaterial({map:om.map||null,color:om.color?om.color.clone():0xffffff,transparent:om.transparent,opacity:om.opacity,alphaTest:om.alphaTest||0,side:om.side});}if(o.material){o.material.roughness=0.55;o.material.envMap=PUDS.env;o.material.envMapIntensity=0.6;if(o.material.map){o.material.emissiveMap=o.material.map;o.material.emissive=new THREE.Color(0x6a6258);o.material.emissiveIntensity=0.55;}}}});
     PUDS.mud=m;try{placePuddles();}catch(e){}
   },undefined,function(e){console.warn('mud puddle not used',e);});
