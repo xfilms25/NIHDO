@@ -1139,7 +1139,7 @@ function enterCar(loop){
   carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
   if(loop===1)after(2.2,function(){hint(tx('radio'),2600);});
   if(loop===2)after(2.2,function(){hint(tx('reach'),2600);});
-  S.knock1=S.knock2=0;
+  S.knock1=S.knock2=0;if(S.holSit&&GL.hol)holSeat(false);S.holSit=false;S.dip=0;
 }
 function setTL(c){GL.tlR.color.setHex(c==='red'?0xff1a10:0x200606);GL.tlG.color.setHex(c==='green'?0x20ff70:0x06200e);
   var col=c==='red'?0xff2010:0x30ff80;GL.tlGlow.material.color.setHex(col);GL.tlLight.color.setHex(col);GL.tlGlow.position.y=GL.tlHeads?(c==='red'?GL.tlHeads.red:GL.tlHeads.green):(c==='red'?6.32:5.68);}
@@ -1194,29 +1194,43 @@ function carTick(dt){
   if(S.walk>=0)S.walk+=dt;if(S.give>=0)S.give+=dt;
   /* 1: the radio has lost her; tune until she comes through */
   if(S.loop===1&&AU.car)GL.radioNeedle.position.x=CO.x*0+CAR.radio[0]-0.09+((S.tune/S.tuneGoal)*0.15);
-  /* 3: someone sits behind you; you only see him in the mirror. Don't turn around. */
-  /* 3: someone is coming up the road, drunk, through the headlights. Don't stare at him. He reaches your window. */
+  /* 3: Hollow, erratic. He is never seen arriving: he is just there, somewhere else each time and closer each time (the road in
+     the headlights, the trees on either side, behind the car, right outside a window), the headlights stutter whenever he
+     jumps, he sits for a breath in the seat beside you, and then he is at your window, knocking. A new order every time. */
   if(S.loop===3&&GL.hol){
-    if(!S.holSeen&&!S.busy&&S.c3T===0){S.holSeen=true;S.hd=26;S.hx=0.35;S.hPh='walk';S.hT=0;S.stare=0;
-      GL.hol.scale.setScalar(HOLS);GL.hol.rotation.set(0,0,0);GL.hol.visible=true;holUse('walk',0.9);
+    if(!S.holSeen&&!S.busy&&S.c3T===0){S.holSeen=true;S.hq=holPlan();S.hi=-1;S.hPh='gap';S.hT=0;S.hDur=1.4;S.stare=0;S.flk=0;
+      GL.hol.scale.setScalar(HOLS);GL.hol.rotation.set(0,0,0);GL.hol.visible=false;
       GL.holLight.color.setHex(0xb8c4e8);GL.holLight.distance=5;GL.holLight.intensity=0;}
-    if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.hT+=dt;var H=GL.hol;H.visible=true;
-      /* stagger: forward along the road in the car's lane, weaving */
-      if(S.hPh==='walk'){S.hd=Math.max(2.3,S.hd-dt*0.78);S.hx=0.35+Math.sin(S.c3T*0.9)*0.55+Math.sin(S.c3T*2.3)*0.12;holUse('walk',0.9);
-        if(S.hd<=2.3){S.hPh='side';S.hT=0;holUse('turn');}}
-      /* round the front of the car to the driver's window */
-      else if(S.hPh==='side'){var u=ss(0,2.6,S.hT);S.hx=0.35+(-1.25-0.35)*u;S.hd=2.3+(0.2-2.3)*u;holUse(u<0.95?'walk':'idleB',0.7);if(S.hT>2.6){S.hPh='window';S.hT=0;}}
+    if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.hT+=dt;var H=GL.hol;
+      if(S.hPh==='gap'){H.visible=false;GL.holLight.intensity=0;
+        if(S.hT>=S.hDur){S.hi++;var A=S.hq[S.hi];S.hT=0;
+          if(A.t==='window'){S.hPh='window';S.hx=-1.25;S.hd=0.2;S.hLean=0;H.visible=true;holUse('idleB');sBoom(0.8);S.flk=0.5;H.rotation.y=Math.atan2(CAR.eye[0]-S.hx,(-CAR.eye[2])-S.hd)+Math.PI;}
+          else{S.hPh='on';S.hA=A;S.hx=A.x;S.hd=A.d;S.hDur=A.dur;S.flk=0.35;H.visible=true;
+            if(A.t==='seat'){holSeat(true);sBoom(0.9);if(G.buzz)G.buzz([120,40,160],1);S.dip=1;}
+            else{holUse(A.walk?'walk':(Math.random()<0.5?'idleA':'idleB'),A.walk?1.1:1);if(A.close){sBoom(0.55);}else noiseBurst(0.18,260,0.8,0.28,true,0.6);}}}}
+      else if(S.hPh==='on'){var A2=S.hA;
+        if(A2.walk){S.hd=Math.max(2.6,S.hd-dt*1.5);S.hx+=(0.35-S.hx)*Math.min(1,dt*0.6);}
+        if(S.hT>=S.hDur){if(A2.t==='seat')holSeat(false);H.visible=false;GL.holLight.intensity=0;S.flk=0.3;noiseBurst(0.1,1400,1.2,0.22,true,0.6);
+          S.hPh='gap';S.hT=0;S.hDur=0.5+Math.random()*1.2;}}
       /* at the window: he sways, leans in, knocks on the glass */
       else if(S.hPh==='window'){S.hx=-1.25;S.hd=0.2;holUse('idleB');
-        if(!S.knock1&&S.hT>1.2){S.knock1=1;knock();}if(!S.knock2&&S.hT>2.6){S.knock2=1;knock();}
-        if(S.hT>4.6){S.trig=true;setTL('off');GL.heads&&GL.heads.forEach(function(h){h.intensity=0;});H.visible=false;GL.holLight.intensity=0;sBoom(0.7);
+        if(!S.knock1&&S.hT>1.0){S.knock1=1;knock();}if(!S.knock2&&S.hT>2.4){S.knock2=1;knock();}
+        if(S.hT>4.4){S.trig=true;setTL('off');GL.heads&&GL.heads.forEach(function(h){h.intensity=0;});H.visible=false;GL.holLight.intensity=0;sBoom(0.7);
           after(0.5,function(){setTL('red');if(GL.heads)GL.heads.forEach(function(h){h.intensity=2.6;});});nextCarLoop(2.2);}}
-      /* place him (car-local: -z is ahead), facing where he goes, then the car */
-      var wx=CO.x+S.hx,wz=CO.z-S.hd;var face=S.hPh==='walk'?0:S.hPh==='side'?Math.atan2(-1,0.3):Math.atan2(CO.x+CAR.eye[0]-wx,CO.z+CAR.eye[2]-wz);
-      if(S.hPh==='window'){S.hLean=Math.min(1,(S.hLean||0)+dt*0.8);}else S.hLean=0;H.rotation.order='YXZ';H.rotation.x=0.26*ss(0,1,S.hLean);H.position.set(wx,roadYAt(wx,wz),wz);H.rotation.y+=Math.atan2(Math.sin(face-H.rotation.y),Math.cos(face-H.rotation.y))*Math.min(1,dt*3);
-      GL.holLight.position.set(wx+0.3,2.0,wz+(S.hPh==='window'?0.6:1.2));GL.holLight.intensity=S.hPh==='walk'?1.0:1.4;
+      /* the headlights stutter when he jumps */
+      if(GL.heads&&!S.trig){S.flk=Math.max(0,S.flk-dt);var hf=S.flk>0?(Math.random()<0.55?0.15:1):1;GL.heads.forEach(function(h){h.intensity=2.6*hf;});}
+      var hx,hy,hz;
+      if(S.hPh==='on'&&S.hA.t==='seat'&&S.holSit){holSeatTick();var hh=H.getObjectByName('mixamorigHead');var hw=hh?hh.getWorldPosition(new T.Vector3()):H.getWorldPosition(new T.Vector3());hx=hw.x;hy=hw.y;hz=hw.z;
+        var lp=GL.carBody.localToWorld(new T.Vector3(0.45,1.45,-0.55));GL.holLight.position.copy(lp);GL.holLight.intensity=0.7;}
+      else if(H.visible){
+        /* place him (car-local: -z is ahead), turned toward the driver, then the car */
+        var wx=CO.x+S.hx,wz=CO.z-S.hd,face=(S.hPh==='on'&&S.hA.walk)?Math.atan2(CO.x+0.35-wx,CO.z-wz):Math.atan2(CO.x+CAR.eye[0]-wx,CO.z+CAR.eye[2]-wz);
+        if(S.hPh==='window'){S.hLean=Math.min(1,(S.hLean||0)+dt*0.8);}else S.hLean=0;H.rotation.order='YXZ';H.rotation.x=0.26*ss(0,1,S.hLean);H.position.set(wx,roadYAt(wx,wz),wz);
+        if(S.hT<0.05)H.rotation.y=face;else H.rotation.y+=Math.atan2(Math.sin(face-H.rotation.y),Math.cos(face-H.rotation.y))*Math.min(1,dt*3);
+        GL.holLight.position.set(wx+0.3,2.0,wz+(S.hd<0?-1.2:S.hPh==='window'?0.6:1.2));GL.holLight.intensity=S.hPh==='window'?1.4:(S.hA&&S.hA.close?1.2:1.0);hx=wx;hy=1.5;hz=wz;}
+      if(S.dip>0){S.dip=Math.max(0,S.dip-dt*2.2);GL.carBody.position.y-=0.022*Math.sin(Math.min(1,S.dip)*Math.PI);}
       /* staring at him is what brings the ringing */
-      var lk=lookingAt(_v.set(wx,1.5,wz),40,0.93);if(lk){S.stare+=dt;S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*(S.hPh==='window'?0.5:0.22));}else S.stare=Math.max(0,S.stare-dt*0.5);
+      if(H.visible&&hx!==undefined){var lk=lookingAt(_v.set(hx,hy,hz),40,0.93);if(lk){S.stare+=dt;S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*(S.hPh==='window'||(S.hA&&(S.hA.close||S.hA.t==='seat'))?0.5:0.25));}else S.stare=Math.max(0,S.stare-dt*0.5);}
       if(S.c3T>0.5&&S.c3T<0.6)hint(tx('noStare'),3200);}
   }
   /* 4: the streetlights die, far to near; her voice; the ringing. Close your eyes until it passes. */
@@ -1320,6 +1334,38 @@ function lunaSeatTick(dt){
   aimBone(b.LeftArm,b.LeftForeArm,el);aimBone(b.LeftForeArm,b.LeftHand,tgt);
   C.light.position.set(0.55,1.3,-0.45);C.light.intensity=0.9*(GL.lunaHand.visible?1:0);
 }
+/* ---- Hollow in the car (scene 3): the order of his apparitions, and the moment he sits beside you ---- */
+function holPlan(){var R=Math.random,far=['road','left','right','behind'];for(var i=far.length-1;i>0;i--){var j=Math.floor(R()*(i+1)),t=far[i];far[i]=far[j];far[j]=t;}
+  var L=far.slice(0,3).map(function(t){var a={t:t,dur:0.9+R()*0.8};
+    if(t==='road'){a.x=-0.4+R()*1.4;a.d=8+R()*7;a.walk=R()<0.5;if(a.walk)a.dur+=0.6;}
+    else if(t==='left'){a.x=-3.6-R()*2.4;a.d=1+R()*7;}else if(t==='right'){a.x=3.6+R()*2.4;a.d=1+R()*7;}
+    else{a.x=-0.8+R()*1.6;a.d=-5-R()*4;}return a;});
+  /* nearer each time */
+  L.sort(function(a,b){return Math.abs(b.d)+Math.abs(b.x)*0.6-(Math.abs(a.d)+Math.abs(a.x)*0.6);});
+  var side=R()<0.5?-1:1;L.push({t:'close',close:true,x:side<0?-1.7:1.8,d:-0.6+R()*1.4,dur:0.8+R()*0.6});
+  L.splice(L.length-(R()<0.5?0:1),0,{t:'seat',dur:1.3+R()*0.4});
+  L.push({t:'window'});return L;}
+/* his bind pose straight from the skin, whatever his mixer was doing */
+function bindRest(root){var r={},sk=null;root.traverse(function(o){if(!sk&&o.isSkinnedMesh)sk=o.skeleton;});if(!sk)return boneRest(root);
+  var W=sk.boneInverses.map(function(m){return m.clone().invert();}),q=new T.Quaternion(),p=new T.Vector3(),sc=new T.Vector3(),M=new T.Matrix4();
+  sk.bones.forEach(function(b,i){var pi=sk.bones.indexOf(b.parent);if(pi<0){r[b.name]=b.quaternion.clone();return;}M.copy(W[pi]).invert().multiply(W[i]);M.decompose(p,q,sc);r[b.name]=q.clone();});return r;}
+function holSeat(on){var H=GL.hol;
+  if(on){S.holSit=true;GL.carBody.add(H);H.rotation.set(0,Math.PI,0);H.scale.setScalar(HOLS);}
+  else{S.holSit=false;scene.add(H);H.rotation.set(0,0,0);H.scale.setScalar(HOLS);H.visible=false;}}
+function holSeatTick(){var H=GL.hol,B=GL.carBody;if(!GL.holBind)GL.holBind=bindRest(H);
+  if(!GL.holSitMix){var CD=GL.alt.clown;if(!GL.holSitFail&&CD&&CD.own&&CD.own.Sitting&&CD.rest&&T.SkeletonUtils){
+      try{var c=retarget(restClone(CD.rest,null),CD.own.Sitting,restClone(H,GL.holBind));GL.holSitMix=new T.AnimationMixer(H);GL.holSitAct=GL.holSitMix.clipAction(c);GL.holSitAct.play();}catch(e){GL.holSitFail=true;console.warn('holSit',e);}}
+    else if(!CD)loadSuit();}
+  if(GL.holSitMix){H.traverse(function(o){if(o.isBone&&GL.holBind[o.name])o.quaternion.copy(GL.holBind[o.name]);});GL.holSitAct.enabled=true;GL.holSitAct.setEffectiveWeight(1);GL.holSitMix.setTime(0.6);}
+  else{H.visible=false;return;}   /* no seated pose to give him: better unseen than standing through the roof */
+  /* hips on the passenger cushion, where Luna sits in the last scene */
+  H.position.set(0,0,0);H.updateMatrixWorld(true);var hips=H.getObjectByName('mixamorigHips');
+  if(hips){var hp=B.worldToLocal(hips.getWorldPosition(new T.Vector3()));H.position.set(0.31-hp.x,0.8-hp.y,-0.3-hp.z);H.updateMatrixWorld(true);}
+  /* hands in his lap (the borrowed pose holds a wheel), head tipped toward the driver */
+  function W(x,y,z){return B.localToWorld(new T.Vector3(x,y,z));}function bn(n){return H.getObjectByName('mixamorig'+n);}
+  [['Right',0.5,0.42],['Left',0.12,0.22]].forEach(function(e){var a=bn(e[0]+'Arm'),f=bn(e[0]+'ForeArm'),h=bn(e[0]+'Hand');if(a&&f&&h){aimBone(a,f,W(e[1],0.98,-0.42));aimBone(f,h,W(e[2],0.86,-0.64));}});
+  var nk=bn('Neck'),hd=bn('Head'),ht=bn('HeadTop_End');if(nk&&hd){var np=B.worldToLocal(nk.getWorldPosition(new T.Vector3()));aimBone(nk,hd,W(np.x-0.07,np.y+0.3,np.z-0.03));
+    if(ht){var hp2=B.worldToLocal(hd.getWorldPosition(new T.Vector3()));aimBone(hd,ht,W(hp2.x-0.12,hp2.y+0.24,hp2.z+0.02));}}}
 /* three knuckles on the driver's window */
 function knock(){for(var i=0;i<3;i++)(function(i){after(i*0.22,function(){noiseBurst(0.04,1400,1.5,0.5,true,0.8);thud(ac?ac.currentTime:0,180,90,0.12);});})(i);}
 function takeHand(){
@@ -2109,7 +2155,7 @@ L.characters=function(){var out=[],add=function(id,label,obj,clips){if(obj&&obj.
   if(GL.goth)add('goth','Chica gótica',GL.goth.g,{});if(GL.gothWatch)add('gothWatch','Chica gótica (mirando)',GL.gothWatch,{});
   if(GL.cast)for(var k in GL.cast){var C=GL.cast[k],cc={};if(C.act)cc[C.clip==='own'?'propia':C.clip]=C.act.getClip();(C.anims||[]).forEach(function(a){cc[a.name]=a;});add(k,k.charAt(0).toUpperCase()+k.slice(1),C.g,cc);}
   return out;};
-L._dbg=function(){return {BEAMS:BEAMS,LMS:LMS,lunaSeatTick:lunaSeatTick,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {holPlan:holPlan,holSeat:holSeat,holSeatTick:holSeatTick,BEAMS:BEAMS,LMS:LMS,lunaSeatTick:lunaSeatTick,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
