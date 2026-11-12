@@ -34,7 +34,7 @@ var TX={
   brush:'El labial rojo',mirror:'El espejo',neck:'El collar',door:'La puerta',
   tune:'Sintonizar',reach:'Acercarte',takeHand:'Tomar su mano',radio:'La radio',rear:'El retrovisor',nextDoor:'Otra puerta te espera.',
   noStare:'No lo mires fijamente.',c1:'¿Por qué ya no me hablas?',c2:'Todavía lo intentas…',c4:'Quédate conmigo.',
-  findHer:'Encuéntrala.',hall:'El pasillo.',someone:'Hay alguien adentro.',p1:'Te busqué toda la noche.',lunaCall:'¿Damian?',p2:'Nadie me veía.',p3:'No me sueltes.'},
+  tuneHow:'Pulsa cuando su voz se aclare.',listen:'Escucha.',walkSoft:'Camina. No corras.',blind:'Quieto y con los ojos cerrados, te pierde.',findHer:'Encuéntrala.',hall:'El pasillo.',someone:'Hay alguien adentro.',p1:'Te busqué toda la noche.',lunaCall:'¿Damian?',p2:'Nadie me veía.',p3:'No me sueltes.'},
  en:{lily:'I believe the white lily appears when love goes rotten.',find:'Find the light.',dontLook:"Don't look back.",
   open:'Open',look:'Look',take:'Take',veil:'Lift the veil',locked:'Not yet.',stuck:"It won't open.",
   eyes:'Hold {k} to close your eyes',eyesK:'F',eyesP:'LT',eyesT:'the eye',
@@ -45,7 +45,7 @@ var TX={
   brush:'The red lipstick',mirror:'The mirror',neck:'The necklace',door:'The door',
   tune:'Tune',reach:'Reach out',takeHand:'Take her hand',radio:'The radio',rear:'The rear-view mirror',nextDoor:'Another door is waiting.',
   noStare:"Don't stare at him.",c1:"Why don't you talk to me anymore?",c2:'You still try…',c4:'Stay with me.',
-  findHer:'Find her.',hall:'The hallway.',someone:'Someone is inside.',p1:'I looked for you all night.',lunaCall:'Damian?',p2:'Nobody could see me.',p3:"Don't let go of me."}};
+  tuneHow:'Press when her voice comes through.',listen:'Listen.',walkSoft:'Walk. Do not run.',blind:'Still, with your eyes closed, he loses you.',findHer:'Find her.',hall:'The hallway.',someone:'Someone is inside.',p1:'I looked for you all night.',lunaCall:'Damian?',p2:'Nobody could see me.',p3:"Don't let go of me."}};
 function tx(k){var l=(G&&G.lang())==='es'?'es':'en';return TX[l][k]!==undefined?TX[l][k]:k;}
 
 /* ---------- small helpers ---------- */
@@ -508,16 +508,47 @@ function audioInit(){
     AU.ring=ac.createGain();AU.ring.gain.value=0;AU.ring.connect(AU.sfx);
     [6100,6163].forEach(function(f){var o=ac.createOscillator();o.type='sine';o.frequency.value=f;o.connect(AU.ring);o.start();});
     /* the bedroom lamp's buzz */
-    AU.buzz=ac.createGain();AU.buzz.gain.value=0;var bo=ac.createOscillator();bo.type='sawtooth';bo.frequency.value=100;var bf=ac.createBiquadFilter();bf.type='lowpass';bf.frequency.value=420;bo.connect(bf);bf.connect(AU.buzz);AU.buzz.connect(AU.sfx);bo.start();
+    AU.buzz=ac.createGain();AU.buzz.gain.value=0;var bo=ac.createOscillator();bo.type='sawtooth';bo.frequency.value=100;var bf=ac.createBiquadFilter();bf.type='lowpass';bf.frequency.value=420;bo.connect(bf);bf.connect(AU.buzz);AU.buzzP=panAt(RO.x-1,1.2,RO.z-1.8,{ref:1.0,roll:1.4});AU.buzz.connect(AU.buzzP);bo.start();
+    /* the lipstick sings, very quietly, wherever it lies */
+    AU.hum=ac.createGain();AU.hum.gain.value=0;AU.humP=panAt(RO.x,1,RO.z,{ref:0.9,roll:1.5});AU.hum.connect(AU.humP);
+    [1318.5,1324,1975.5].forEach(function(f,i){var o=ac.createOscillator();o.type='sine';o.frequency.value=f;var g=ac.createGain();g.gain.value=[0.5,0.5,0.18][i];o.connect(g);g.connect(AU.hum);o.start();});
+    hubDoorsAudio();
     /* the whole world through a wall (used when the hands come) */
     AU.muffle=1;
   }catch(e){console.warn('limbo audio',e);}
 }
+/* ---------- sound in space ----------
+   The ears are the camera. A sound made inside sAt(pos, fn) comes from that point: left or right, in front or behind
+   (HRTF on computers), fainter with distance. Sounds made outside it stay in the head, as before (his own steps, the ringing). */
+function AO(){return AU.cur||AU.sfx;}
+function panAt(x,y,z,o){o=o||{};var p=ac.createPanner();p.panningModel=isPhone()?'equalpower':'HRTF';p.distanceModel='inverse';p.refDistance=o.ref||1.6;p.rolloffFactor=o.roll===undefined?1.1:o.roll;p.maxDistance=80;
+  if(p.positionX){p.positionX.value=x;p.positionY.value=y;p.positionZ.value=z;}else p.setPosition(x,y,z);p.connect(o.to||AU.sfx);return p;}
+function panMove(p,x,y,z){if(!p||!ac)return;if(p.positionX){var t=ac.currentTime;p.positionX.setTargetAtTime(x,t,0.03);p.positionY.setTargetAtTime(y,t,0.03);p.positionZ.setTargetAtTime(z,t,0.03);}else p.setPosition(x,y,z);}
+function sAt(pos,fn,o){if(!ac||!AU.sfx||!pos){try{fn();}catch(e){}return;}var prev=AU.cur;try{AU.cur=panAt(pos.x,pos.y,pos.z,o);fn();}catch(e){}AU.cur=prev;}
+var _ef=new T.Vector3(),_eu=new T.Vector3();
+function earsTick(){if(!ac||!cam)return;var l=ac.listener,p=cam.position;cam.getWorldDirection(_ef);_eu.set(0,1,0).applyQuaternion(cam.quaternion);
+  try{if(l.positionX){var t=ac.currentTime,k=0.02;l.positionX.setTargetAtTime(p.x,t,k);l.positionY.setTargetAtTime(p.y,t,k);l.positionZ.setTargetAtTime(p.z,t,k);
+      l.forwardX.setTargetAtTime(_ef.x,t,k);l.forwardY.setTargetAtTime(_ef.y,t,k);l.forwardZ.setTargetAtTime(_ef.z,t,k);l.upX.setTargetAtTime(_eu.x,t,k);l.upY.setTargetAtTime(_eu.y,t,k);l.upZ.setTargetAtTime(_eu.z,t,k);}
+    else{l.setPosition(p.x,p.y,p.z);l.setOrientation(_ef.x,_ef.y,_ef.z,_eu.x,_eu.y,_eu.z);}}catch(e){}}
+/* what waits behind each door of the hub, heard through the wood as you come near: the lamp's hum, rain on a car roof, a party's bass */
+function hubDoorsAudio(){
+  if(!ac||AU.dA)return;try{var D={};
+    var mk=function(d){var g=ac.createGain();g.gain.value=0;var f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=520;f.connect(g);var q=d.g.position;g.connect(panAt(q.x,1.1,q.z,{ref:1.1,roll:2.2}));return {g:g,in:f};};
+    var b=D.bed=mk(GL.dBed),o=ac.createOscillator();o.type='sawtooth';o.frequency.value=100;var og=ac.createGain();og.gain.value=0.5;var lf=ac.createOscillator();lf.frequency.value=0.7;var lg=ac.createGain();lg.gain.value=0.2;lf.connect(lg);lg.connect(og.gain);o.connect(og);og.connect(b.in);o.start();lf.start();
+    var c=D.car=mk(GL.dCar);c.in.frequency.value=1400;var nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),nd=nb.getChannelData(0);for(var i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+    var rn=ac.createBufferSource();rn.buffer=nb;rn.loop=true;var rg=ac.createGain();rg.gain.value=0.35;rn.connect(rg);rg.connect(c.in);rn.start();
+    var eo=ac.createOscillator();eo.type='sawtooth';eo.frequency.value=30;var ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=150;var eg=ac.createGain();eg.gain.value=0.9;eo.connect(ef);ef.connect(eg);eg.connect(c.in);eo.start();
+    var pa=D.party=mk(GL.dParty);pa.in.frequency.value=170;pa.t=ac.currentTime+0.2;
+    AU.dA=D;}catch(e){console.warn('door audio',e);}}
+function hubDoorsTick(){var D=AU.dA;if(!D||!ac)return;var hub=P.area==='hub'&&!S.revealing&&S.fade<0.95,t=ac.currentTime;
+  D.bed.g.gain.setTargetAtTime(hub&&!S.roomDone?0.07:0,t,0.4);D.car.g.gain.setTargetAtTime(hub&&!S.carDone?0.12:0,t,0.4);D.party.g.gain.setTargetAtTime(hub&&!S.partyDone?0.55:0,t,0.4);
+  if(!hub||S.partyDone){D.party.t=t+0.2;return;}
+  while(D.party.t<t+0.25){var k=D.party.t,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(130,k);o.frequency.exponentialRampToValueAtTime(44,k+0.12);g.gain.setValueAtTime(0.9,k);g.gain.exponentialRampToValueAtTime(0.0001,k+0.24);o.connect(g);g.connect(D.party.in);o.start(k);o.stop(k+0.26);D.party.t+=60/118;}}
 function noiseBurst(dur,f,q,gain,wet,rate){
   if(!ac)return;try{var t=ac.currentTime,len=Math.max(1,Math.floor(ac.sampleRate*dur)),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);
     for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
     var s=ac.createBufferSource();s.buffer=b;s.playbackRate.value=rate||1;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;var g=ac.createGain();g.gain.value=gain;
-    s.connect(bp);bp.connect(g);g.connect(AU.sfx);if(wet)g.connect(AU.send);s.start(t);}catch(e){}
+    s.connect(bp);bp.connect(g);g.connect(AO());if(wet)g.connect(AU.send);s.start(t);}catch(e){}
 }
 /* footsteps in shallow water: the heel slosh, a few drops falling back, a soft thud under it */
 function floorAt(){if(P.area==='hub'||S.revealing)return 'water';if(P.area==='party')return 'wood';return (P.z-RO.z)<-2.5?'tile':'wood';}
@@ -531,11 +562,11 @@ function stepWater(){var v=P.area==='hub'?1:0.75;
     for(var i=0;i<len;i++){var x=i/len,w=Math.random()*2-1;l=l*0.55+w*0.45;d[i]=l*Math.pow(1-x,1.6)*(x<0.03?x/0.03:1);}
     var s=ac.createBufferSource();s.buffer=b;s.playbackRate.value=0.85+Math.random()*0.3;
     var f=ac.createBiquadFilter();f.type='bandpass';f.Q.value=1.1;f.frequency.setValueAtTime(1500+Math.random()*500,t);f.frequency.exponentialRampToValueAtTime(420,t+0.26);
-    var g=ac.createGain();g.gain.value=0.5*v;s.connect(f);f.connect(g);g.connect(AU.sfx);g.connect(AU.send);s.start(t);
+    var g=ac.createGain();g.gain.value=0.5*v;s.connect(f);f.connect(g);g.connect(AO());g.connect(AU.send);s.start(t);
     var nd=2+Math.floor(Math.random()*3);
     for(var k=0;k<nd;k++){var td=t+0.05+Math.random()*0.22,o=ac.createOscillator(),og=ac.createGain(),f0=700+Math.random()*900;o.type='sine';
       o.frequency.setValueAtTime(f0,td);o.frequency.exponentialRampToValueAtTime(f0*1.9,td+0.03);og.gain.setValueAtTime(0.0001,td);og.gain.exponentialRampToValueAtTime(0.05*v,td+0.004);og.gain.exponentialRampToValueAtTime(0.0001,td+0.05);
-      o.connect(og);og.connect(AU.sfx);og.connect(AU.send);o.start(td);o.stop(td+0.06);}
+      o.connect(og);og.connect(AO());og.connect(AU.send);o.start(td);o.stop(td+0.06);}
     thud(t,80,45,0.08*v);
   }catch(e){}
 }
@@ -545,19 +576,19 @@ function stepWood(){
     noiseBurst(0.07,380+Math.random()*120,1.2,0.22,true,0.9+Math.random()*0.2);
     if(Math.random()<0.3){var len=Math.floor(ac.sampleRate*0.42),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++){var x=i/len;d[i]=(Math.random()*2-1)*(0.5+0.5*Math.sin(x*180+Math.sin(x*30)*4))*Math.sin(Math.PI*x);}
       var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=12;var f0=500+Math.random()*400;bp.frequency.setValueAtTime(f0,t+0.04);bp.frequency.linearRampToValueAtTime(f0*1.5,t+0.45);
-      var g=ac.createGain();g.gain.value=0.09;s.connect(bp);bp.connect(g);g.connect(AU.sfx);g.connect(AU.send);s.start(t+0.04);}
+      var g=ac.createGain();g.gain.value=0.09;s.connect(bp);bp.connect(g);g.connect(AO());g.connect(AU.send);s.start(t+0.04);}
   }catch(e){}
 }
 /* tiles: a hard heel click that rings in the small room */
 function stepTile(){
   try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*0.05),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,4);
     var s=ac.createBufferSource();s.buffer=b;var hp=ac.createBiquadFilter();hp.type='bandpass';hp.frequency.value=2600+Math.random()*700;hp.Q.value=1.4;var g=ac.createGain();g.gain.value=0.5;
-    s.connect(hp);hp.connect(g);g.connect(AU.sfx);g.connect(AU.send);g.connect(AU.send);s.start(t);
-    var o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(320+Math.random()*60,t);o.frequency.exponentialRampToValueAtTime(190,t+0.05);og.gain.setValueAtTime(0.09,t);og.gain.exponentialRampToValueAtTime(0.0001,t+0.08);o.connect(og);og.connect(AU.sfx);og.connect(AU.send);o.start(t);o.stop(t+0.1);
+    s.connect(hp);hp.connect(g);g.connect(AO());g.connect(AU.send);g.connect(AU.send);s.start(t);
+    var o=ac.createOscillator(),og=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(320+Math.random()*60,t);o.frequency.exponentialRampToValueAtTime(190,t+0.05);og.gain.setValueAtTime(0.09,t);og.gain.exponentialRampToValueAtTime(0.0001,t+0.08);o.connect(og);og.connect(AO());og.connect(AU.send);o.start(t);o.stop(t+0.1);
     thud(t,95,60,0.1);
   }catch(e){}
 }
-function thud(t,f0,f1,v){try{var o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+0.1);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.13);o.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(t);o.stop(t+0.15);}catch(e){}}
+function thud(t,f0,f1,v){try{var o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+0.1);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.13);o.connect(g);g.connect(AO());g.connect(AU.send);o.start(t);o.stop(t+0.15);}catch(e){}}
 /* rings spreading where he steps */
 function ripple(x,z,big){if(!GL.rip)return;var R=GL.rip[GL.ripI];GL.ripI=(GL.ripI+1)%GL.rip.length;R.t=0;R.big=big?2.0:1;
   /* under the foot that just landed: left, right, left... a little ahead of the eye */
@@ -565,17 +596,17 @@ function ripple(x,z,big){if(!GL.rip)return;var R=GL.rip[GL.ripI];GL.ripI=(GL.rip
 function rippleTick(dt){if(!GL.rip)return;GL.rip.forEach(function(R){if(!R.m.visible)return;R.t+=dt;var u=R.t/(R.big>1?2.2:1.7);if(u>=1){R.m.visible=false;return;}R.m.scale.setScalar(0.62*R.big);var U=R.m.material.uniforms;U.u.value=u;U.k.value=0.16*(1-u)*(1-u)*(R.big>1?1.3:1);});}
 function sCreak(){if(!ac)return;try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*1.3),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*(0.6+0.4*Math.sin(i/len*40));
   var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=9;bp.frequency.setValueAtTime(380,t);bp.frequency.linearRampToValueAtTime(1500,t+0.6);bp.frequency.linearRampToValueAtTime(700,t+1.3);
-  var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.08);g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);s.connect(bp);bp.connect(g);g.connect(AU.sfx);g.connect(AU.send);s.start(t);}catch(e){}}
+  var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.08);g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);s.connect(bp);bp.connect(g);g.connect(AO());g.connect(AU.send);s.start(t);}catch(e){}}
 function sClick(n){for(var i=0;i<(n||1);i++)(function(i){after(i*0.09,function(){noiseBurst(0.03,2600,2,0.35,true);});})(i);}
-function sDrip(){if(!ac)return;try{var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(1500+Math.random()*300,t);o.frequency.exponentialRampToValueAtTime(600,t+0.12);g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);o.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(t);o.stop(t+0.18);}catch(e){}}
-function sBoom(v){if(!ac)return;try{var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(64,t);o.frequency.exponentialRampToValueAtTime(26,t+2);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.8*(v||1),t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+2.4);o.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(t);o.stop(t+2.5);noiseBurst(0.4,160,0.7,0.5*(v||1),true);}catch(e){}}
+function sDrip(){if(!ac)return;try{var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(1500+Math.random()*300,t);o.frequency.exponentialRampToValueAtTime(600,t+0.12);g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);o.connect(g);g.connect(AO());g.connect(AU.send);o.start(t);o.stop(t+0.18);}catch(e){}}
+function sBoom(v){if(!ac)return;try{var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(64,t);o.frequency.exponentialRampToValueAtTime(26,t+2);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.8*(v||1),t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+2.4);o.connect(g);g.connect(AO());g.connect(AU.send);o.start(t);o.stop(t+2.5);noiseBurst(0.4,160,0.7,0.5*(v||1),true);}catch(e){}}
 function sWhoosh(dur){if(!ac)return;try{var t=ac.currentTime,len=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
-  var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.1;bp.frequency.setValueAtTime(240,t);bp.frequency.exponentialRampToValueAtTime(3200,t+dur);var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+dur*0.9);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);s.connect(bp);bp.connect(g);g.connect(AU.sfx);s.start(t);}catch(e){}}
-function sChime(){if(!ac)return;try{var t=ac.currentTime;[1,1.5,2.01,2.99].forEach(function(m,i){var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=392*m;var st=t+i*0.08;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.05/(1+i*0.7),st+0.8);g.gain.exponentialRampToValueAtTime(0.0001,st+5);o.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(st);o.stop(st+5.1);});}catch(e){}}
+  var s=ac.createBufferSource();s.buffer=b;var bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.1;bp.frequency.setValueAtTime(240,t);bp.frequency.exponentialRampToValueAtTime(3200,t+dur);var g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+dur*0.9);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);s.connect(bp);bp.connect(g);g.connect(AO());s.start(t);}catch(e){}}
+function sChime(){if(!ac)return;try{var t=ac.currentTime;[1,1.5,2.01,2.99].forEach(function(m,i){var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=392*m;var st=t+i*0.08;g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.05/(1+i*0.7),st+0.8);g.gain.exponentialRampToValueAtTime(0.0001,st+5);o.connect(g);g.connect(AO());g.connect(AU.send);o.start(st);o.stop(st+5.1);});}catch(e){}}
 /* Luna's voice: one of her recorded calls, far away and full of echo, under each line */
-function sLuna(i,gain){var B=G.lunaBufs();if(!ac||!B||!B.length)return;var buf=B[i%B.length]||B.find(function(b){return b;});if(!buf)return;
-  try{var s=ac.createBufferSource();s.buffer=buf;s.playbackRate.value=0.92;var lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;var g=ac.createGain();g.gain.value=gain||0.5;s.connect(lp);lp.connect(g);g.connect(AU.sfx);g.connect(AU.send);s.start();}catch(e){}}
-function vo(key,ms,li){sub(tx(key),ms||5200);sLuna(li===undefined?Math.floor(Math.random()*5):li,0.45);}
+function sLuna(i,gain,pos){if(pos&&!AU.cur){sAt(pos,function(){sLuna(i,gain);},{ref:6,roll:0.6});return;}var B=G.lunaBufs();if(!ac||!B||!B.length)return;var buf=B[i%B.length]||B.find(function(b){return b;});if(!buf)return;
+  try{var s=ac.createBufferSource();s.buffer=buf;s.playbackRate.value=0.92;var lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;var g=ac.createGain();g.gain.value=gain||0.5;s.connect(lp);lp.connect(g);g.connect(AO());g.connect(AU.send);s.start();}catch(e){}}
+function vo(key,ms,li,pos){sub(tx(key),ms||5200);sLuna(li===undefined?Math.floor(Math.random()*5):li,pos?0.6:0.45,pos);}
 
 /* ---------- UI (built here, removed with the level) ---------- */
 function uiInit(){
@@ -826,9 +857,12 @@ function build(){
     {id:'exit',pos:function(){return new T.Vector3(RO.x,1.2,RO.z+D);},r:2.0,area:'room',label:'open',use:function(){exitRoom();}},
     {id:'brush',pos:function(){return GL.brushPos;},r:1.7,area:'room',label:'take',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;GL.brush.visible=false;noiseBurst(0.12,1800,1,0.3,true);vo('v2',6000,1);after(1.2,function(){GL.drips.visible=true;sBoom(0.25);});unlockExit(3.5);}},
     {id:'bath',pos:function(){return new T.Vector3(RO.x+1.0,1.2,RO.z-D);},r:1.9,area:'room',label:'open',when:function(){return S.loop===4&&!S.bathOpen;},use:function(){sClick(2);hint(tx('stuck'),2000);}},
-    {id:'radio',pos:function(){return cw(CAR.radio[0],CAR.radio[1],-0.64);},r:1.3,area:'car',label:'tune',when:function(){return S.loop===1&&!S.trig;},use:function(){S.tune++;sClick(1);
-      if(AU.car){AU.car.stF.frequency.setTargetAtTime(900+Math.random()*3000,ac.currentTime,0.05);}
-      if(S.tune>=S.tuneGoal){S.trig=true;if(AU.car)AU.car.stG.gain.setTargetAtTime(0.008,ac.currentTime,0.4);after(0.5,function(){vo('c1',5200,2);});nextCarLoop(6.5);}}},
+    {id:'radio',pos:function(){return cw(CAR.radio[0],CAR.radio[1],-0.64);},r:1.3,area:'car',label:'tune',when:function(){return S.loop===1&&!S.trig;},use:function(){var rp=cw(CAR.radio[0],CAR.radio[1],-0.64);
+      /* the needle drifts across the band on its own; press while her voice is coming through */
+      if((S.tuneNear||0)>0.2){S.tune++;sAt(rp,function(){noiseBurst(0.03,2600,2,0.6,true);sLuna(S.tune,0.5);},{ref:0.7,roll:0.8});
+        var nc;do{nc=0.12+Math.random()*0.76;}while(Math.abs(nc-S.tuneC)<0.28);S.tuneC=nc;S.tuneNear=0;
+        if(S.tune>=S.tuneGoal){S.trig=true;if(AU.car){AU.car.stG.gain.setTargetAtTime(0.008,ac.currentTime,0.4);AU.car.vG.gain.setTargetAtTime(0,ac.currentTime,0.3);}GL.radioL.intensity=0.25;after(0.5,function(){vo('c1',5200,2,rp);});nextCarLoop(6.5);}}
+      else{sAt(rp,function(){noiseBurst(0.35,2200,0.6,0.9,true);},{ref:0.7,roll:0.8});S.ring=Math.min(0.95,S.ring+0.14);if(!S.tuneTold){S.tuneTold=1;hint(tx('tuneHow'),3200);}}}},
     {id:'dash',pos:function(){return cw(CAR.dash[0],CAR.dash[1],CAR.dash[2]);},r:1.3,area:'car',label:'reach',when:function(){return S.loop===2&&!S.trig;},use:function(){S.trig=true;S.walk=0;
       after(4.4,function(){noiseBurst(0.3,800,0.8,0.08,true,0.5);});after(5.2,function(){vo('c2',4200,1);});nextCarLoop(9.5);}},
     {id:'lunaHand',pos:function(){var p=GL.lunaHand.position;return cw(p.x,p.y,p.z);},r:1.3,area:'car',label:'takeHand',when:function(){return S.loop===4&&S.handOut&&S.give<0;},use:function(){takeHand();}},
@@ -1115,19 +1149,21 @@ function carAudio(on){
     var eo=ac.createOscillator();eo.type='sawtooth';eo.frequency.value=30;var ef=ac.createBiquadFilter();ef.type='lowpass';ef.frequency.value=160;var eg=ac.createGain();eg.gain.value=0.07;
     var lfo=ac.createOscillator();lfo.frequency.value=7.5;var lg=ac.createGain();lg.gain.value=0.025;lfo.connect(lg);lg.connect(eg.gain);eo.connect(ef);ef.connect(eg);eg.connect(A.g);eo.start();lfo.start();A.eng=eo;A.engF=ef;A.engG=eg;
     var nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),nd=nb.getChannelData(0);for(var i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
-    var st=ac.createBufferSource();st.buffer=nb;st.loop=true;A.stF=ac.createBiquadFilter();A.stF.type='bandpass';A.stF.frequency.value=2400;A.stF.Q.value=0.8;A.stG=ac.createGain();A.stG.gain.value=0.0;st.connect(A.stF);A.stF.connect(A.stG);A.stG.connect(A.g);st.start();
+    var st=ac.createBufferSource();st.buffer=nb;st.loop=true;A.stF=ac.createBiquadFilter();A.stF.type='bandpass';A.stF.frequency.value=2400;A.stF.Q.value=0.8;A.stG=ac.createGain();A.stG.gain.value=0.0;st.connect(A.stF);A.stF.connect(A.stG);A.rad=panAt(CO.x+CAR.radio[0],CAR.radio[1],CO.z-0.64,{ref:0.7,roll:0.8,to:A.g});A.stG.connect(A.rad);st.start();
+    /* her voice inside the static: a thin chord that only comes through on the right frequency */
+    A.vG=ac.createGain();A.vG.gain.value=0;A.vG.connect(A.rad);[392,587.3,783.9].forEach(function(f,i){var o=ac.createOscillator();o.type='sine';o.frequency.value=f;var g=ac.createGain();g.gain.value=[0.5,0.3,0.15][i];o.connect(g);g.connect(A.vG);o.start();});
     var rn=ac.createBufferSource();rn.buffer=nb;rn.loop=true;rn.playbackRate.value=0.7;var rf=ac.createBiquadFilter();rf.type='highpass';rf.frequency.value=2200;var rg=ac.createGain();rg.gain.value=0.035;rn.connect(rf);rf.connect(rg);rg.connect(A.g);rn.start();
     AU.car=A;}catch(e){console.warn('car audio',e);}}
   if(AU.car)AU.car.g.gain.setTargetAtTime(on?1:0,ac.currentTime,0.3);
 }
-function sTick(){noiseBurst(0.02,1800,3,0.12,false);}
+function sTick(){var q=GL.tlGlow?GL.tlGlow.getWorldPosition(_sp):null;sAt(q,function(){noiseBurst(0.02,1800,3,q?0.2:0.12,false);},{ref:9,roll:0.8});}
 /* entering the car */
 function goCar(loop){
-  if(S.busy)return;loadRoadModels();loadGoth();loadLuna2();S.busy=true;sCreak();GL.dCar.want=1.2;
+  if(S.busy)return;loadRoadModels();loadGoth();loadLuna2();S.busy=true;sAt(GL.dCar.g.position.clone().setY(1.2),sCreak);GL.dCar.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterCar(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterCar(loop){
-  setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.leanT=0;S.leanSnd=0;if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3+Math.floor(Math.random()*3);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
+  setArea('car');S.loop=loop;S.trig=false;S.lookT=0;S.holSeen=false;S.holMirror=false;S.eyesAcc=0;S.mockT=2;S.c3T=0;S.leanT=0;S.leanSnd=0;if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.c4T=0;S.handOut=false;S.drive=0;S.tune=0;S.tuneGoal=3;S.tuneP=0;S.tuneDir=1;S.tuneC=0.45+Math.random()*0.4;S.tuneNear=0;S.tuneTold=0;if(AU.car&&AU.car.vG&&ac)AU.car.vG.gain.setTargetAtTime(0,ac.currentTime,0.1);S.walk=-1;S.give=-1;S.wipeT=3;S.tickT=1;
   S.ring=Math.min(S.ring,0.2);
   P.x=CO.x+CAR.eye[0];P.z=CO.z+CAR.eye[2];P.yaw=Math.PI;P.pitch=-0.03;S.camDY=CAR.eye[1]-EYE;P.spd=0;
   GL.street.position.z=0;GL.carBody.position.y=0;S.dist=0;if(GL.road)placeRoad(0);
@@ -1137,7 +1173,7 @@ function enterCar(loop){
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   GL.carAmb.intensity=loop===4?0.14:0.5;GL.radioL.intensity=loop===4?0.08:0.25;
   carAudio(true);if(AU.car)AU.car.stG.gain.setTargetAtTime(loop===1?0.09:0.025,ac.currentTime,0.2);
-  if(loop===1)after(2.2,function(){hint(tx('radio'),2600);});
+  if(loop===1){after(2.2,function(){hint(tx('radio'),2600);});after(5.4,function(){if(P.area==='car'&&S.loop===1&&!S.trig)hint(tx('tuneHow'),3600);});}
   if(loop===2)after(2.2,function(){hint(tx('reach'),2600);});
   S.knock1=S.knock2=0;if(S.holSit&&GL.hol)holSeat(false);S.holSit=false;S.dip=0;
 }
@@ -1193,7 +1229,11 @@ function carTick(dt){
   if(!S.revealing)carArms(dt);
   if(S.walk>=0)S.walk+=dt;if(S.give>=0)S.give+=dt;
   /* 1: the radio has lost her; tune until she comes through */
-  if(S.loop===1&&AU.car)GL.radioNeedle.position.x=CO.x*0+CAR.radio[0]-0.09+((S.tune/S.tuneGoal)*0.15);
+  if(S.loop===1){
+    if(!S.trig&&!S.busy){S.tuneP+=S.tuneDir*dt*(0.3+0.07*S.tune);if(S.tuneP>1){S.tuneP=1;S.tuneDir=-1;}else if(S.tuneP<0){S.tuneP=0;S.tuneDir=1;}
+      var nr=1-clamp(Math.abs(S.tuneP-S.tuneC)/0.1,0,1);S.tuneNear=nr;GL.radioL.intensity=0.25+0.9*nr;
+      if(AU.car&&ac){var tn=ac.currentTime;AU.car.stG.gain.setTargetAtTime(0.11*(1-0.9*nr),tn,0.04);AU.car.stF.frequency.setTargetAtTime(700+3400*S.tuneP,tn,0.05);AU.car.vG.gain.setTargetAtTime(0.05*nr*nr,tn,0.04);}}
+    GL.radioNeedle.position.x=CAR.radio[0]-0.09+S.tuneP*0.15;}
   /* 3: Hollow, erratic. He is never seen arriving: he is just there, somewhere else each time and closer each time (the road in
      the headlights, the trees on either side, behind the car, right outside a window), the headlights stutter whenever he
      jumps, he sits for a breath in the seat beside you, and then he is at your window, knocking. A new order every time. */
@@ -1204,10 +1244,10 @@ function carTick(dt){
     if(S.holSeen&&!S.trig&&!S.busy){S.c3T+=dt;S.hT+=dt;var H=GL.hol;
       if(S.hPh==='gap'){H.visible=false;GL.holLight.intensity=0;
         if(S.hT>=S.hDur){S.hi++;var A=S.hq[S.hi];S.hT=0;
-          if(A.t==='window'){S.hPh='window';S.hx=-1.25;S.hd=0.2;S.hLean=0;H.visible=true;holUse('idleB');sBoom(0.8);S.flk=0.5;H.rotation.y=Math.atan2(CAR.eye[0]-S.hx,(-CAR.eye[2])-S.hd)+Math.PI;}
+          if(A.t==='window'){S.hPh='window';S.hx=-1.25;S.hd=0.2;S.hLean=0;H.visible=true;holUse('idleB');sAt(cw(-1.0,1.3,-0.1),function(){sBoom(1.0);},{ref:1.2,roll:0.6});S.flk=0.5;H.rotation.y=Math.atan2(CAR.eye[0]-S.hx,(-CAR.eye[2])-S.hd)+Math.PI;}
           else{S.hPh='on';S.hA=A;S.hx=A.x;S.hd=A.d;S.hDur=A.dur;S.flk=0.35;H.visible=true;
-            if(A.t==='seat'){holSeat(true);sBoom(0.9);if(G.buzz)G.buzz([120,40,160],1);S.dip=1;}
-            else{holUse(A.walk?'walk':(Math.random()<0.5?'idleA':'idleB'),A.walk?1.1:1);if(A.close){sBoom(0.55);}else noiseBurst(0.18,260,0.8,0.28,true,0.6);}}}}
+            if(A.t==='seat'){holSeat(true);sAt(cw(0.45,1.0,-0.3),function(){sBoom(1.0);noiseBurst(0.25,300,0.8,0.5,true,0.7);},{ref:0.8,roll:0.6});if(G.buzz)G.buzz([120,40,160],1);S.dip=1;}
+            else{holUse(A.walk?'walk':(Math.random()<0.5?'idleA':'idleB'),A.walk?1.1:1);var hq=cw(A.x,1.4,-A.d);if(A.close){sAt(hq,function(){sBoom(0.8);},{ref:1.4,roll:0.7});}else sAt(hq,function(){noiseBurst(0.22,260,0.8,0.9,true,0.6);thud(ac.currentTime,70,38,0.5);},{ref:3.5,roll:0.8});}}}}
       else if(S.hPh==='on'){var A2=S.hA;
         if(A2.walk){S.hd=Math.max(2.6,S.hd-dt*1.5);S.hx+=(0.35-S.hx)*Math.min(1,dt*0.6);}
         if(S.hT>=S.hDur){if(A2.t==='seat')holSeat(false);H.visible=false;GL.holLight.intensity=0;S.flk=0.3;noiseBurst(0.1,1400,1.2,0.22,true,0.6);
@@ -1236,10 +1276,10 @@ function carTick(dt){
   /* 4: the streetlights die, far to near; her voice; the ringing. Close your eyes until it passes. */
   if(L4){
     S.c4T+=dt;
-    GL.lamps.forEach(function(l,i){var off=1.0+(GL.lamps.length-1-i)*0.75;if(l.on&&S.c4T>off){l.on=0;l.m.color.setHex(0x110a04);l.s.visible=false;if(l.l)l.l.intensity=0;noiseBurst(0.12,180,0.7,0.2,false,0.6);}
+    GL.lamps.forEach(function(l,i){var off=1.0+(GL.lamps.length-1-i)*0.75;if(l.on&&S.c4T>off){l.on=0;l.m.color.setHex(0x110a04);l.s.visible=false;if(l.l)l.l.intensity=0;sAt(l.s.getWorldPosition(new T.Vector3()),function(){noiseBurst(0.12,180,0.7,0.9,false,0.6);noiseBurst(0.03,3200,2,0.5,false);},{ref:7,roll:0.9});}
       else if(l.on&&S.c4T>off-0.5&&Math.random()<0.2){l.s.visible=!l.s.visible;}});
     if(GL.heads){var hf=S.c4T>1.0+GL.lamps.length*0.75+0.6?0:1;if(S.c4T>1.0+GL.lamps.length*0.75&&hf&&Math.random()<0.3)hf=0.2;GL.heads.forEach(function(h){h.intensity=2.6*hf;});}
-    if(!S.handOut){S.mockT-=dt;if(S.mockT<=0){S.mockT=6;vo('mock',3000,3);}
+    if(!S.handOut){S.mockT-=dt;if(S.mockT<=0){S.mockT=6;vo('mock',3000,3,cw(0.45,1.15,-0.25));}
       S.ring=Math.min(1.2,S.ring+dt*0.1);S.ringSrc=true;
       if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.handOut=true;S.ring=0;GL.lunaHand.visible=true;GL.lunaHand.position.set(CAR.hand[0],CAR.hand[1],CAR.hand[2]);lunaSeat(true);GL.lunaHand.rotation.set(0,0.25,0);sChime();after(1.2,function(){hint(tx('takeHand'),3000);});}}}
     else if(S.give<0){var hp=GL.lunaHand.position;hp.x+=(CAR.hand[0]-0.2-hp.x)*Math.min(1,dt*0.8);}
@@ -1367,7 +1407,7 @@ function holSeatTick(){var H=GL.hol,B=GL.carBody;if(!GL.holBind)GL.holBind=bindR
   var nk=bn('Neck'),hd=bn('Head'),ht=bn('HeadTop_End');if(nk&&hd){var np=B.worldToLocal(nk.getWorldPosition(new T.Vector3()));aimBone(nk,hd,W(np.x-0.07,np.y+0.3,np.z-0.03));
     if(ht){var hp2=B.worldToLocal(hd.getWorldPosition(new T.Vector3()));aimBone(hd,ht,W(hp2.x-0.12,hp2.y+0.24,hp2.z+0.02));}}}
 /* three knuckles on the driver's window */
-function knock(){for(var i=0;i<3;i++)(function(i){after(i*0.22,function(){noiseBurst(0.04,1400,1.5,0.5,true,0.8);thud(ac?ac.currentTime:0,180,90,0.12);});})(i);}
+function knock(){for(var i=0;i<3;i++)(function(i){after(i*0.22,function(){sAt(cw(-0.78,1.15,-0.02),function(){noiseBurst(0.04,1400,1.5,0.9,true,0.8);thud(ac?ac.currentTime:0,180,90,0.25);},{ref:0.6,roll:0.6});});})(i);}
 function takeHand(){
   S.give=0;S.busy=true;S.lockInput=true;noiseBurst(0.2,2600,1.5,0.15,true);
   after(1.4,function(){sChime();});after(2.6,function(){vo('c4',4200,0);});
@@ -1489,7 +1529,7 @@ function buildParty(){
 /* the music: a heavy kick, an off-beat hat, a sick minor bass line; muffled when she can't hear it */
 function partyAudio(on){
   if(!ac)return;
-  if(on&&!AU.party){try{var A={};A.g=ac.createGain();A.g.gain.value=0;A.f=ac.createBiquadFilter();A.f.type='lowpass';A.f.frequency.value=16000;A.f.connect(A.g);A.g.connect(AU.amb);A.send=ac.createGain();A.send.gain.value=0.25;A.f.connect(A.send);A.send.connect(AU.send);A.beat=0;A.t=ac.currentTime+0.1;AU.party=A;}catch(e){}}
+  if(on&&!AU.party){try{var A={};A.g=ac.createGain();A.g.gain.value=0;A.f=ac.createBiquadFilter();A.f.type='lowpass';A.f.frequency.value=16000;A.occ=ac.createBiquadFilter();A.occ.type='lowpass';A.occ.frequency.value=18000;A.f.connect(A.occ);A.occ.connect(A.g);A.bed=ac.createGain();A.bed.gain.value=0.45;A.g.connect(A.bed);A.bed.connect(AU.amb);A.spk=ac.createGain();A.spk.gain.value=1.1;A.g.connect(A.spk);A.spk.connect(panAt(PO.x+4.4,1.0,PO.z-3.4,{ref:3.2,roll:0.9,to:AU.amb}));A.send=ac.createGain();A.send.gain.value=0.25;A.occ.connect(A.send);A.send.connect(AU.send);A.beat=0;A.t=ac.currentTime+0.1;AU.party=A;}catch(e){}}
   if(AU.party)AU.party.g.gain.setTargetAtTime(on?0.9:0,ac.currentTime,on?0.4:0.15);
   if(AU.party&&on)AU.party.t=Math.max(AU.party.t,ac.currentTime+0.05);
 }
@@ -1651,14 +1691,14 @@ function lunaSearchTick(dt){var L=GL.luna,Q=S.ls;if(!Q)lunaSearchStart(),Q=S.ls;
   /* standing still she searches the room: the head turns from side to side */
   var hd=L.getObjectByName('mixamorigHead'),nk=L.getObjectByName('mixamorigNeck');if(hd&&(1-Q.walkW)>0.05){var a=Math.sin(Q.look*1.7)*0.65*(1-Q.walkW);_q1.setFromAxisAngle(_v1.set(0,1,0),a*0.55);hd.quaternion.multiply(_q1);if(nk){_q1.setFromAxisAngle(_v1.set(0,1,0),a*0.45);nk.quaternion.multiply(_q1);}}
   if(GL.lunaPL){GL.lunaPL.position.set(L.position.x,2.1,L.position.z+0.6);}
-  Q.call-=dt;if(Q.call<=0){Q.call=4+Math.random()*3;var dp=Math.hypot(P.x-PO.x-L.position.x,P.z-PO.z-L.position.z);sLuna(Math.floor(Math.random()*5),0.35*Math.max(0.25,1-dp/9));if(dp<7)sub(tx('lunaCall'),1600);}}
+  Q.call-=dt;if(Q.call<=0){Q.call=4+Math.random()*3;var dp=Math.hypot(P.x-PO.x-L.position.x,P.z-PO.z-L.position.z);sLuna(Math.floor(Math.random()*5),0.6,_sp.set(PO.x+L.position.x,1.5,PO.z+L.position.z));if(dp<7)sub(tx('lunaCall'),1600);}}
 function enterPartyGoth(){if(GL.gothWatch){GL.gothWatch.visible=S.loop<=2;gothPose(GL.gothW,'watch');}}
 function goParty(loop){
-  if(S.busy)return;loadGoth();loadPartyCast();S.busy=true;sCreak();GL.dParty.want=1.2;
+  if(S.busy)return;loadGoth();loadPartyCast();S.busy=true;sAt(GL.dParty.g.position.clone().setY(1.2),sCreak);GL.dParty.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterParty(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterParty(loop){
-  setArea('party');S.loop=loop;S.trig=false;S.lookT=0;S.eyesAcc=0;S.pDoorOpen=false;S.lunaI=0;S.lunaGone=0;S.strobeT=1.5;S.hp=null;S.kiss=-1;S.mockT=3;
+  setArea('party');S.loop=loop;S.trig=false;S.c3p=undefined;S.pLost=0;S.lookT=0;S.eyesAcc=0;S.pDoorOpen=false;S.lunaI=0;S.lunaGone=0;S.strobeT=1.5;S.hp=null;S.kiss=-1;S.mockT=3;
   S.ring=Math.min(S.ring,0.2);P.x=PO.x;P.z=PO.z+PD-0.7;P.yaw=Math.PI;P.pitch=-0.02;
   GL.pDoor.open=GL.pDoor.want=0;GL.kissRoom.visible=false;GL.kissL.intensity=0;
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
@@ -1712,7 +1752,7 @@ function partyTick(dt){
       else{S.trig=true;hideLunaParty();vo('p1',5000,0);nextPartyLoop(5.5);}}}
   /* 2: the music drops away; everyone turns to watch; the door at the end of the hallway */
   if(L===2){S.muteT=Math.max(0,(S.muteT||0)-dt);if(AU.party&&S.muteT<3.5&&!S.muted){S.muted=true;AU.party.f.frequency.setTargetAtTime(220,ac.currentTime,0.6);AU.party.g.gain.setTargetAtTime(0.25,ac.currentTime,1.2);}
-    if(!S.trig&&pz<-PD-HL+1.6){S.trig=true;sClick(3);after(0.6,function(){girlLaugh();});after(1.4,function(){hint(tx('someone'),2400);vo('p2',5000,1);});nextPartyLoop(6);}}
+    if(!S.trig&&pz<-PD-HL+1.6){S.trig=true;sClick(3);after(0.6,function(){sAt(GL.pDoorPos,girlLaugh,{ref:2.2,roll:0.9});});after(1.4,function(){hint(tx('someone'),2400);vo('p2',5000,1);});nextPartyLoop(6);}}
   else S.muted=false;
   /* 3: strobe. Each flash he is closer. Don't look at him. Get to the hallway. */
   /* the flash: the cold wash floods the room, the haze glows cyan and gets 30% thicker, then all of it falls back */
@@ -1723,25 +1763,34 @@ function partyTick(dt){
   if(L===3&&GL.hol){S.strobeT-=dt;GL.pStrobe.intensity=Math.max(0,GL.pStrobe.intensity-dt*90);
     if(!S.hp){S.hp=new T.Vector3(-3.2,0,-2.6);}
     if(S.strobeT<=0&&!S.trig){S.strobeT=0.7+Math.random()*0.6;GL.pStrobe.intensity=9;noiseBurst(0.05,3000,0.7,0.25,true);
-      var dx=px-S.hp.x,dz=pz-S.hp.z,dl=Math.hypot(dx,dz)||1,step=Math.min(dl-0.6,0.6);S.hp.x+=dx/dl*step;S.hp.z+=dz/dl*step;
+      var dx=px-S.hp.x,dz=pz-S.hp.z,dl=Math.hypot(dx,dz)||1,blind=S.eyes>0.85&&P.spd<0.15,step;
+      /* running brings him twice as far; eyes shut and still, he loses you and turns up somewhere else */
+      if(blind){step=0;S.pLost=(S.pLost||0)+1;if(S.pLost>=2){var la=Math.random()*6.28,ld=Math.max(2.6,dl);S.hp.x=clamp(px+Math.sin(la)*ld,-PW+0.6,PW-0.6);S.hp.z=clamp(pz+Math.cos(la)*ld,-PD+0.6,PD-0.6);S.pLost=0;}}
+      else{S.pLost=0;step=Math.min(dl-0.6,P.spd>1.15?1.25:0.6);if(Math.random()<0.18&&dl>3){/* erratic: a flash with him on your other side */S.hp.x=clamp(px-dx/dl*(dl-0.5),-PW+0.6,PW-0.6);S.hp.z=clamp(pz-dz/dl*(dl-0.5),-PD+0.6,PD-0.6);step=0;}
+        else{S.hp.x+=dx/dl*step;S.hp.z+=dz/dl*step;}}
+      dx=px-S.hp.x;dz=pz-S.hp.z;dl=Math.hypot(dx,dz)||1;
       GL.hol.visible=true;holUse(step>0.3?'walk':'idleA');GL.hol.position.set(PO.x+S.hp.x,0,PO.z+S.hp.z);GL.hol.rotation.y=Math.atan2(dx,dz);
+      sAt(_sp.set(PO.x+S.hp.x,0.2,PO.z+S.hp.z),function(){thud(ac.currentTime,85,40,0.9);noiseBurst(0.08,300,1,0.6,true,0.8);},{ref:2.2,roll:0.7});
+      if(!S.pTold&&S.c3p===undefined){S.c3p=1;after(3.2,function(){if(P.area==='party'&&S.loop===3&&!S.trig)hint(tx('blind'),3600);});}
       GL.crowd.forEach(function(d){var u=d.userData;d.position.set(u.home.x+(Math.random()-0.5)*1.2,0,u.home.z+(Math.random()-0.5)*1.2);d.rotation.y=Math.random()*6.3;});
       if(GL.cast)for(var ck in GL.cast){var CC=GL.cast[ck];if(!CC.g.visible)continue;CC.g.position.set(CC.home.x+(Math.random()-0.5)*0.9,0,CC.home.z+(Math.random()-0.5)*0.9);CC.g.rotation.y=CC.yaw=Math.random()*6.3;}
-      if(dl<1.25){S.ring=1.1;}}
+      if(dl<1.25&&!blind){S.ring=1.1;}}
     var lk=lookingAt(_pv.set(GL.hol.position.x,1.6,GL.hol.position.z),12,0.75);if(lk&&GL.pStrobe.intensity>0.5){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*1.4);}
     if(!S.trig&&pz<-PD-0.5){S.trig=true;GL.hol.visible=false;vo('p3',4500,2);nextPartyLoop(5);}}
   /* 4: silence, the red light under the door; her voice behind it. Close your eyes and it opens. */
-  if(L===4){GL.pHall.intensity=1.0+0.25*Math.sin(time*2.3);S.mockT-=dt;if(S.mockT<=0&&!S.pDoorOpen){S.mockT=7;girlLaugh();}
+  if(L===4){GL.pHall.intensity=1.0+0.25*Math.sin(time*2.3);S.mockT-=dt;if(S.mockT<=0&&!S.pDoorOpen){S.mockT=7;sAt(GL.pDoorPos,girlLaugh,{ref:2.2,roll:0.9});}
     var nearDoor=pz<-PD-HL+2.2;
     if(nearDoor&&!S.pDoorOpen){if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>3.2)openPartyDoor();}}
     if(S.kiss>=0)kissTick(dt);}
   if(GL.dcMix&&GL.kissRoom.visible){GL.dcMix.update(dt);if(GL.goth)gothFollow();}
+  /* down the hallway the wall swallows the highs, a little more with every step */
+  if(AU.party&&ac&&AU.party.occ){var hallIn=clamp((-PD+0.4-pz)/3.5,0,1);AU.party.occ.frequency.setTargetAtTime(S.pDoorOpen?18000:18000*Math.pow(0.03,hallIn),ac.currentTime,0.12);AU.party.bed.gain.setTargetAtTime(0.45-0.2*hallIn,ac.currentTime,0.2);}
   if(AU.party&&ac&&L===4&&!S.pDoorOpen){var dd2=Math.max(0,pz-(-PD-HL));AU.party.g.gain.setTargetAtTime(0.06+0.22*(1-Math.min(1,dd2/6)),ac.currentTime,0.3);}
 }
-function girlLaugh(){if(!ac)return;try{var t=ac.currentTime;for(var i=0;i<5;i++){var o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();o.type='sawtooth';var f0=420+Math.random()*60;o.frequency.setValueAtTime(f0,t+i*0.16);o.frequency.exponentialRampToValueAtTime(f0*0.82,t+i*0.16+0.12);f.type='bandpass';f.frequency.value=1100;f.Q.value=2;g.gain.setValueAtTime(0.0001,t+i*0.16);g.gain.exponentialRampToValueAtTime(0.05*(1-i*0.15),t+i*0.16+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.16+0.13);o.connect(f);f.connect(g);g.connect(AU.sfx);g.connect(AU.send);o.start(t+i*0.16);o.stop(t+i*0.16+0.15);}}catch(e){}}
+function girlLaugh(){if(!ac)return;try{var t=ac.currentTime;for(var i=0;i<5;i++){var o=ac.createOscillator(),g=ac.createGain(),f=ac.createBiquadFilter();o.type='sawtooth';var f0=420+Math.random()*60;o.frequency.setValueAtTime(f0,t+i*0.16);o.frequency.exponentialRampToValueAtTime(f0*0.82,t+i*0.16+0.12);f.type='bandpass';f.frequency.value=1100;f.Q.value=2;g.gain.setValueAtTime(0.0001,t+i*0.16);g.gain.exponentialRampToValueAtTime(0.05*(1-i*0.15),t+i*0.16+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.16+0.13);o.connect(f);f.connect(g);g.connect(AO());g.connect(AU.send);o.start(t+i*0.16);o.stop(t+i*0.16+0.15);}}catch(e){}}
 /* the truth: the door opens on him kissing someone else; he turns, and Luna is standing in the hallway behind him */
 function openPartyDoor(){
-  S.pDoorOpen=true;S.busy=true;S.lockInput=true;S.kiss=0;sCreak();GL.pDoor.want=1.5;GL.kissRoom.visible=true;GL.kissL.intensity=2.8;
+  S.pDoorOpen=true;S.busy=true;S.lockInput=true;S.kiss=0;sAt(GL.pDoorPos,sCreak);GL.pDoor.want=1.5;GL.kissRoom.visible=true;GL.kissL.intensity=2.8;
   if(AU.party){AU.party.f.frequency.setTargetAtTime(16000,ac.currentTime,0.05);AU.party.g.gain.setTargetAtTime(0.75,ac.currentTime,0.05);}
   S.kiss0={yaw:P.yaw,x:P.x,z:P.z};
   /* pose the two of them close, heads together */
@@ -1814,12 +1863,12 @@ function fxShadowLights(){if(!HQ)return;
   if(GL.heads)GL.heads.forEach(function(h,i){if(i)return;h.castShadow=true;h.shadow.mapSize.set(1024,1024);h.shadow.bias=-0.0008;h.shadow.camera.near=0.5;h.shadow.camera.far=36;});
   if(GL.hol)castShadows(GL.hol);}
 function castShadows(o){if(!HQ||!o)return;o.traverse(function(m){if(m.isMesh)m.castShadow=true;});}
-function setArea(a){FX.area=a;fxEnv(true);if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
+function setArea(a){FX.area=a;fxEnv(true);if(a!=='room'&&GL.brushGlow){GL.brushGlow.visible=false;GL.brushGL.intensity=0;}if(a!=='room'&&AU.hum&&ac)AU.hum.gain.setTargetAtTime(0,ac.currentTime,0.1);if(a!=='car'&&GL.lunaCar&&GL.lunaCar.on)lunaSeat(false);
   P.area=a;heroSync();GL.hub.visible=a==='hub';GL.room.visible=a==='room';if(GL.car)GL.car.visible=a==='car';if(GL.party)GL.party.visible=a==='party';if(a!=='party'){partyAudio(false);if(GL.luna&&GL.luna.parent===GL.party)hideLunaParty();}scene.fog=a==='car'&&GL.road?GL.carFog:a==='party'&&GL.partyFog?GL.partyFog:null;if(a!=='car'){if(GL.hol){GL.hol.scale.setScalar(HOLS);GL.hol.rotation.x=0;}S.camDY=0;if(GL.fpOn&&!S.revealing)fpHands(0,0,0,0);carAudio(false);if(S.dmUse==='Driving')dmStop();}
   if(AU.wetHub&&ac){AU.wetHub.gain.setTargetAtTime(a==='hub'?0.7:0,ac.currentTime,0.05);AU.wetRoom.gain.setTargetAtTime(a==='room'?0.45:a==='car'?0.18:a==='party'?0.55:0,ac.currentTime,0.05);}
 }
 function goRoom(loop){
-  if(S.busy)return;loadRoadModels();loadLuna2();S.busy=true;sCreak();GL.dBed.want=1.2;
+  if(S.busy)return;loadRoadModels();loadLuna2();S.busy=true;sAt(GL.dBed.g.position.clone().setY(1.2),sCreak);GL.dBed.want=1.2;
   after(0.5,function(){fadeTo(1,0.6,function(){enterRoom(loop);fadeTo(0,0.9,function(){S.busy=false;});});});
 }
 function enterRoom(loop){
@@ -1827,6 +1876,8 @@ function enterRoom(loop){
   P.x=RO.x;P.z=RO.z+1.95;P.yaw=Math.PI;P.pitch=-0.05;
   GL.dExit.open=GL.dExit.want=0;
   GL.brush.visible=true;GL.bristleM.emissive.setHex(0);GL.drips.visible=loop>=3;
+  S.brushSpot=null;if(loop===2)brushHide();else placeBrush();
+  if(AU.buzzP){var lw=GL.lamp.getWorldPosition(new T.Vector3());panMove(AU.buzzP,lw.x,lw.y,lw.z);}
   GL.wallM.map=loop>=3?GL.wallTex2:GL.wallTex;GL.wallM.needsUpdate=true;
   GL.photo.material.map=loop>=3?GL.photoTex2:GL.photoTex;GL.photo.material.needsUpdate=true;
   GL.bedForm.visible=loop===3;GL.sheetM.color.setHex(loop>=3?0xb9b6ae:0xd8d2c6);
@@ -1838,14 +1889,25 @@ function enterRoom(loop){
   if(GL.hol){GL.hol.visible=false;GL.holLight.intensity=0;}
   if(ac&&AU.buzz)AU.buzz.gain.setTargetAtTime(loop===4?0:0.012,ac.currentTime,0.2);
   if(loop===1||loop===3)after(2,function(){hint(tx('mirror'),2400);});
-  if(loop===2)after(2,function(){hint(tx('brush'),2400);});
+  if(loop===2){after(2,function(){hint(tx('brush'),2400);});after(5,function(){if(P.area==='room'&&S.loop===2&&!S.trig)hint(tx('listen'),2600);});}
   if(loop===4)after(1.5,function(){hint(tx('eyes').replace('{k}',eyesKey()),4200);});
 }
-function unlockExit(delay){after(delay||0.5,function(){S.exitOpen=true;sClick(1);noiseBurst(0.2,900,1,0.18,true);hint(tx('door'),2200);});}
+var _sp=new T.Vector3();
+/* put the lipstick on one of a few surfaces (found by dropping a ray on the furniture), a different one each visit */
+function placeBrush(){var B=GL.brush;if(!B||!B.parent)return;if(!B.userData.home){B.userData.home=B.position.clone();B.userData.homeP=GL.brushPos.clone();}
+  S.brushObj=B;var c=S.brushSpot;B.position.copy(B.userData.home);GL.brushPos.copy(B.userData.homeP);if(!c)return;
+  GL.room.updateMatrixWorld(true);var rc=new T.Raycaster(new T.Vector3(RO.x+c[0],1.55,RO.z+c[1]),new T.Vector3(0,-1,0),0,1.3),hit=null,hs;rc.camera=cam;try{hs=rc.intersectObject(GL.room,true);}catch(e){S.brushSpot=null;return;}
+  for(var i=0;i<hs.length;i++){var o=hs[i].object,own=false;for(var q=o;q;q=q.parent)if(q===B)own=true;if(own||!o.isMesh||!o.visible||(o.material&&o.material.transparent))continue;hit=hs[i];break;}
+  if(!hit||hit.point.y<0.3){S.brushSpot=null;return;}
+  var bb=new T.Box3().setFromObject(B),w=new T.Vector3(RO.x+c[0],hit.point.y+(B.getWorldPosition(new T.Vector3()).y-bb.min.y)+0.004,RO.z+c[1]);
+  B.parent.worldToLocal(w);B.position.copy(w);GL.brushPos.set(RO.x+c[0],hit.point.y+0.07,RO.z+c[1]);}
+function brushHide(){var sb=GL.bathBlocks[1],C=[null,[(sb[0]+sb[1])/2,(sb[2]+sb[3])/2],[-0.95,-1.75],[-0.5,-0.15],[-1.5,0.2]];
+  var i;do{i=Math.floor(Math.random()*C.length);}while(C.length>1&&i===GL.brushLast);GL.brushLast=i;S.brushSpot=C[i];placeBrush();}
+function unlockExit(delay){after(delay||0.5,function(){S.exitOpen=true;sAt(_sp.set(RO.x,1.2,RO.z+2.5),function(){noiseBurst(0.03,2600,2,0.5,true);noiseBurst(0.2,900,1,0.3,true);},{ref:2.5});hint(tx('door'),2200);});}
 function exitRoom(){
   if(S.busy)return;
   if(!S.exitOpen){sClick(3);hint(tx('locked'),1800);return;}
-  S.busy=true;sCreak();GL.dExit.want=1.3;
+  S.busy=true;sAt(_sp.set(RO.x,1.2,RO.z+2.5),sCreak);GL.dExit.want=1.3;
   var next=S.loop+1;
   after(0.45,function(){fadeTo(1,0.6,function(){
     if(S.loop===3&&S.holSeen)vo('v3',5200,2);
@@ -1861,7 +1923,7 @@ function takeNecklace(){
 }
 function toHub(after2){
   setArea('hub');P.x=0;P.z=7;P.yaw=Math.PI;P.pitch=-0.02;GL.dBed.open=GL.dBed.want=0;GL.dCar.open=GL.dCar.want=0;GL.dParty.open=GL.dParty.want=0;
-  S.hubT=0;S.hol.d=9;S.hol.on=false;S.hol.cool=after2?999:14;S.busy=false;
+  S.hubT=0;S.hol.d=9;S.hol.on=false;S.hol.cool=after2?((S.roomDone&&S.carDone&&S.partyDone)?999:9):14;S.busy=false;
   /* the doors open in any order: each one goes dark once its memory is done; the veil wakes when all three are */
   if(S.roomDone){GL.dBed.light.intensity=0;GL.dBed.strip.material.opacity=0;}
   if(S.carDone){GL.dCar.light.intensity=0;GL.dCar.strip.material.opacity=0;}
@@ -1976,6 +2038,7 @@ L.frame=function(dt){
   var bob=Math.sin(P.phase)*0.028*Math.min(1,P.spd/1.3);
   cam.position.set(P.x,EYE+bob+(S.camDY||0),P.z);cam.rotation.set(P.pitch,P.yaw+Math.PI,Math.sin(P.phase*0.5)*0.006*Math.min(1,P.spd/1.3)+(S.camRoll||0));
   var baseF=57+((G.CAM.fov||62)-62)*0.6;if(Math.abs(cam.fov-baseF)>0.05){cam.fov=baseF;cam.updateProjectionMatrix();}
+  earsTick();hubDoorsTick();
   GL.near.position.set(P.x,1.5,P.z);GL.near.intensity=P.area==='hub'?0.35:P.area==='car'?0.06:0.25;
   /* Damian's body (only the mirror sees it) */
   if(S.fpOpen>0){S.fpOpen-=dt;fpBody(0.16,0.06);if(S.fpOpen<=0){fpBodyOff();if(S.dmUse==='Opening')dmStop();}}
@@ -2030,24 +2093,51 @@ function hubTick(dt){
   GL.dBed.light.intensity=S.roomDone?0:0.5+0.15*Math.sin(time*1.7);
   GL.dCar.light.intensity=S.carDone?0:0.55+0.35*Math.sin(time*2.4);GL.dCar.strip.material.opacity=S.carDone?0:0.6;
   if(S.revealing)return;
-  /* Hollow stands behind you in the dark. Look at him and the ringing comes; each time he comes back closer. */
-  var h=S.hol;if(!GL.hol)return;
-  if(!h.on){h.cool-=dt;if(h.cool<=0&&S.hubT>10){h.on=true;h.d=Math.max(3.2,h.d);var bx=P.x-Math.sin(P.yaw)*h.d,bz=P.z-Math.cos(P.yaw)*h.d;
-      GL.hol.position.set(bx,0,bz);GL.hol.visible=true;holUse(Math.random()<0.5?'idleA':'idleB');GL.holLight.intensity=0.35;GL.holLight.position.set(bx,2.3,bz);if(!h.told){h.told=true;after(0.8,function(){hint(tx('dontLook'),3200);});}
-      noiseBurst(0.6,300,0.5,0.25,true,0.6);}
+  /* Hollow in the dark. He answers to what you do:
+     - look at him and the ringing comes; he may vanish, or snap to your other shoulder, closer;
+     - run and you draw him: he comes sooner, and stands ahead of you, in your way;
+     - stand still and he walks to you through the water (you hear every step);
+     - close your eyes and hold still: he loses you and leaves.
+     Every door you finish makes him bolder. */
+  var h=S.hol;if(!GL.hol)return;var H=GL.hol,agg=(S.roomDone?1:0)+(S.carDone?1:0)+(S.partyDone?1:0);
+  h.run=P.spd>1.15?(h.run||0)+dt:Math.max(0,(h.run||0)-dt*0.6);h.still=P.spd<0.1?(h.still||0)+dt:0;
+  function put(ang,d){var bx=P.x+Math.sin(ang)*d,bz=P.z+Math.cos(ang)*d,r=Math.hypot(bx,bz+3);if(r>13.5){bx*=13.5/r;bz=(bz+3)*13.5/r-3;}
+    H.position.set(bx,0,bz);H.rotation.y=Math.atan2(P.x-bx,P.z-bz);H.visible=true;GL.holLight.intensity=0.35+0.1*agg;GL.holLight.position.set(bx,2.3,bz);h.sx=bx;h.sz=bz;}
+  function gone(cool){h.on=false;h.seen=0;h.blind=0;H.visible=false;GL.holLight.intensity=0;h.cool=cool;}
+  if(!h.on){h.cool-=dt*(h.run>1.2?2.2:1);
+    if(h.cool<=0&&S.hubT>10){h.on=true;h.jumped=false;h.seen=0;h.blind=0;h.hold=0.6+Math.random()*0.9;h.d=Math.max(3.2,h.d);
+      var front=h.run>1.2;if(front){put(P.yaw+(Math.random()-0.5)*0.5,Math.max(6.5,h.d));}else put(P.yaw+Math.PI+(Math.random()<0.5?-1:1)*(0.25+Math.random()*0.95),h.d);
+      holUse(Math.random()<0.5?'idleA':'idleB');if(!h.told){h.told=true;after(0.8,function(){hint(tx('dontLook'),3200);});}
+      sAt(_sp.set(H.position.x,1.5,H.position.z),function(){noiseBurst(0.6,300,0.5,0.7,true,0.6);if(front)sBoom(0.5);},{ref:3,roll:0.7});}
     return;}
-  GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);
-  var lk=lookingAt(_v.set(GL.hol.position.x,1.6,GL.hol.position.z),30,0.7);
-  if(lk){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*0.55);h.seen=(h.seen||0)+dt;
-    if(h.seen>1.3){h.on=false;h.seen=0;GL.hol.visible=false;GL.holLight.intensity=0;h.d-=1.6;h.cool=4+Math.random()*4;noiseBurst(0.3,200,0.6,0.35,true);
-      if(h.d<2.6){h.d=9;S.ring=1.05;}}}
-  else h.seen=Math.max(0,(h.seen||0)-dt*0.5);
+  var hd=Math.hypot(P.x-H.position.x,P.z-H.position.z);
+  H.rotation.y=Math.atan2(P.x-H.position.x,P.z-H.position.z);
+  /* eyes shut and still: he loses you */
+  if(S.eyes>0.85&&P.spd<0.15){h.blind=(h.blind||0)+dt;if(h.blind>1.8){sAt(_sp.set(H.position.x,1.5,H.position.z),function(){sWhoosh(0.5);},{ref:3});gone(8+Math.random()*5-agg*1.2);h.d=Math.min(9,h.d+1.5);return;}}else h.blind=0;
+  var lk=S.eyes<0.6&&lookingAt(_v.set(H.position.x,1.6,H.position.z),30,0.7);
+  if(lk){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*(0.5+0.06*agg));h.seen=(h.seen||0)+dt;holUse('idleB');
+    if(h.seen>h.hold){
+      if(!h.jumped&&Math.random()<0.3+0.15*agg){/* he does not leave: he is at your other shoulder now */
+        h.jumped=true;h.seen=0;h.hold=0.9+Math.random()*0.6;h.d=Math.max(2.4,h.d-1.2);put(P.yaw+Math.PI+(Math.random()-0.5)*0.9,h.d);GL.spot.intensity*=0.4;after(0.12,function(){GL.spot.intensity=S.roomDone&&S.carDone&&S.partyDone?6.5:5;});
+        sAt(_sp.set(H.position.x,1.5,H.position.z),function(){noiseBurst(0.25,180,0.7,0.9,true);thud(ac.currentTime,60,34,0.6);},{ref:2,roll:0.6});}
+      else{sAt(_sp.set(H.position.x,1.5,H.position.z),function(){noiseBurst(0.3,200,0.6,0.8,true);},{ref:2.5});gone(Math.max(2.5,4+Math.random()*4-agg*0.8));h.d-=1.6;if(h.d<2.6){h.d=9;S.ring=1.05;}}}}
+  else{h.seen=Math.max(0,(h.seen||0)-dt*0.5);
+    /* you stopped: he comes */
+    if(h.still>2.6&&hd>1.25){var sp=(0.5+0.12*agg)*dt,ux=(P.x-H.position.x)/hd,uz=(P.z-H.position.z)/hd;H.position.x+=ux*sp;H.position.z+=uz*sp;holUse('walk',0.8);GL.holLight.position.set(H.position.x,2.3,H.position.z);
+      if(Math.hypot(H.position.x-h.sx,H.position.z-h.sz)>0.7){h.sx=H.position.x;h.sz=H.position.z;sAt(_sp.set(h.sx,0.1,h.sz),stepWater,{ref:2.2,roll:0.8});ripple(h.sx,h.sz,true);}}
+    else if(GL.hcCur==='walk')holUse('idleA');
+    if(hd<1.6){S.ringSrc=true;S.ring=Math.min(1.2,S.ring+dt*0.45);}}
 }
 function roomTick(dt){
   var L4=S.loop===4;
   /* lamp flicker from the second visit on */
   if(S.loop===2||S.loop===3){var f=Math.random()<0.04?0.15:1;GL.lamp.intensity=2.0*f;GL.vanL.intensity=1.3*f;GL.shadeM.emissiveIntensity=0.9*f;if(ac&&AU.buzz)AU.buzz.gain.setTargetAtTime(0.012*f,ac.currentTime,0.02);}
-  if(S.loop===2&&!S.trig){var gl2=0.22+0.18*Math.sin(time*3);GL.bristleM.emissive.setRGB(gl2,0.0,0.01);}
+  if(S.loop===2&&!S.trig){var gl2=0.22+0.18*Math.sin(time*3);GL.bristleM.emissive.setRGB(gl2,0.0,0.01);if(GL.brush!==S.brushObj)placeBrush();}
+  /* a breath of red light on it, so the eye can confirm what the ear found */
+  if(S.loop===2&&!S.trig){if(!GL.brushGlow){GL.brushGlow=new T.Sprite(new T.SpriteMaterial({map:GL.glow,color:0xff2038,transparent:true,opacity:0.5,depthWrite:false,blending:T.AdditiveBlending,fog:false}));GL.brushGlow.scale.set(0.3,0.3,1);scene.add(GL.brushGlow);GL.brushGL=new T.PointLight(0xff2a40,0,1.5,2);scene.add(GL.brushGL);}
+    var gp=0.55+0.45*Math.sin(time*2.6);GL.brushGlow.visible=true;GL.brushGlow.position.copy(GL.brushPos);GL.brushGlow.material.opacity=0.25+0.4*gp;GL.brushGL.position.set(GL.brushPos.x,GL.brushPos.y+0.12,GL.brushPos.z);GL.brushGL.intensity=0.5+0.6*gp;}
+  else if(GL.brushGlow&&GL.brushGlow.visible){GL.brushGlow.visible=false;GL.brushGL.intensity=0;}
+  if(AU.hum&&ac){var hOn=S.loop===2&&!S.trig&&!S.busy;if(hOn)panMove(AU.humP,GL.brushPos.x,GL.brushPos.y,GL.brushPos.z);AU.hum.gain.setTargetAtTime(hOn?0.06*(0.65+0.35*Math.sin(time*2.6)):0,ac.currentTime,0.15);}
   var mlook=lookingAt(GL.mirrorPos,3.2,0.88);
   if(S.loop===1&&!S.trig){if(mlook){S.lookT+=dt;if(S.lookT>1.4){S.trig=true;vo('v1',5000,0);unlockExit(2.5);
     /* in the mirror he slowly shakes his head */if(dmUse('HeadShake',{once:true}))after(5.4,function(){if(S.dmUse==='HeadShake')dmStop();});}}}
@@ -2057,19 +2147,29 @@ function roomTick(dt){
         /* over his left shoulder, a step behind: clear of his head in the reflection */
         var bb=GL.bathBox,hx=clamp(P.x-1.75,RO.x+bb[0]+0.6,RO.x+bb[1]-0.6),hz=clamp(P.z-0.7,RO.z+bb[2]+0.3,RO.z+bb[3]-0.3);GL.hol.position.set(hx,0,hz);
         GL.holLight.color.setHex(0x9fb6ff);GL.holLight.position.set(hx+0.7,1.7,hz+0.1);GL.holLight.distance=3;GL.holLight.intensity=2.2;
-        GL.hol.rotation.y=Math.atan2(P.x-hx,P.z-GL.hol.position.z);sBoom(0.35);hint(tx('dontLook'),3600);S.exitOpen=true;sClick(1);}}
-    if(S.holSeen&&!S.busy){GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);S.ring=Math.min(1,S.ring+dt*0.05);S.ringSrc=true;
+        GL.hol.rotation.y=Math.atan2(P.x-hx,P.z-GL.hol.position.z);sAt(_sp.set(hx,1.5,hz),function(){sBoom(0.6);},{ref:1.5,roll:0.6});hint(tx('dontLook'),3600);after(3.8,function(){if(P.area==='room'&&S.loop===3&&S.holSeen)hint(tx('walkSoft'),3200);});S.exitOpen=true;sClick(1);
+        S.fd=Math.hypot(P.x-hx,P.z-hz);S.fStill=0;S.fx=hx;S.fz=hz;}}
+    if(S.holSeen&&!S.busy){
+      /* running pulls him in fast; standing still lets him creep; a steady walk keeps him where he is */
+      var HP=GL.hol.position,fdx=HP.x-P.x,fdz=HP.z-P.z,fl=Math.hypot(fdx,fdz)||1;S.fStill=P.spd<0.1?S.fStill+dt:0;
+      if(P.spd>1.15)S.fd-=dt*0.85;else if(S.fStill>2.5)S.fd-=dt*0.22;else if(P.spd>0.2)S.fd+=(1.9-S.fd)*Math.min(1,dt*0.35);
+      var bbx=GL.bathBox,nx2=clamp(P.x+fdx/fl*S.fd,RO.x-1.7,RO.x+Math.max(1.7,bbx[1]-0.4)),nz2=clamp(P.z+fdz/fl*S.fd,RO.z+bbx[2]+0.3,RO.z+2.2);HP.x+=(nx2-HP.x)*Math.min(1,dt*4);HP.z+=(nz2-HP.z)*Math.min(1,dt*4);
+      /* his steps, a beat after yours, from where he is */
+      if(Math.hypot(HP.x-S.fx,HP.z-S.fz)>0.62){S.fx=HP.x;S.fz=HP.z;sAt(_sp.set(HP.x,0.1,HP.z),(HP.z-RO.z)<-2.5?stepTile:stepWood,{ref:1.3,roll:0.7});}
+      GL.holLight.position.set(HP.x+0.7,1.7,HP.z+0.1);
+      if(Math.hypot(HP.x-P.x,HP.z-P.z)<0.8){S.ring=1.1;}
+      GL.hol.rotation.y=Math.atan2(P.x-GL.hol.position.x,P.z-GL.hol.position.z);S.ring=Math.min(1,S.ring+dt*0.05);S.ringSrc=true;
       if(lookingAt(_v.set(GL.hol.position.x,1.5,GL.hol.position.z),8,0.55)){
         /* you looked: he's really there, for an instant */
-        GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,2,GL.hol.position.z+0.4);GL.holLight.intensity=1.2;sBoom(0.9);if(G.buzz)G.buzz([200,60,200],1);
+        GL.hol.visible=true;GL.holLight.position.set(GL.hol.position.x,2,GL.hol.position.z+0.4);GL.holLight.intensity=1.2;sAt(_sp.set(GL.hol.position.x,1.5,GL.hol.position.z),function(){sBoom(1.1);},{ref:1.5,roll:0.5});if(G.buzz)G.buzz([200,60,200],1);
         S.holMirror=false;after(0.25,function(){GL.hol.visible=false;GL.holLight.intensity=0;S.ring=1.1;});S.busy=true;after(0.3,function(){S.busy=false;});}}
   }
   /* fourth visit: the dark, her voice, the ringing. Close your eyes until it passes. */
   if(L4){
-    S.mockT-=dt;if(S.mockT<=0&&!S.bathOpen){S.mockT=5.5;vo('mock',3000,3);}
+    S.mockT-=dt;if(S.mockT<=0&&!S.bathOpen){S.mockT=5.5;var ma=P.yaw+Math.PI+(Math.random()-0.5)*2.2;vo('mock',3000,3,_sp.set(P.x+Math.sin(ma)*1.6,1.5,P.z+Math.cos(ma)*1.6));}
     if(!S.bathOpen){S.ring=Math.min(1.2,S.ring+dt*0.12);S.ringSrc=true;
-      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.bathOpen=true;GL.dBath.want=1.35;GL.bath.visible=true;GL.bathL.intensity=1.6;GL.bathL.color.setHex(0xffa660);GL.moon.intensity=2.2;GL.bathFill.intensity=0.35;sCreak();vo('v4',5600,1);S.dripT=1;}}}
-    else{GL.bathL.intensity=Math.random()<0.03?0.35:1.6;S.dripT-=dt;if(S.dripT<=0){S.dripT=1.1+Math.random()*0.6;sDrip();}GL.water.position.y=GL.waterY+Math.sin(time*1.3)*0.0012;}
+      if(S.eyes>0.85){S.eyesAcc+=dt;if(S.eyesAcc>4.2){S.bathOpen=true;GL.dBath.want=1.35;GL.bath.visible=true;GL.bathL.intensity=1.6;GL.bathL.color.setHex(0xffa660);GL.moon.intensity=2.2;GL.bathFill.intensity=0.35;sAt(_sp.set(RO.x+1.0,1.2,RO.z-2.5),sCreak);vo('v4',5600,1);S.dripT=1;}}}
+    else{GL.bathL.intensity=Math.random()<0.03?0.35:1.6;S.dripT-=dt;if(S.dripT<=0){S.dripT=1.1+Math.random()*0.6;sAt(GL.neckPos,sDrip,{ref:1.2});}GL.water.position.y=GL.waterY+Math.sin(time*1.3)*0.0012;}
   }
 }
 /* Hollow's breathing: the recorded breath from the forest, placed in space (left/right, muffled with distance) */
@@ -2090,7 +2190,7 @@ function hBreath(pos,vol,heavy){
       src.buffer=b;f.type='bandpass';f.frequency.value=heavy?520:380;f.Q.value=0.8;a=Math.max(0.0001,vol*0.9);
       g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(a*0.7,t+dur*0.35);g.gain.linearRampToValueAtTime(0.0001,t+dur*0.45);g.gain.linearRampToValueAtTime(a,t+dur*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
       src.start(t);}
-    src.connect(f);f.connect(g);if(pn){pn.pan.value=pan;g.connect(pn);pn.connect(AU.sfx);pn.connect(AU.send);}else{g.connect(AU.sfx);g.connect(AU.send);}
+    src.connect(f);f.connect(g);if(pos){g.connect(panAt(pos.x,pos.y,pos.z,{ref:2.4,roll:0.5}));g.connect(AU.send);}else{g.connect(AO());g.connect(AU.send);}
     return dur;
   }catch(e){return 0;}
 }
@@ -2143,7 +2243,7 @@ function resetState(){
   S.busy=true;S.fade=1;
   after(1.2,function(){sStep();});after(1.9,function(){sStep();});
   after(2.6,function(){fadeTo(0,2.4,function(){S.busy=false;});});
-  after(3.4,function(){vo('lily',6500,5);});
+  after(3.4,function(){vo('lily',6500,5,_sp.set(0,1.5,-5));});
   after(10.5,function(){hint(tx('find'),3000);});
 }
 /* for creator mode: the people in the scene, with the clips each one can play */
@@ -2155,7 +2255,7 @@ L.characters=function(){var out=[],add=function(id,label,obj,clips){if(obj&&obj.
   if(GL.goth)add('goth','Chica gótica',GL.goth.g,{});if(GL.gothWatch)add('gothWatch','Chica gótica (mirando)',GL.gothWatch,{});
   if(GL.cast)for(var k in GL.cast){var C=GL.cast[k],cc={};if(C.act)cc[C.clip==='own'?'propia':C.clip]=C.act.getClip();(C.anims||[]).forEach(function(a){cc[a.name]=a;});add(k,k.charAt(0).toUpperCase()+k.slice(1),C.g,cc);}
   return out;};
-L._dbg=function(){return {holPlan:holPlan,holSeat:holSeat,holSeatTick:holSeatTick,BEAMS:BEAMS,LMS:LMS,lunaSeatTick:lunaSeatTick,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
+L._dbg=function(){return {AU:AU,ac:function(){return ac;},placeBrush:placeBrush,holPlan:holPlan,holSeat:holSeat,holSeatTick:holSeatTick,BEAMS:BEAMS,LMS:LMS,lunaSeatTick:lunaSeatTick,handFrame:handFrame,holUse:holUse,P:P,S:S,GL:GL,cur:curInter,cam:cam,scene:scene,interact:interact,enterRoom:enterRoom,enterCar:enterCar,enterParty:enterParty,openPartyDoor:openPartyDoor,loadGoth:loadGoth,loadLuna2:loadLuna2,dmUse:dmUse,fpOpen:fpOpen,lunaSeat:lunaSeat,CAR:CAR,loadRoad:loadRoadModels,placeRoad:placeRoad,toHub:toHub,reveal:reveal,takeHand:takeHand};};
 L.restart=function(){resetState();try{if(!G.touch())G.canvas.requestPointerLock();}catch(e){}};
 L.init=function(api,done){
   G=api;T=G.THREE;R=G.renderer;
